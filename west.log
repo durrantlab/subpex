@@ -1,0 +1,54 @@
+-- WARNING  [py.warnings] -- /home/ehellemann/miniconda2/envs/westpa-2017.10/lib/python2.7/site-packages/h5py/__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+
+Updating system with the options from the configuration file
+Maximum wallclock time: 3 days, 0:00:00
+
+Mon Jul 23 19:35:55 2018
+Iteration 1 (10 requested)
+Beginning iteration 1
+5 segments remain in iteration 1 (5 total)
+1 of 28 (3.571429%) active bins are populated
+per-bin minimum non-zero probability:       1
+per-bin maximum probability:                1
+per-bin probability dynamic range (kT):     0
+per-segment minimum non-zero probability:   0.2
+per-segment maximum non-zero probability:   0.2
+per-segment probability dynamic range (kT): 0
+norm = 1, error in norm = 0 (0*epsilon)
+-- WARNING  [py.warnings] -- /home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/src/west/propagators/executable.py:47: UserWarning: loadtxt: Empty input file: "/tmp/tmponsbuH"
+  pcoord = numpy.loadtxt(pcoord_return_filename, dtype=system.pcoord_dtype)
+
+-- ERROR    [west.propagators.executable] -- could not read pcoord from '/tmp/tmponsbuH': ValueError('progress coordinate data has incorrect shape (0, 1) [expected (51, 1)]',)
+-- WARNING  [py.warnings] -- /home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/src/west/propagators/executable.py:47: UserWarning: loadtxt: Empty input file: "/tmp/tmppGSMo4"
+  pcoord = numpy.loadtxt(pcoord_return_filename, dtype=system.pcoord_dtype)
+
+-- ERROR    [west.propagators.executable] -- could not read pcoord from '/tmp/tmppGSMo4': ValueError('progress coordinate data has incorrect shape (0, 1) [expected (51, 1)]',)
+-- WARNING  [py.warnings] -- /home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/src/west/propagators/executable.py:47: UserWarning: loadtxt: Empty input file: "/tmp/tmpRpdq4u"
+  pcoord = numpy.loadtxt(pcoord_return_filename, dtype=system.pcoord_dtype)
+
+-- ERROR    [west.propagators.executable] -- could not read pcoord from '/tmp/tmpRpdq4u': ValueError('progress coordinate data has incorrect shape (0, 1) [expected (51, 1)]',)
+-- WARNING  [py.warnings] -- /home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/src/west/propagators/executable.py:47: UserWarning: loadtxt: Empty input file: "/tmp/tmpzGnxT6"
+  pcoord = numpy.loadtxt(pcoord_return_filename, dtype=system.pcoord_dtype)
+
+-- ERROR    [west.propagators.executable] -- could not read pcoord from '/tmp/tmpzGnxT6': ValueError('progress coordinate data has incorrect shape (0, 1) [expected (51, 1)]',)
+-- WARNING  [py.warnings] -- /home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/src/west/propagators/executable.py:47: UserWarning: loadtxt: Empty input file: "/tmp/tmpYYYgGB"
+  pcoord = numpy.loadtxt(pcoord_return_filename, dtype=system.pcoord_dtype)
+
+-- ERROR    [west.propagators.executable] -- could not read pcoord from '/tmp/tmpYYYgGB': ValueError('progress coordinate data has incorrect shape (0, 1) [expected (51, 1)]',)
+-- ERROR    [west.sim_manager] -- propagation failed for 5 segment(s):
+0  
+1  
+2  
+3  
+4
+exception caught; shutting down
+-- ERROR    [w_run] -- Traceback (most recent call last):
+  File "/home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/lib/cmds/w_run.py", line 65, in <module>
+    sim_manager.run()
+  File "/home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/src/west/sim_manager.py", line 645, in run
+    self.check_propagation()
+  File "/home/ehellemann/miniconda2/envs/westpa-2017.10/westpa-2017.10/src/west/sim_manager.py", line 544, in check_propagation
+    raise PropagationError('propagation failed for {:d} segments'.format(len(failed_segments)))
+PropagationError: propagation failed for 5 segments
+
