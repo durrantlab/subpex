@@ -28,19 +28,13 @@ Things that need to be changed:
 
 ## Important scripts and files and what they do 
 
-__env.sh__ sets up some enviroenmental variables.
-
-__init.sh__ initializes the run. Creates the basis state, the initial states and calculates progress coordiantes for those.
-
-__gen_istate.sh__ copies necessary files to generate initial states.
-
-__get_pcoord.sh__ calls on personall scripts to calculate progress coordinate. This calls for the SubPEx code.
-
-__run.sh__ starts the run.
-
-__runseg.sh__ WESTPA runs this script for each trajectory segment. has three jobs:
-- Will create the files necessary for md simulations
-- Run the MD simualtion
-- Calculate the progress coordiante.
-
-__west.cfg__ the file that contains the configuration of the run.
+- __env.sh__ sets up some enviroenmental variables.
+- __init.sh__ initializes the run. Creates the basis state, the initial states and calculates progress coordiantes for those.
+- __gen_istate.sh__ copies necessary files to generate initial states.
+- __get_pcoord.sh__ calls on personall scripts to calculate progress coordinate. This calls for the SubPEx code.
+- __run.sh__ starts the run.
+- __runseg.sh__ WESTPA runs this script for each trajectory segment. has three jobs:
+-- Will create the files necessary for md simulations
+-- Run the MD simualtion
+-- Calculate the progress coordiante.
+- __west.cfg__ the file that contains the configuration of the run.
