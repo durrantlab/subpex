@@ -4,7 +4,7 @@
 rm -rf temp
 mkdir temp
 
-SCRIPTS=$WEST_SIM_ROOT/westpa_scripts/init_pcoord/
+SCRIPTS=$WEST_SIM_ROOT/westpa_scripts/pcoord_calc/
 
 #################### Trajectory to PDB ####################
 

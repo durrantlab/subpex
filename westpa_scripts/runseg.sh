@@ -55,7 +55,7 @@ ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd structure.inpcrd
 # We'll use the "sed" command to replace the string "RAND" with a randomly
 # generated seed.
 sed "s/RAND/$WEST_RAND16/g" \
-  $WEST_SIM_ROOT/namd_config/md.conf > md.conf
+  $WEST_SIM_ROOT/reference/md.conf > md.conf
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
@@ -72,27 +72,28 @@ $NAMD md.conf > seg.log
 
 ########################## Calculate and return data ###########################
 
-# Calculate the progress coordinate, which is the distance between the Na+ and
-# Cl- ions.  This custom Python script looks for the files nacl.psf and seg.dcd
-# The script outputs the distance between the ions at each timepoint, printing
-# one distance value per line to STDOUT.
-# Note that the script also loads the parent segment's .dcd file, in order to 
-# include the current segment's starting configuration (which is the same as the
-# parent segment's final configuration) in the calculation.
+# Calculate the progress coordinate, which is the jaccard distance between the 
+# bstate and this segment. 
+# The script outputs the distance saving the values of the parent pcoord and the 
+# child pcoord to a file called pcoord.txt.
 
-cd $WEST_CURRENT_SEG_DATA_REF
-SCRIPTS=$WEST_SIM_ROOT/westpa_scripts/init_pcoord
+
+ln -sv $WEST_CURRENT_SEG_DATA_REF
+SCRIPTS=$WEST_SIM_ROOT/westpa_scripts/pcoord_calc/
 mkdir temp
-cp seg.dcd                          temp/
-cp $WEST_SIM_ROOT/reference/mol.psf temp/
-cp $WEST_SIM_ROOT/reference/mol.pdb temp/ref.pdb
-cp $SCRIPTS/SubPEX_settings_pre     ./
-cp $WEST_SIM_ROOT/reference/ref.xyz ref.xyz
+ln -sv seg.dcd                          temp/
+ln -sv $WEST_SIM_ROOT/reference/mol.psf temp/
+ln -sv $WEST_SIM_ROOT/reference/mol.pdb temp/ref.pdb
+ln -sv $SCRIPTS/SubPEX_settings_pre     ./
+ln -sv $WEST_SIM_ROOT/reference/ref.xyz ref.xyz
 
 python2 $SCRIPTS/align_traj.py temp/mol.psf seg.dcd temp/ref.pdb
 
+###### Calculation of progress coordinate ######
 #################### SubPEx ####################
 
+# symlinks the parent pcoord.txt file and pipes the last line the current pcoord
+# file
 ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parentpcoord.txt
 cat parentpcoord.txt | tail -n 1 > pcoord.txt
 
@@ -104,18 +105,16 @@ python2 $SCRIPTS/fix_settings.py temp/seg_aligned.pdb
 python2 $SCRIPTS/SubPEX_tweaked.py
 python2 $SCRIPTS/jdistance.py >> pcoord.txt
 
-while read i; do if [ "$i" = pcoord.txt ]; then break; fi; done
+# this line just loops until we see the file 
+while read i; do if [ -e pcoord.txt ]; then break; fi; done
 
 #python2 $WEST_SIM_ROOT/westpa_scripts/test.py
 cp pcoord.txt $WEST_PCOORD_RETURN
-
-# Output coordinates. We use a custom python script that converts to the dcd
-# file to a multi-frame pdb (named seg.pdb)
 
 # Clean up
 rm -f md.conf parent.coor parent.dcd parent.vel parent.xsc seg.pdb \
   seg.restart.coord seg.restart.coor.old seg.restart.vel seg.restart.vel.old\
   seg.restart.xsc seg.restart.xsc.old structure.pdb structure.psf \
-  SubPEX_settings SubPEX_settings_pre ref.xyz
+  SubPEX_settings SubPEX_settings_pre ref.xyz parentpcoord.txt
 
 rm -rf temp/
