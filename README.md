@@ -34,7 +34,7 @@ Things that need to be changed:
 - __get_pcoord.sh__ calls on personall scripts to calculate progress coordinate. This calls for the SubPEx code.
 - __run.sh__ starts the run.
 - __runseg.sh__ WESTPA runs this script for each trajectory segment. has three jobs:
--- Will create the files necessary for md simulations
--- Run the MD simualtion
--- Calculate the progress coordiante.
+1) Will create the files necessary for md simulations
+2) Run the MD simualtion
+3) Calculate the progress coordiante.
 - __west.cfg__ the file that contains the configuration of the run.
