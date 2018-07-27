@@ -43,7 +43,6 @@ i=0                                                             # Index
 while(  os.path.isfile("temp/seg_aligned_frame"+str(i)+".xyz")  ):      # While next frame exists
     i_npa = xyz_to_npa("temp/seg_aligned_frame"+str(i)+".xyz")          # Convert to NumPy Array
     jdistance = jaccard_distance_2d(ref_npa,i_npa)                    # Convert to Jaccard Distance
-    print("{:.05f}".format(jdistance))                             # Output
-    i=i+1
-
+    i = i + 1
+    print("{:.04f}".format(jdistance))                             # Output
 

@@ -33,7 +33,8 @@ source $WEST_SIM_ROOT/westpa_scripts/init_pcoord/jaccard.sh
 while read i; do if [ "$i" = pcoord.txt ]; then break; fi; done
 
 # Pipe the relevant part of the output file (the distance) to $WEST_PCOORD_RETURN
-cat $WEST_STRUCT_DATA_REF/pcoord.txt | tail -n 1 > $WEST_PCOORD_RETURN
+cp pcoord.txt $WEST_PCOORD_RETURN
+
 
 if [ -n "$SEG_DEBUG" ] ; then
   head -v $WEST_PCOORD_RETURN

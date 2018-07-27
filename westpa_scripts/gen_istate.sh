@@ -13,4 +13,4 @@ ln -s $WEST_BSTATE_DATA_REF $WEST_ISTATE_DATA_REF
 mkdir $WEST_SIM_ROOT/reference
 cp $WEST_SIM_ROOT/namd_config/mol.pdb $WEST_SIM_ROOT/reference/
 cp $WEST_SIM_ROOT/namd_config/mol.psf $WEST_SIM_ROOT/reference/
-cp $WEST_SIM_ROOT/prep/equil9/system-hc_eq_9.dcd  $WEST_SIM_ROOT/reference/eq.dcd
+cp $WEST_SIM_ROOT/prep/equil9/system-hc_eq_9.dcd  $WEST_SIM_ROOT/reference/seg.dcd

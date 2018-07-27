@@ -29,11 +29,10 @@ python2 $SCRIPTS/SubPEX_tweaked.py
 
 # Make & Copy Reference
 cp temp/seg_aligned_frame0.xyz $WEST_STRUCT_DATA_REF/ref.xyz
-cp temp/seg_aligned_frame0.xyz $WEST_SIM_ROOT/md_config/ref.xyz
+cp temp/seg_aligned_frame0.xyz $WEST_SIM_ROOT/reference/ref.xyz
 
 # Run Conversion
 python2 $SCRIPTS/jdistance.py > pcoord.txt
-
 
 #### Delete Temporary Space ####
 #rm -rf temp
