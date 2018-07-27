@@ -44,7 +44,6 @@ ln -sv $WEST_SIM_ROOT/reference/mol.pdb    structure.pdb
 ln -sv $WEST_SIM_ROOT/reference/mol.prmtop structure.prmtop
 ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd structure.inpcrd
 
-
 # Either continue an existing tractory, or start a new trajectory. Here, both
 # cases are the same.  If you need to handle the cases separately, you can
 # check the value of the environment variable "WEST_CURRENT_SEG_INIT_POINT",
@@ -81,13 +80,42 @@ $NAMD md.conf > seg.log
 # include the current segment's starting configuration (which is the same as the
 # parent segment's final configuration) in the calculation.
 
-pcoord.txt > $WEST_PCOORD_RETURN
+cd $WEST_CURRENT_SEG_DATA_REF
+SCRIPTS=$WEST_SIM_ROOT/westpa_scripts/init_pcoord
+mkdir temp
+cp seg.dcd                          temp/
+cp $WEST_SIM_ROOT/reference/mol.psf temp/
+cp $WEST_SIM_ROOT/reference/mol.pdb temp/ref.pdb
+cp $SCRIPTS/SubPEX_settings_pre     ./
+cp $WEST_SIM_ROOT/reference/ref.xyz ref.xyz
 
-# Output coordinates. We use a custom python script that converts to the dcd 
+python2 $SCRIPTS/align_traj.py temp/mol.psf seg.dcd temp/ref.pdb
+
+#################### SubPEx ####################
+
+ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parentpcoord.txt
+cat parentpcoord.txt | tail -n 1 > pcoord.txt
+
+
+# Check Chain for SubPEX Settings
+python2 $SCRIPTS/fix_settings.py temp/seg_aligned.pdb
+
+# Run SubPEX
+python2 $SCRIPTS/SubPEX_tweaked.py
+python2 $SCRIPTS/jdistance.py >> pcoord.txt
+
+while read i; do if [ "$i" = pcoord.txt ]; then break; fi; done
+
+#python2 $WEST_SIM_ROOT/westpa_scripts/test.py
+cp pcoord.txt $WEST_PCOORD_RETURN
+
+# Output coordinates. We use a custom python script that converts to the dcd
 # file to a multi-frame pdb (named seg.pdb)
 
 # Clean up
 rm -f md.conf parent.coor parent.dcd parent.vel parent.xsc seg.pdb \
   seg.restart.coord seg.restart.coor.old seg.restart.vel seg.restart.vel.old\
-  seg.restart.xsc seg.restart.xsc.old structure.pdb structure.psf toppar
+  seg.restart.xsc seg.restart.xsc.old structure.pdb structure.psf \
+  SubPEX_settings SubPEX_settings_pre ref.xyz
 
+rm -rf temp/
