@@ -31,9 +31,10 @@ cp prep/equil9/system-hc_eq_9.dcd  bstates/first_conformer/seg.dcd
 cp prep/equil9/system-hc_eq_9.vel  bstates/first_conformer/seg.vel
 cp prep/equil9/system-hc_eq_9.xsc  bstates/first_conformer/seg.xsc
 
-cp prep/equil9/mol.psf   namd_config/mol.psf
-cp prep/equil9/mol.pdb   namd_config/mol.pdb
-
+#Copy files to reference directory
+cp prep/equil9/mol.psf   reference/mol.psf
+cp prep/equil9/mol.pdb   reference/mol.pdb
+cp prep/equil9/system-hc_eq_9.dcd  $WEST_SIM_ROOT/reference/seg.dcd
 
 # Define the arguments for the basis states (used for generating initial 
 # states; in this case we only have one), and target states (used for
@@ -42,7 +43,8 @@ cp prep/equil9/mol.pdb   namd_config/mol.pdb
 # the binding process (and not the unbinding process).
 
 BSTATE_ARGS="--bstate-file bstates/bstates.txt"
-#TSTATE_ARGS="--tstate bound,1.0"
+# In this case we are not recycling walkers so no TSTATE is necessary
+#TSTATE_ARGS="--tstate bound,1.0"       
 
 # Initialize the simulation, creating the main WESTPA data file (west.h5)
 # The "$@" lets us take any arguments that were passed to init.sh at the
