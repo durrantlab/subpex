@@ -319,3 +319,6 @@ for frame_index in xrange(len(kept_atoms)):                         # for each f
 	# summary output
 	print "Done with frame {} of {}".format(frame_index+1, len(kept_atoms))
 	
+with open('pvol.txt', 'a+') as file:
+    file.write("\n")
+    file.write( "{}".format(len(final_shape)*(inputs[0]**3)))

@@ -28,6 +28,9 @@ while read i; do if [ -e pcoord.txt ]; then break; fi; done
 #than piping the info to the variable. 
 cp pcoord.txt $WEST_PCOORD_RETURN
 
+# Copy the file containing the volume of the pocket as calculated by subpex
+cp pvol.txt $WEST_PVOL_RETURN
+
 # If we are running in debug mode, then output a lot of extra information.
 if [ -n "$SEG_DEBUG" ] ; then
   head -v $WEST_PCOORD_RETURN

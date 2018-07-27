@@ -96,7 +96,8 @@ python2 $SCRIPTS/align_traj.py temp/mol.psf seg.dcd temp/ref.pdb
 # file
 ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parentpcoord.txt
 cat parentpcoord.txt | tail -n 1 > pcoord.txt
-
+ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parentpvol.txt
+cat parentpvol.txt | tail -n 1 > pvol.txt
 
 # Check Chain for SubPEX Settings
 python2 $SCRIPTS/fix_settings.py temp/seg_aligned.pdb
@@ -108,13 +109,15 @@ python2 $SCRIPTS/jdistance.py >> pcoord.txt
 # this line just loops until we see the file 
 while read i; do if [ -e pcoord.txt ]; then break; fi; done
 
+
 #python2 $WEST_SIM_ROOT/westpa_scripts/test.py
 cp pcoord.txt $WEST_PCOORD_RETURN
+cp pvol.txt $WEST_PVOL_RETURN
 
 # Clean up
 rm -f md.conf parent.coor parent.dcd parent.vel parent.xsc seg.pdb \
   seg.restart.coord seg.restart.coor.old seg.restart.vel seg.restart.vel.old\
   seg.restart.xsc seg.restart.xsc.old structure.pdb structure.psf \
-  SubPEX_settings SubPEX_settings_pre ref.xyz parentpcoord.txt
+  SubPEX_settings SubPEX_settings_pre ref.xyz parentpcoord.txt parentpvol.txt
 
 rm -rf temp/
