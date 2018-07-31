@@ -77,8 +77,6 @@ $NAMD md.conf > seg.log
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-
-ln -sv $WEST_CURRENT_SEG_DATA_REF
 SCRIPTS=$WEST_SIM_ROOT/westpa_scripts/pcoord_calc/
 mkdir temp
 ln -sv seg.dcd                          temp/
