@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#this script tars all the segments.
+
 [ -z "$WEST_SIM_ROOT" ] &&
     exit 1
 [ ! -d $WEST_SIM_ROOT/traj_segs ] &&

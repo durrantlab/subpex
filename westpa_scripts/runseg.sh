@@ -90,7 +90,7 @@ python2 $SCRIPTS/align_traj.py temp/mol.psf seg.dcd temp/ref.pdb
 ###### Calculation of progress coordinate ######
 #################### SubPEx ####################
 
-# symlinks the parent pcoord.txt file and pipes the last line the current pcoord
+# symlinks the parent pcoord.txt file and pipes the last line to the current pcoord
 # file
 ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parentpcoord.txt
 cat parentpcoord.txt | tail -n 1 > pcoord.txt
