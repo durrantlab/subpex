@@ -1,0 +1,5 @@
+resolution      0.5
+dimension       15 
+filepath        temp/seg_aligned.pdb
+center          6,6,6
+chain           S
