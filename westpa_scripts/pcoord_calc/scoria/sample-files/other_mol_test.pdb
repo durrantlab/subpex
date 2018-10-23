@@ -1,0 +1,24 @@
+REMARK This is a test file.
+ATOM      1  N1    U E  71      10.000 -10.000  10.000  1.00 85.48           N  
+ATOM      2  C2'  DT F  13     -10.000  10.000 -10.000  1.00 87.46           C  
+ATOM      3  N   HIS A 985     -24.365  20.486  64.350  1.00 60.64           N  
+ATOM      4  CA  HIS A 985     -24.785  21.465  63.359  1.00 62.92           C  
+ATOM      5  C   HIS A 985     -24.073  22.793  63.581  1.00 62.18           C  
+ATOM      6  O   HIS A 985     -23.553  23.390  62.640  1.00 65.13           O  
+ATOM      7  CB  HIS A 985     -26.301  21.662  63.404  1.00 65.71           C  
+ATOM      8  CG  HIS A 985     -27.079  20.481  62.918  1.00 67.07           C  
+ATOM      9  ND1 HIS A 985     -26.493  19.435  62.234  1.00 66.53           N  
+ATOM     10  CD2 HIS A 985     -28.394  20.175  63.013  1.00 67.93           C  
+ATOM     11  CE1 HIS A 985     -27.414  18.539  61.931  1.00 67.17           C  
+ATOM     12  NE2 HIS A 985     -28.578  18.964  62.393  1.00 68.24           N  
+
+CONECT    3    4
+CONECT    4    3    5    7
+CONECT    5    4    6
+CONECT    6    5
+CONECT    7    4    8
+CONECT    8    7    9   10
+CONECT    9    8   11
+CONECT   10    8   12
+CONECT   11    9   12
+CONECT   12   10   11
