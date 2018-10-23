@@ -12,3 +12,6 @@ module load NAMD_MODULE
 module load westpa/2017.10 
 
 ./init.sh
+
+
+## it still does not work !!!
