@@ -1,6 +1,6 @@
 {
   "center": [6.0, 6.0, 6.0],
   "chain": "S",
-  "dimension": 25,
+  "radius": 12.5,
   "resolution": 0.5
 }
