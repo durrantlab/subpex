@@ -146,6 +146,14 @@ def get_field_of_points(protein, alphas, center, resolution, radius):
 
     return pocket
 
+def point_in_hull(point, hull, tolerance=1e-12):
+    # a point is in the hull if and only if for every equation (describing the facets) the dot product between the point and
+    # the normal vector (eq[:-1]) plus the offset (eq[-1]) is less than or equal to zero. You may want to compare to a small,
+    # positive constant tolerance = 1e-12 rather than to zero because of issues of numerical precision (otherwise, you may
+    # find that a vertex of the convex hull is not in the convex hull).
+    return all(
+        (np.dot(eq[:-1], point) + eq[-1] <= tolerance)
+        for eq in hull.equations)
 
 def remove_convex_fop(trimmed_fop, trimmed_alpha):
     '''
@@ -154,7 +162,12 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
     :param trimmed_alpha:
     :return:
     '''
-    return trimmed_fop
+    points_in_hull = []
+    trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
+    for point in trimmed_fop:
+        if(point_in_hull(point, trimmed_alpha_convex)):
+            points_in_hull.append(point)
+    return points_in_hull
 
 
 if __name__ == "__main__":
