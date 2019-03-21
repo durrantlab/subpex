@@ -198,23 +198,29 @@ if __name__ == "__main__":
         print("make sure the file exists and is correctly formatted")
         raise IOError("Could not load the json file with the setttings")
 
-    # Load pdb file which should be the reference and obtained the pocket field of points.
+    # Load pdb file and dcd file to load the reference and the trajectory to obtain field of points of the pocket.
     protein = prody.parsePDB('mol.pdb')
     reference = protein.select('protein')
     ensemble = prody.parseDCD('seg.dcd')
     ensemble.setAtoms(reference)
+    # Save the last frame of the trajectory file as a PDB file and then load it. This is done because the way
+    # ensembles work does not let us superpose and change the coordinates of the frame.
     prody.writePDB('segment.pdb', ensemble[-1])
     segment = prody.parsePDB('segment.pdb')
-
+    # Superpose the las segment of the trajecotry file and moove the coordinate system of the segment.
     segment, transformation = prody.superpose(segment, reference)
+    # Write the nwe protein in the new coordinate system.
     prody.writePDB('segment.pdb', segment)
+    # Obtain RMSD of  the backbone PROBABLY WILL HAVE TO CHANGE to backbone atoms of the pocket.
     rmsd = prody.calcRMSD(reference.backbone, segment.backbone)
+    # Obtain coordinates for reference atoms and coordinates for alpha carbons.
     reference_coordinates = reference.getCoords()
     reference_alpha = reference.calpha.getCoords()
     reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings['center'],
                                         settings['resolution'], settings['radius'])
+    # Save xyz coordinates of FOP
     points_to_xyz_file('ref_pocket.xyz', reference_fop, settings['resolution'], settings['radius'])
-
+    # Obtain coordinates for last frame atoms and coordinates for alpha carbons.
     segment_coordinates = segment.getCoords()
     segment_alpha = segment.calpha.getCoords()
     segment_fop = get_field_of_points(segment_coordinates, segment_alpha, settings['center'],
