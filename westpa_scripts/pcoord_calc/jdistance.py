@@ -91,7 +91,7 @@ def get_trimmed_fop(field_of_points, atoms_points):
         for item in index:
             field_of_points[item] = None
 
-    # Creating the FOP that does not contain points that clash with the atoms provided tpo the function.
+    # Creating the FOP that does not contain points that clash with the atoms provided to the function.
     trimmed_fop = []
     for i in field_of_points:
         if type(i) == np.ndarray:
@@ -102,23 +102,34 @@ def get_trimmed_fop(field_of_points, atoms_points):
     return trimmed_fop
 
 
-def get_jaccard_distance(reference_fop, pocket_fop):
+def get_jaccard_distance(reference_fop, segment_fop, resolution):
     '''
-    Function that calculates the Jaccard distance between the points in reference_fop and the pocket_fop.
+    Function that calculates the Jaccard distance between the points in reference_fop and the segment_fop. Uses the
+    distance between points to calculate the intersection.
 
     :param reference_fop: list of list containing the reference FOP.
-    :param pocket_fop: list of list containing the pocket FOP.
+    :param segment_fop: list of list containing the segment FOP.
+    :param resolution: resolution used to create FOP.
     :return: float with the Jaccard distance.
     '''
-    intersection = []
-    union = reference_fop.copy()
-    for i in pocket_fop:
-        if i in union:
-            intersection.append(i)
-        else:
-            union.append(i)
+    # Obtaining the trees for both field of points
+    reference_tree = sp.spatial.cKDTree(reference_fop)
+    segment_tree = sp.spatial.cKDTree(segment_fop)
+    # Obtain the points that are at less than resolution/2.5 (aka have the same coordinates)
+    clash_indices = reference_tree.query_ball_tree(segment_tree, resolution / 2.5, p=2, eps=0)
+    # Count the points that intersect
+    intersection = 0
+    for index in clash_indices:
+        for item in index:
+            intersection += 1.0
 
-    return 1 - float(len(intersection)) / len(union)
+    # Obtain the union of both FOP
+    union = float(len(reference_fop) + len(segment_fop) - intersection)
+
+    # Calculate Jaccard distance
+    jaccard = 1 - intersection / union
+
+    return jaccard
 
 
 def get_field_of_points(protein, alphas, center, resolution, radius):
@@ -188,29 +199,28 @@ if __name__ == "__main__":
         raise IOError("Could not load the json file with the setttings")
 
     # Load pdb file which should be the reference and obtained the pocket field of points.
-    protein_reference = prody.parsePDB(args.reference)
-    protein = protein_reference.select('protein')
-    reference_coordinates = protein.getCoords()
-    reference_alpha = protein.calpha.getCoords()
+    protein = prody.parsePDB('mol.pdb')
+    reference = protein.select('protein')
+    ensemble = prody.parseDCD('seg.dcd')
+    ensemble.setAtoms(reference)
+    prody.writePDB('segment.pdb', ensemble[-1])
+    segment = prody.parsePDB('segment.pdb')
+
+    segment, transformation = prody.superpose(segment, reference)
+    prody.writePDB('segment.pdb', segment)
+    rmsd = prody.calcRMSD(reference.backbone, segment.backbone)
+    reference_coordinates = reference.getCoords()
+    reference_alpha = reference.calpha.getCoords()
     reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings['center'],
                                         settings['resolution'], settings['radius'])
     points_to_xyz_file('ref_pocket.xyz', reference_fop, settings['resolution'], settings['radius'])
 
-    # Load dcd file and grab last frame to obtained the pocket field of points of that frames conformation.
-    ensemble = prody.parseDCD(args.dcd_file)
-    n_frames = ensemble.numCoordsets()
-    ensemble.setAtoms(protein_reference)
-    ensemble.setCoords(protein_reference)
-    ensemble.setAtoms(protein)
-    ensemble.superpose()
-    coords_protein = ensemble.getCoords(n_frames)
-    ensemble.setAtoms(protein.calpha)
-    coords_alpha = ensemble.getCoords(n_frames)
-    segment_fop = get_field_of_points(reference_coordinates, coords_alpha, settings['center'], settings['resolution'],
-                                       settings['radius'])
-
+    segment_coordinates = segment.getCoords()
+    segment_alpha = segment.calpha.getCoords()
+    segment_fop = get_field_of_points(segment_coordinates, segment_alpha, settings['center'],
+                                      settings['resolution'], settings['radius'])
     points_to_xyz_file('seg_pocket.xyz', segment_fop, settings['resolution'], settings['radius'])
-    #points_to_xyz_file('alpha.xyz', trimmed_alpha, settings['resolution'], settings['radius'])
-
     # Compare pockets of reference and the segment and calculate Jaccard distance between both.
-    #jaccard = get_jaccard_distance(reference_fop, segment_fop)
+    jaccard = get_jaccard_distance(reference_fop, segment_fop, settings['resolution'])
+
+    print(jaccard, rmsd)
