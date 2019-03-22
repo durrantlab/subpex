@@ -199,9 +199,9 @@ if __name__ == "__main__":
         raise IOError("Could not load the json file with the setttings")
 
     # Load pdb file and dcd file to load the reference and the trajectory to obtain field of points of the pocket.
-    protein = prody.parsePDB('mol.pdb')
+    protein = prody.parsePDB(args.reference)
     reference = protein.select('protein')
-    ensemble = prody.parseDCD('seg.dcd')
+    ensemble = prody.parseDCD(args.dcd_file)
     ensemble.setAtoms(reference)
     # Save the last frame of the trajectory file as a PDB file and then load it. This is done because the way
     # ensembles work does not let us superpose and change the coordinates of the frame.
@@ -219,14 +219,18 @@ if __name__ == "__main__":
     reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings['center'],
                                         settings['resolution'], settings['radius'])
     # Save xyz coordinates of FOP
-    points_to_xyz_file('ref_pocket.xyz', reference_fop, settings['resolution'], settings['radius'])
+    #points_to_xyz_file('ref_pocket.xyz', reference_fop, settings['resolution'], settings['radius'])
     # Obtain coordinates for last frame atoms and coordinates for alpha carbons.
     segment_coordinates = segment.getCoords()
     segment_alpha = segment.calpha.getCoords()
     segment_fop = get_field_of_points(segment_coordinates, segment_alpha, settings['center'],
                                       settings['resolution'], settings['radius'])
-    points_to_xyz_file('seg_pocket.xyz', segment_fop, settings['resolution'], settings['radius'])
+    #points_to_xyz_file('seg_pocket.xyz', segment_fop, settings['resolution'], settings['radius'])
     # Compare pockets of reference and the segment and calculate Jaccard distance between both.
     jaccard = get_jaccard_distance(reference_fop, segment_fop, settings['resolution'])
 
-    print(jaccard, rmsd)
+    with open('pcoord.txt', 'w') as f:
+        f.write(jaccard)
+
+    with open('pvol.txt', 'w') as f:
+        f.write(str(len(segment_fop) * (settings['resolution'] ** 3)))
