@@ -17,19 +17,27 @@ cd $WEST_SIM_ROOT
 source env.sh
 cd $WEST_STRUCT_DATA_REF
 
+rm -rf temp
+mkdir temp
+
+cp $WEST_STRUCT_DATA_REF/seg.dcd    temp/
+cp $WEST_SIM_ROOT/reference/mol.pdb temp/ref.pdb
+cp $WEST_SIM_ROOT/westpa_scripts/settings.json temp/
+
 # Use a custom script to calculate the jaccard distance between the starting 
 # structure and the initial state (should be 0 since we are copying the files).
-source $WEST_SIM_ROOT/westpa_scripts/pcoord_calc/jaccard.sh
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py temp/ref.pdb temp/seg.dcd temp/settings.json >> pcoord.txt
 
 # this line just loops until we see the file 
 while read i; do if [ -e pcoord.txt ]; then break; fi; done
 
 # Copy the file that contains the information to $WEST_PCOORD_RETURN. Better 
 #than piping the info to the variable. 
-cp pcoord.txt $WEST_PCOORD_RETURN
+#cp pcoord.txt $WEST_PCOORD_RETURN
+tail -n 1 pcoord.txt > $WEST_PCOORD_RETURN
 
 # Copy the file containing the volume of the pocket as calculated by subpex
-cp pvol.txt $WEST_PVOL_RETURN
+tail -n 1 pvol.txt > $WEST_PVOL_RETURN
 
 # If we are running in debug mode, then output a lot of extra information.
 if [ -n "$SEG_DEBUG" ] ; then
