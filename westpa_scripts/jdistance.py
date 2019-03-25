@@ -229,8 +229,10 @@ if __name__ == "__main__":
     # Compare pockets of reference and the segment and calculate Jaccard distance between both.
     jaccard = get_jaccard_distance(reference_fop, segment_fop, settings['resolution'])
 
-    with open('pcoord.txt', 'w') as f:
-        f.write(jaccard)
+    print(jaccard)
 
-    with open('pvol.txt', 'w') as f:
-        f.write(str(len(segment_fop) * (settings['resolution'] ** 3)))
+    with open('pvol.txt', 'a') as f:
+        f.write(str(len(segment_fop) * (settings['resolution'] ** 3))+'\n')
+
+    with open('timer.txt', 'w') as f:
+        f.write('Done with the script')

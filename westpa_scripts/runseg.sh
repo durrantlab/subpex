@@ -77,15 +77,8 @@ $NAMD md.conf > seg.log
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-SCRIPTS=$WEST_SIM_ROOT/westpa_scripts/pcoord_calc/
-mkdir temp
-ln -sv seg.dcd                          temp/
-ln -sv $WEST_SIM_ROOT/reference/mol.psf temp/
-ln -sv $WEST_SIM_ROOT/reference/mol.pdb temp/ref.pdb
-ln -sv $SCRIPTS/SubPEX_settings_pre     ./
-ln -sv $WEST_SIM_ROOT/reference/ref.xyz ref.xyz
-
-python2 $SCRIPTS/align_traj.py temp/mol.psf seg.dcd temp/ref.pdb
+cp -sv $WEST_SIM_ROOT/reference/mol.pdb ref.pdb
+cp -sv $WEST_SIM_ROOT/westpa_scripts/settings.json .
 
 ###### Calculation of progress coordinate ######
 #################### SubPEx ####################
@@ -93,19 +86,15 @@ python2 $SCRIPTS/align_traj.py temp/mol.psf seg.dcd temp/ref.pdb
 # symlinks the parent pcoord.txt file and pipes the last line to the current pcoord
 # file
 ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parentpcoord.txt
-cat parentpcoord.txt | tail -n 1 > pcoord.txt
+tail -n 1 parentpcoord.txt > pcoord.txt
 ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parentpvol.txt
-cat parentpvol.txt | tail -n 1 > pvol.txt
+tail -n 1 parentpvol.txt > pvol.txt
 
 # Check Chain for SubPEX Settings
-python2 $SCRIPTS/fix_settings.py temp/seg_aligned.pdb
-
-# Run SubPEX
-python2 $SCRIPTS/SubPEX_tweaked.py
-python2 $SCRIPTS/jdistance.py >> pcoord.txt
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb seg.dcd settings.json >> pcoord.txt
 
 # this line just loops until we see the file 
-while read i; do if [ -e pcoord.txt ]; then break; fi; done
+while read i; do if [ -e timer.txt ]; then break; fi; done
 
 
 #python2 $WEST_SIM_ROOT/westpa_scripts/test.py
@@ -113,9 +102,4 @@ cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
 
 # Clean up
-rm -f md.conf parent.coor parent.dcd parent.vel parent.xsc seg.pdb \
-  seg.restart.coord seg.restart.coor.old seg.restart.vel seg.restart.vel.old\
-  seg.restart.xsc seg.restart.xsc.old structure.pdb structure.psf \
-  SubPEX_settings SubPEX_settings_pre ref.xyz parentpcoord.txt parentpvol.txt
-
-rm -rf temp/
+rm -rf temp md.conf parent.coor parent.dcd parentpcoord.txt parentpvol.txt parent.vel parent.xsc ref.pdb settings.json timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
