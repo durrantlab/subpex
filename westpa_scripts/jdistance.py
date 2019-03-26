@@ -4,6 +4,53 @@ import json
 import numpy as np
 import scipy as sp
 
+def get_rmsd_pocket(reference, protein, center, radius):
+    '''
+
+    :param reference:
+    :param protein:
+    :param center:
+    :param radius:
+    :return:
+    '''
+    # select alpha carbons within the sphere created by the center and the radius
+    alphas_pocket = reference.select('calpha and within '+str(radius)+' of pocketcenter', pocketcenter=np.array(center))
+    # obtain the selection of the atoms for other conformations of the protein.
+    selection = ''
+    for i in alphas_pocket:
+        selection += 'ca resnum ' + str(i.getResindex() + 1) + ' or '
+    selection = selection[:-3]
+    # Apply the selection to the protein and obtain the RMSD
+    protein_pocket = protein.select(selection)
+    protein_pocket,  = prody.superpose(protein_pocket, alphas_pocket)
+    pocket_rmsd = prody.calcRMSD(alphas_pocket, protein_pocket)
+    return pocket_rmsd
+
+
+def points_to_pdb(filename, coordinates):
+    '''
+
+    :param filename:
+    :param coordinates:
+    :return:
+    '''
+    with open(filename, 'w') as f:
+        counter = 1
+        for i in coordinates:
+            text = 'ATOM' + '{:>7}'.format(counter)
+            text += '{:^6}'.format('CA')
+            text += '{:>3}'.format('ALA')
+            text += '{:>6}'.format('A')
+            text += '{:>12}'.format(i[0])
+            text += '{:>8}'.format(i[1])
+            text += '{:>8}'.format(i[2])
+            text += '{:>6}'.format('1.0')
+            text += '{:>6}'.format('1.0')
+            text += '\n'
+            f.write(text)
+            counter += 1
+        f.write('\n')
+
 
 def points_to_xyz_file(filename, coordinates, resolution, radius):
     '''
