@@ -4,6 +4,7 @@ import json
 import numpy as np
 import scipy as sp
 
+
 def get_rmsd_pocket(reference, protein, center, radius):
     '''
 
@@ -13,17 +14,20 @@ def get_rmsd_pocket(reference, protein, center, radius):
     :param radius:
     :return:
     '''
-    # select alpha carbons within the sphere created by the center and the radius
-    alphas_pocket = reference.select('calpha and within '+str(radius)+' of pocketcenter', pocketcenter=np.array(center))
-    # obtain the selection of the atoms for other conformations of the protein.
-    selection = ''
-    for i in alphas_pocket:
-        selection += 'ca resnum ' + str(i.getResindex() + 1) + ' or '
-    selection = selection[:-3]
-    # Apply the selection to the protein and obtain the RMSD
-    protein_pocket = protein.select(selection)
-    protein_pocket,  = prody.superpose(protein_pocket, alphas_pocket)
-    pocket_rmsd = prody.calcRMSD(alphas_pocket, protein_pocket)
+    # select heavy atoms within the sphere created by the center and the radius in the reference
+    segment, transformation = prody.superpose(protein, reference)
+    ref_pocket = reference.select('not water and not hydrogen and within ' + str(radius) + ' of pocketcenter',
+                           pocketcenter=np.array(center))
+    #print(type(ref_pocket))
+    # Obtain the selection from above so we can pass it to the protein
+    pocket_selection = ref_pocket.getSelstr()
+    # Select heavy atoms in protein
+    protein_pocket = segment.select(pocket_selection)
+    #print(type(protein_pocket))
+    # super pose reference and protein
+    #protein_pocket = prody.superpose(protein_pocket, ref_pocket)
+    # calculate rmsd
+    pocket_rmsd = prody.calcRMSD(ref_pocket, protein_pocket)
     return pocket_rmsd
 
 
@@ -204,6 +208,7 @@ def get_field_of_points(protein, alphas, center, resolution, radius):
 
     return pocket
 
+
 def point_in_hull(point, hull, tolerance=1e-12):
     # a point is in the hull if and only if for every equation (describing the facets) the dot product between the point and
     # the normal vector (eq[:-1]) plus the offset (eq[-1]) is less than or equal to zero. You may want to compare to a small,
@@ -212,6 +217,7 @@ def point_in_hull(point, hull, tolerance=1e-12):
     return all(
         (np.dot(eq[:-1], point) + eq[-1] <= tolerance)
         for eq in hull.equations)
+
 
 def remove_convex_fop(trimmed_fop, trimmed_alpha):
     '''
@@ -243,7 +249,7 @@ if __name__ == "__main__":
     except IOError:
         print("Could not load the json file with the settings")
         print("make sure the file exists and is correctly formatted")
-        raise IOError("Could not load the json file with the setttings")
+        raise IOError("Could not load the json file with the settings")
 
     # Load pdb file and dcd file to load the reference and the trajectory to obtain field of points of the pocket.
     protein = prody.parsePDB(args.reference)
@@ -259,7 +265,7 @@ if __name__ == "__main__":
     # Write the nwe protein in the new coordinate system.
     prody.writePDB('segment.pdb', segment)
     # Obtain RMSD of  the backbone PROBABLY WILL HAVE TO CHANGE to backbone atoms of the pocket.
-    rmsd = prody.calcRMSD(reference.backbone, segment.backbone)
+    rmsd_all_backbone = prody.calcRMSD(reference.backbone, segment.backbone)
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
     reference_coordinates = reference.getCoords()
     reference_alpha = reference.calpha.getCoords()
@@ -275,11 +281,19 @@ if __name__ == "__main__":
     #points_to_xyz_file('seg_pocket.xyz', segment_fop, settings['resolution'], settings['radius'])
     # Compare pockets of reference and the segment and calculate Jaccard distance between both.
     jaccard = get_jaccard_distance(reference_fop, segment_fop, settings['resolution'])
+    rmsd = get_rmsd_pocket(reference, segment, settings['center'], settings['radius'])
+    pcoord = str(jaccard)+'    '+str(rmsd)
+    print(pcoord)
 
-    print(jaccard)
+    with open('jaccard.dat', 'w') as f:
+        f.write('1 '+str(jaccard))
+
+    with open('rmsd.dat', 'w') as f:
+        f.write('1 '+str(rmsd))
 
     with open('pvol.txt', 'a') as f:
         f.write(str(len(segment_fop) * (settings['resolution'] ** 3))+'\n')
 
     with open('timer.txt', 'w') as f:
         f.write('Done with the script')
+
