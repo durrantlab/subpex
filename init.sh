@@ -26,6 +26,7 @@ mkdir   seg_logs traj_segs istates
 # including coordinates, velocities, and box information
 rm -rf bstates/first_conformer
 mkdir bstates/first_conformer
+
 cp prep/equil9/system-hc_eq_9.coor bstates/first_conformer/seg.coor
 cp prep/equil9/system-hc_eq_9.dcd  bstates/first_conformer/seg.dcd
 cp prep/equil9/system-hc_eq_9.vel  bstates/first_conformer/seg.vel
@@ -51,5 +52,5 @@ BSTATE_ARGS="--bstate-file bstates/bstates.txt"
 # command line and pass them along to w_init.
 $WEST_ROOT/bin/w_init \
   $BSTATE_ARGS \
-  --segs-per-state 5 \
+  --segs-per-state 3 \
   --work-manager=threads "$@"
