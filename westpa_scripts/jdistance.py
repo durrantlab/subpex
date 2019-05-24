@@ -16,7 +16,7 @@ def get_rmsd_pocket(reference, protein, center, radius):
     '''
     # select heavy atoms within the sphere created by the center and the radius in the reference
     segment, transformation = prody.superpose(protein, reference)
-    ref_pocket = reference.select('not water and not hydrogen and within ' + str(radius) + ' of pocketcenter',
+    ref_pocket = reference.select('not water and not hydrogen and not resname "Cl-" "Na+" SOD CLA and within ' + str(radius) + ' of pocketcenter',
                            pocketcenter=np.array(center))
     #print(type(ref_pocket))
     # Obtain the selection from above so we can pass it to the protein
