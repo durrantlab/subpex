@@ -21,13 +21,17 @@ def get_rmsd_pocket(reference, protein, center, radius):
     #print(type(ref_pocket))
     # Obtain the selection from above so we can pass it to the protein
     pocket_selection = ref_pocket.getSelstr()
+
     # Select heavy atoms in protein
     protein_pocket = segment.select(pocket_selection)
     #print(type(protein_pocket))
+
     # super pose reference and protein
-    #protein_pocket = prody.superpose(protein_pocket, ref_pocket)
+    protein_pocket, _transform = prody.superpose(protein_pocket, ref_pocket)
+
     # calculate rmsd
     pocket_rmsd = prody.calcRMSD(ref_pocket, protein_pocket)
+
     return pocket_rmsd
 
 
