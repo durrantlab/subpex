@@ -124,14 +124,6 @@ def get_trimmed_fop(field_of_points, atoms_points):
     :return: Returns a list of list that has the trimmed FOP.
     '''
     # Generating cKDTrees to obtain distances
-    if type(atoms_points) is list and len(atoms_points) > 0:
-        atoms_points = np.vstack(atoms_points)
-    if type(field_of_points) is list and len(field_of_points) > 0:
-        field_of_points = np.vstack(field_of_points)
-
-    #if len(atoms_points) > 0 or len(field_of_points) > 0:
-    #    return 1.0
-
     atoms_tree = sp.spatial.cKDTree(atoms_points)
     fop_tree = sp.spatial.cKDTree(field_of_points)
 
