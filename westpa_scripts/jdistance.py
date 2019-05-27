@@ -124,6 +124,14 @@ def get_trimmed_fop(field_of_points, atoms_points):
     :return: Returns a list of list that has the trimmed FOP.
     '''
     # Generating cKDTrees to obtain distances
+    if type(atoms_points) is list and len(atoms_points) > 0:
+        atoms_points = np.vstack(atoms_points)
+    if type(field_of_points) is list and len(field_of_points) > 0:
+        field_of_points = np.vstack(field_of_points)
+
+    #if len(atoms_points) > 0 or len(field_of_points) > 0:
+    #    return 1.0
+
     atoms_tree = sp.spatial.cKDTree(atoms_points)
     fop_tree = sp.spatial.cKDTree(field_of_points)
 
@@ -242,12 +250,15 @@ def align_last_frame_to_ref_by_pocket(last_frame, ref_protein, center, radius, r
     # Select heavy atoms in protein
     last_frame_pocket = last_frame.select(ref_pocket_sel)
 
-    # super pose the last-frame pocket onto the reference pocket
+    # super pose the last-frame pocket onto the reference pocket. Interestingly, this also
+    # aligns last_frame.
     last_frame_pocket, transform = prody.superpose(last_frame_pocket, ref_pocket)
 
     if return_whole_protein:
         # Apply that transform to the whole protein and return that.
-        last_frame = transform.apply(last_frame)
+        # Nevermind. last_frame is also aligned when you align by the
+        # pocket above.
+        # last_frame = transform.apply(last_frame)
         return last_frame, ref_protein
     else:
         # Return only the aligned pocket atoms from the selection. For RMSD calc.
