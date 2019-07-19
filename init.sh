@@ -10,6 +10,7 @@
 #
 
 source env.sh
+source _make_westpa_work_from_commandline.sh
 
 # Make sure that WESTPA is not already running.  Running two instances of 
 # WESTPA on a single node/machine can cause problems.
@@ -50,7 +51,10 @@ BSTATE_ARGS="--bstate-file bstates/bstates.txt"
 # Initialize the simulation, creating the main WESTPA data file (west.h5)
 # The "$@" lets us take any arguments that were passed to init.sh at the
 # command line and pass them along to w_init.
+WORKMANAGER="processes"
 $WEST_ROOT/bin/w_init \
   $BSTATE_ARGS \
-  --segs-per-state 3 \
-  --work-manager=threads "$@"
+  $TSTATE_ARGS \
+  --segs-per-state 4 \
+  --work-manager=$WORKMANAGER "$@"
+
