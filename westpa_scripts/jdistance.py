@@ -4,18 +4,17 @@ import json
 import numpy as np
 import scipy as sp
 
-def get_rmsd_pocket(reference, protein, center, radius):
+def get_rmsd_pocket(reference, protein, settings):
     '''
 
     :param reference:
     :param protein:
-    :param center:
-    :param radius:
+    :param settings:
     :return:
     '''
 
     # Align the protein pocket onto the reference pocket.
-    protein_pocket, ref_pocket = align_last_frame_to_ref_by_pocket(protein, reference, center, radius, False)
+    protein_pocket, ref_pocket = align_last_frame_to_ref_by_pocket(protein, reference, settings, False)
 
     # calculate rmsd
     pocket_rmsd = prody.calcRMSD(ref_pocket, protein_pocket)
@@ -231,10 +230,14 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
             points_in_hull.append(point)
     return points_in_hull
 
-def align_last_frame_to_ref_by_pocket(last_frame, ref_protein, center, radius, return_whole_protein):
-    # select heavy atoms within the sphere created by the center and the radius in the reference
-    ref_pocket = ref_protein.select('not water and not hydrogen and not resname "Cl-" "Na+" SOD CLA and within ' + str(radius) + ' of pocketcenter',
-                                    pocketcenter=np.array(center))
+def align_last_frame_to_ref_by_pocket(last_frame, ref_protein, settings, return_whole_protein):
+    if "rmsd_sel" in settings:
+        # Use explicitly defined selection in calculating rmsd
+        ref_pocket = ref_protein.select(settings["rmsd_sel"])
+    else:
+        # No rmsd sel specified, so create selection based on povme pocket definition
+        # select heavy atoms within the sphere created by the center and the radius in the reference
+        ref_pocket = ref_protein.select('not water and not hydrogen and not resname "Cl-" "Na+" SOD CLA and within ' + str(settings["radius"]) + ' of pocketcenter', pocketcenter=np.array(settings["center"]))
 
     # Obtain the selection from above so we can pass it to the protein
     ref_pocket_sel = ref_pocket.getSelstr()
@@ -290,7 +293,7 @@ if __name__ == "__main__":
     # Superpose the last_frame of the trajecotry file and move the coordinate system of the last frame.
     # Below aligns by the whol protein. Commented out, because I want to align by pocket here too.
     #last_frame, _transform = prody.superpose(last_frame, ref_protein)
-    last_frame, ref_protein = align_last_frame_to_ref_by_pocket(last_frame, ref_protein, settings['center'], settings['radius'], True)
+    last_frame, ref_protein = align_last_frame_to_ref_by_pocket(last_frame, ref_protein, settings, True)
 
     # Write the nwe protein in the new coordinate system.
     prody.writePDB('seg.last_frame.aligned_to_ref_pocket.pdb', last_frame)
@@ -301,29 +304,33 @@ if __name__ == "__main__":
     # rmsd_all_backbone never used.
     # rmsd_all_backbone = prody.calcRMSD(ref_protein.backbone, last_frame.backbone)
 
-    # Obtain coordinates for reference atoms and coordinates for alpha carbons.
-    # JDD comment: Really necssary to calculate this every time? Probably fast anyway.
-    ref_coors = ref_protein.getCoords()
-    ref_alpha = ref_protein.calpha.getCoords()
-    reference_fop = get_field_of_points(ref_coors, ref_alpha, settings['center'],
-                                        settings['resolution'], settings['radius'])
+    if False:  # Tmp code so I can easily toggle off POVME
+        # Obtain coordinates for reference atoms and coordinates for alpha carbons.
+        # JDD comment: Really necssary to calculate this every time? Probably fast anyway.
+        ref_coors = ref_protein.getCoords()
+        ref_alpha = ref_protein.calpha.getCoords()
+        reference_fop = get_field_of_points(ref_coors, ref_alpha, settings['center'],
+                                            settings['resolution'], settings['radius'])
 
-    # Save xyz coordinates of FOP
-    if DEBUG: points_to_xyz_file('ref_pocket.xyz', reference_fop, settings['resolution'], settings['radius'])
+        # Save xyz coordinates of FOP
+        if DEBUG: points_to_xyz_file('ref_pocket.xyz', reference_fop, settings['resolution'], settings['radius'])
 
-    # Obtain coordinates for last frame atoms and coordinates for alpha carbons.
-    last_frame_coors = last_frame.getCoords()
-    last_frame_alpha = last_frame.calpha.getCoords()
-    last_frame_fop = get_field_of_points(last_frame_coors, last_frame_alpha, settings['center'],
-                                         settings['resolution'], settings['radius'])
+        # Obtain coordinates for last frame atoms and coordinates for alpha carbons.
+        last_frame_coors = last_frame.getCoords()
+        last_frame_alpha = last_frame.calpha.getCoords()
+        last_frame_fop = get_field_of_points(last_frame_coors, last_frame_alpha, settings['center'],
+                                             settings['resolution'], settings['radius'])
 
-    if DEBUG: points_to_xyz_file('seg_pocket.xyz', last_frame_fop, settings['resolution'], settings['radius'])
+        if DEBUG: points_to_xyz_file('seg_pocket.xyz', last_frame_fop, settings['resolution'], settings['radius'])
 
-    # Compare pockets of reference and the segment and calculate Jaccard distance between both.
-    jaccard = get_jaccard_distance(reference_fop, last_frame_fop, settings['resolution'])
+        # Compare pockets of reference and the segment and calculate Jaccard distance between both.
+        jaccard = get_jaccard_distance(reference_fop, last_frame_fop, settings['resolution'])
+    else:
+        jaccard = 0
+        last_frame_fop = []
 
     # Calcult the rmsd too.
-    rmsd = get_rmsd_pocket(ref_protein, last_frame, settings['center'], settings['radius'])
+    rmsd = get_rmsd_pocket(ref_protein, last_frame, settings)
 
     # Print both metrics to the screen.
     pcoord = str(jaccard)+'    '+str(rmsd)
