@@ -1,22 +1,23 @@
 import argparse
-import prody
+import MDAnalysis
 import json
 import numpy as np
 import scipy as sp
+from MDAnalysis.analysis import rms, align
 
 
 def get_rmsd_pocket(reference, protein, center, radius):
-    '''
+    """
 
     :param reference:
     :param protein:
     :param center:
     :param radius:
     :return:
-    '''
+    """
     # select heavy atoms within the sphere created by the center and the radius in the reference
     segment, transformation = prody.superpose(protein, reference)
-    ref_pocket = reference.select('not water and not hydrogen and within ' + str(radius) + ' of pocketcenter',
+    ref_pocket = reference.select("not water and not hydrogen and within " + str(radius) + " of pocketcenter",
                            pocketcenter=np.array(center))
     #print(type(ref_pocket))
     # Obtain the selection from above so we can pass it to the protein
@@ -32,61 +33,61 @@ def get_rmsd_pocket(reference, protein, center, radius):
 
 
 def points_to_pdb(filename, coordinates):
-    '''
+    """
 
     :param filename:
     :param coordinates:
     :return:
-    '''
-    with open(filename, 'w') as f:
+    """
+    with open(filename, "w") as f:
         counter = 1
         for i in coordinates:
-            text = 'ATOM' + '{:>7}'.format(counter)
-            text += '{:^6}'.format('CA')
-            text += '{:>3}'.format('ALA')
-            text += '{:>6}'.format('A')
-            text += '{:>12}'.format(i[0])
-            text += '{:>8}'.format(i[1])
-            text += '{:>8}'.format(i[2])
-            text += '{:>6}'.format('1.0')
-            text += '{:>6}'.format('1.0')
-            text += '\n'
+            text = "ATOM" + "{:>7}".format(counter)
+            text += "{:^6}".format("CA")
+            text += "{:>3}".format("ALA")
+            text += "{:>6}".format("A")
+            text += "{:>12}".format(i[0])
+            text += "{:>8}".format(i[1])
+            text += "{:>8}".format(i[2])
+            text += "{:>6}".format("1.0")
+            text += "{:>6}".format("1.0")
+            text += "\n"
             f.write(text)
             counter += 1
-        f.write('\n')
+        f.write("\n")
 
 
 def points_to_xyz_file(filename, coordinates, resolution, radius):
-    '''
+    """
     This Function takes the coordinates and the resolution and coordinates to write an xyz file that can be read by VMD.
 
     :param string filename: name for the xyz file to be created.
     :param list of lists coordinates: contains XYZ coordinates for each atom.
     :param float resolution: Resolution in Angstroms.
     :param float radius: radius in Angstrom for FOP.
-    '''
+    """
     # calculate the volume using the resolution
     volume = len(coordinates) * (resolution ** 3)
 
     # Writing the xyz file.
-    with open(filename, 'w') as f:
-        f.write(str(len(coordinates)) + '\n')
-        f.write('Generated in SubPEx. Res: {res}    Rad: {dim} Ang    Volume: {vol} Ang^3 \n'.format(res=resolution,
+    with open(filename, "w") as f:
+        f.write(str(len(coordinates)) + "\n")
+        f.write("Generated in SubPEx. Res: {res}    Rad: {dim} Ang    Volume: {vol} Ang^3 \n".format(res=resolution,
                                                                                                      dim=radius,
                                                                                                      vol=volume))
         # Adding each coordinate as a C-alpha for visualization purposes
         for i in coordinates:
-            f.write('CA    {}    {}    {} \n'.format(i[0], i[1], i[2]))
+            f.write("CA    {}    {}    {} \n".format(i[0], i[1], i[2]))
 
 
 def calculate_distance_two_points(point1, point2):
-    '''
+    """
     This function calculates the distance between two points in a 3D coordinate system.
 
     :param list point1: coordinates of first point. [x, y, z]
     :param list point2: coordinates of second point. [x, y, z]
     :return float distance: distance between point1 and point2.
-    '''
+    """
     distance = 0
     for i in range(3):
         distance += (point1[i] - point2[i]) ** 2
@@ -95,7 +96,7 @@ def calculate_distance_two_points(point1, point2):
 
 
 def field_of_points(center, resolution, radius):
-    '''
+    """
     Function that snaps the provided center to the a center congruent to the resolution and radiuss given by the
     user. Then it generates a spherical field of points (FOP) with radius = radius/2 with points at with a distance
     between them equal to the resolution.
@@ -104,7 +105,7 @@ def field_of_points(center, resolution, radius):
     :param float resolution: Distance between points which give resolution of the pocket volume calculator method.
     :param float radius: Defines the radius of the sphere of the FOP.
     :return list of lists : a spherical FOP
-    '''
+    """
     # This part of the code will get a new center, a snapped center.
     snapped_x = np.around(center[0] / resolution) * resolution
     snapped_y = np.around(center[1] / resolution) * resolution
@@ -124,13 +125,13 @@ def field_of_points(center, resolution, radius):
 
 
 def get_trimmed_fop(field_of_points, atoms_points):
-    '''
+    """
     Removes points that clash with atoms within the FOP.
 
     :param field_of_points: List of list containing all the points for hte FOP.
     :param atoms_points: List of list containing the coordinates of atoms within the FOP.
     :return: Returns a list of list that has the trimmed FOP.
-    '''
+    """
     # Generating cKDTrees to obtain distances
     atoms_tree = sp.spatial.cKDTree(atoms_points)
     fop_tree = sp.spatial.cKDTree(field_of_points)
@@ -154,7 +155,7 @@ def get_trimmed_fop(field_of_points, atoms_points):
 
 
 def get_jaccard_distance(reference_fop, segment_fop, resolution):
-    '''
+    """
     Function that calculates the Jaccard distance between the points in reference_fop and the segment_fop. Uses the
     distance between points to calculate the intersection.
 
@@ -162,7 +163,7 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     :param segment_fop: list of list containing the segment FOP.
     :param resolution: resolution used to create FOP.
     :return: float with the Jaccard distance.
-    '''
+    """
     # Obtaining the trees for both field of points
     reference_tree = sp.spatial.cKDTree(reference_fop)
     segment_tree = sp.spatial.cKDTree(segment_fop)
@@ -184,7 +185,7 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
 
 
 def get_field_of_points(protein, alphas, center, resolution, radius):
-    '''
+    """
     This function will take the coordinates of the protein and the coordinates of alpha carbons calculate the field of
     points (FOP).
 
@@ -194,7 +195,7 @@ def get_field_of_points(protein, alphas, center, resolution, radius):
     :param resolution: resolution for the FOP (user defined).
     :param radius: radius of sphere for FOP (user defined).
     :return list of lists: pocket shape as a FOP.
-    '''
+    """
     #get starting FOP and snapped center
     fop, center = field_of_points(center, resolution, radius)
     # trim protein atoms to those within the FOP sphere.
@@ -220,12 +221,12 @@ def point_in_hull(point, hull, tolerance=1e-12):
 
 
 def remove_convex_fop(trimmed_fop, trimmed_alpha):
-    '''
+    """
 
     :param trimmed_fop:
     :param trimmed_alpha:
     :return:
-    '''
+    """
     points_in_hull = []
     trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
@@ -236,10 +237,12 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
 
 if __name__ == "__main__":
     # Get arguments and load json settings file.
-    parser = argparse.ArgumentParser(description="Obtain jaccard distance using a reference and a MD trajectory file.")
+    parser = argparse.ArgumentParser(description="Obtain jaccard distance using a reference, a topology file and a MD trajectory file.")
     parser.add_argument("reference", type=str, help="Define the reference PDB file. It is required")
+    parser.add_argument("topology", type=str, help="Define the topology file (e.g. prmtop). It is required")
     parser.add_argument("dcd_file", type=str, help="Define the dcd file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
+    parser.add_argument("--csv", action="store_true", help="will save results in an csv file")
     parser.add_argument("--debug", action="store_true", help="To keep all the files to debug any problem")
     args = parser.parse_args()
 
@@ -251,49 +254,63 @@ if __name__ == "__main__":
         print("make sure the file exists and is correctly formatted")
         raise IOError("Could not load the json file with the settings")
 
-    # Load pdb file and dcd file to load the reference and the trajectory to obtain field of points of the pocket.
-    protein = prody.parsePDB(args.reference)
-    reference = protein.select('protein')
-    ensemble = prody.parseDCD(args.dcd_file)
-    ensemble.setAtoms(reference)
-    # Save the last frame of the trajectory file as a PDB file and then load it. This is done because the way
-    # ensembles work does not let us superpose and change the coordinates of the frame.
-    prody.writePDB('segment.pdb', ensemble[-1])
-    segment = prody.parsePDB('segment.pdb')
-    # Superpose the las segment of the trajecotry file and moove the coordinate system of the segment.
-    segment, transformation = prody.superpose(segment, reference)
-    # Write the nwe protein in the new coordinate system.
-    prody.writePDB('segment.pdb', segment)
-    # Obtain RMSD of  the backbone PROBABLY WILL HAVE TO CHANGE to backbone atoms of the pocket.
-    rmsd_all_backbone = prody.calcRMSD(reference.backbone, segment.backbone)
+    # Load reference pdb file and trajectory to then align the trajectory using the reference.
+    protein = MDAnalysis.Universe(args.reference)
+    reference = protein.select_atoms("protein")
+    ensemble = MDAnalysis.Universe(args.topology, args.dcd_file)
+    alignment = align.AlignTraj(ensemble, reference, in_memory=True, select="backbone")
+    alignment.run()
+
+    # Define the pocket atoms as all atoms that are at a radius distance of the center point as defined by the user. 
+    pocket_reference = reference.select_atoms("point {} {} {} {}".format(str(settings["center"][0]), 
+        str(settings["center"][1]), str(settings["center"][2]), str(settings["radius"])))
+
+    # Get the indexes of atoms selected in the reference 
+    indexes = pocket_reference.ix
+
+    # Use the indexes to create a selection string to pass selection from reference to ensemble
+    selection_pocket = "bynum "+str(indexes[0]) 
+    for i in indexes[1:]:
+        selection_pocket += " or bynum "+str(i)
+    #ensemble_pocket = ensemble.select_atoms(selection_pocket)
+
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
-    reference_coordinates = reference.getCoords()
-    reference_alpha = reference.calpha.getCoords()
-    reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings['center'],
-                                        settings['resolution'], settings['radius'])
-    # Save xyz coordinates of FOP
-    #points_to_xyz_file('ref_pocket.xyz', reference_fop, settings['resolution'], settings['radius'])
-    # Obtain coordinates for last frame atoms and coordinates for alpha carbons.
-    segment_coordinates = segment.getCoords()
-    segment_alpha = segment.calpha.getCoords()
-    segment_fop = get_field_of_points(segment_coordinates, segment_alpha, settings['center'],
-                                      settings['resolution'], settings['radius'])
-    #points_to_xyz_file('seg_pocket.xyz', segment_fop, settings['resolution'], settings['radius'])
-    # Compare pockets of reference and the segment and calculate Jaccard distance between both.
-    jaccard = get_jaccard_distance(reference_fop, segment_fop, settings['resolution'])
-    rmsd = get_rmsd_pocket(reference, segment, settings['center'], settings['radius'])
-    pcoord = str(jaccard)+'    '+str(rmsd)
-    print(pcoord)
+    reference_coordinates = reference.positions
+    reference_alpha = reference.select_atoms("name CA").positions
+    reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings["center"],
+                                        settings["resolution"], settings["radius"])
 
-    with open('jaccard.dat', 'w') as f:
-        f.write('1 '+str(jaccard))
+    # Obtain RMSD of  the backbone PROBABLY WILL HAVE TO CHANGE to backbone atoms of the pocket.
+    if settings["calculated_points"] == -1:
+        num_points = len(ensemble.trajectory)
+    else:
+        num_points = settings["calculated_points"]
 
-    with open('rmsd.dat', 'w') as f:
-        f.write('1 '+str(rmsd))
+    jaccard = []
+    pocket_rmsd = []
+    bb_rmsd = []
+    pvol = []
 
-    with open('pvol.txt', 'a') as f:
-        f.write(str(len(segment_fop) * (settings['resolution'] ** 3))+'\n')
+    for frame in np.linspace(0, len(ensemble.trajectory)-1, num_points, dtype=int):
+        ensemble.trajectory[frame]
+        bb_rmsd.append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions, ensemble.select_atoms("backbone").positions))
+        pocket_rmsd.append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions, ensemble.select_atoms(selection_pocket).positions))
+        frame_coordinates = ensemble.select_atoms("protein").positions
+        frame_calpha = ensemble.select_atoms("name CA").positions
+        frame_fop = get_field_of_points(frame_coordinates, frame_calpha, settings["center"],
+                                          settings["resolution"], settings["radius"])
 
-    with open('timer.txt', 'w') as f:
-        f.write('Done with the script')
+        pvol.append(len(frame_fop) * (settings['resolution'] ** 3))
+        jaccard.append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
+
+    
+    for i, jd in enumerate(jaccard):
+        print(str(jd)+"    "+str(pocket_rmsd[i]))
+
+
+    if args.csv:
+        import pandas as pd
+        results = pd.DataFrame(jaccard, bb_rmsd, pocket_rmsd, pvol, columns=["Jaccard", "RMSD backbone", "RMSD pocket", "Pocket Volume"])
+        results.to_csv("results.csv")
+
 
