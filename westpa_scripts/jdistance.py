@@ -310,7 +310,12 @@ if __name__ == "__main__":
 
     if args.csv:
         import pandas as pd
-        results = pd.DataFrame(jaccard, bb_rmsd, pocket_rmsd, pvol, columns=["Jaccard", "RMSD backbone", "RMSD pocket", "Pocket Volume"])
+        res_dict = {}
+        res_dict["Jaccard"] = jaccard
+        res_dict["Pocket RMSD"] = pocket_rmsd
+        res_dict["Backbone RMSD"] = bb_rmsd
+        res_dict["Pocket volume"] = pvol
+        results = pd.DataFrame(res_dict)
         results.to_csv("results.csv")
 
 
