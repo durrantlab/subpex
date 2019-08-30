@@ -271,7 +271,7 @@ if __name__ == "__main__":
     # Use the indexes to create a selection string to pass selection from reference to ensemble
     selection_pocket = "bynum "+str(indexes[0]) 
     for i in indexes[1:]:
-        selection_pocket += " or bynum "+str(i)
+        selection_pocket += " or bynum "+str(i+1)
     #ensemble_pocket = ensemble.select_atoms(selection_pocket)
 
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
@@ -305,7 +305,7 @@ if __name__ == "__main__":
 
     
     for i, jd in enumerate(jaccard):
-        print(str(jd)+"    "+str(pocket_rmsd[i]))
+        print(str(jd)+"    "+str(bb_rmsd[i]))
 
 
     if args.csv:
