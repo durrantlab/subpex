@@ -269,7 +269,7 @@ if __name__ == "__main__":
     indexes = pocket_reference.ix
 
     # Use the indexes to create a selection string to pass selection from reference to ensemble
-    selection_pocket = "bynum "+str(indexes[0]) 
+    selection_pocket = "bynum "+str(indexes[0]+1) 
     for i in indexes[1:]:
         selection_pocket += " or bynum "+str(i+1)
     #ensemble_pocket = ensemble.select_atoms(selection_pocket)
