@@ -1,7 +1,7 @@
 {
-  "center": [37.8337, 40.2976, 31.0062],
+  "center": [45.27, 44.99, 52.56],
   "chain": "S",
-  "radius": 9.0,
+  "radius": 12.5,
   "resolution": 0.5,
-  "rmsd_sel": "protein and noh and resid 193 194 195 196 198 199 200 201 260 257 256 255 254 253 252 250 224 222 234 220 236"
+  "calculated_points": -1
 }

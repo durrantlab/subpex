@@ -7,9 +7,7 @@ if [ -n "$SEG_DEBUG" ] ; then
     env | sort
 fi
 
-# Make the directories for each of the initial states and symlink the
-# necessary files. To clarify BSTATE is basis state, the input state from
-# which the initial states are created.
+#Make the directories for each of the initial states and symlink the necessary files.
 cd $WEST_SIM_ROOT
 
 mkdir -p $(dirname $WEST_ISTATE_DATA_REF)

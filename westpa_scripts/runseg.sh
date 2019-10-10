@@ -67,17 +67,8 @@ ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
 ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 
 ############################## Run the dynamics ################################
-# Propagate the segment using namd2
-# For multi-GPU on a single node, we need to explicitly assign the device consistent with
-# the --n-workers=4.  4 is the max when the node has 4 GPUs.  Each worker will have its
-# own thread id ($WM_PROCESS_INDEX) numbered from 0 to nGPU-1.
-
-#export NAMD="$NAMD +devices $WM_PROCESS_INDEX"
-
-echo "NAMD:"
-echo $NAMD
-echo "done"
-$NAMD md.conf &> seg.log
+# Propagate the segment using namd2 
+$NAMD md.conf > seg.log 
 
 ########################## Calculate and return data ###########################
 
@@ -92,23 +83,8 @@ cp -sv $WEST_SIM_ROOT/westpa_scripts/settings.json .
 ###### Calculation of progress coordinate ######
 #################### SubPEx ####################
 
-# symlinks the parent pcoord.txt file and pipes the last line to the current pcoord
-# file
-ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parentpcoord.txt
-tail -n 1 parentpcoord.txt > pcoord.txt
-ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parentpvol.txt
-tail -n 1 parentpvol.txt > pvol.txt
-
 # Check Chain for SubPEX Settings
-#echo $(which python) >> /bgfs/jdurrant/durrantj/subpex_tests/NA/out
-#echo $WEST_SIM_ROOT >> /bgfs/jdurrant/durrantj/subpex_tests/NA/out
-#echo $(python $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb seg.dcd settings.json) >> /bgfs/jdurrant/durrantj/subpex_tests/NA/out
-#echo ====== >> /bgfs/jdurrant/durrantj/subpex_tests/NA/out
-
-#python $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb seg.dcd settings.json 2>&1 | grep -v "@>" >> pcoord.txt
-python $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb seg.dcd settings.json >> pcoord.txt
-
-#python jdistance.py ../bstates/first_conformer/temp/ref.pdb ../reference/seg.dcd settings.json  2>&1 | grep -v "@>"
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json > pcoord.txt
 
 #paste <(cat jaccard.dat | awk {'print $2'}) <(cat rmsd.dat | awk {'print $2'}) > $WEST_PCOORD_RETURN
 
