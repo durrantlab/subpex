@@ -83,15 +83,8 @@ cp -sv $WEST_SIM_ROOT/westpa_scripts/settings.json .
 ###### Calculation of progress coordinate ######
 #################### SubPEx ####################
 
-# symlinks the parent pcoord.txt file and pipes the last line to the current pcoord
-# file
-ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parentpcoord.txt
-tail -n 1 parentpcoord.txt > pcoord.txt
-ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parentpvol.txt
-tail -n 1 parentpvol.txt > pvol.txt
-
 # Check Chain for SubPEX Settings
-python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb seg.dcd settings.json >> pcoord.txt
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json > pcoord.txt
 
 #paste <(cat jaccard.dat | awk {'print $2'}) <(cat rmsd.dat | awk {'print $2'}) > $WEST_PCOORD_RETURN
 

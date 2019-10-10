@@ -26,6 +26,7 @@ if __name__ == "__main__":
     pocket_reference = reference.select_atoms("point {} {} {} {}".format(str(settings["center"][0]), 
         str(settings["center"][1]), str(settings["center"][2]), str(settings["radius"])))
 
+    # select heavy atoms
     pocket_reference = pocket_reference.select_atoms("not name H")
 
     # Get the indexes of atoms selected in the reference 
