@@ -4,7 +4,6 @@ import json
 import numpy as np
 import scipy as sp
 from MDAnalysis.analysis import rms, align
-import time
 
 
 def points_to_pdb(filename, coordinates):
@@ -165,7 +164,7 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     return jaccard
 
 
-def get_field_of_points(protein, alphas, center, resolution, radius, probe_radius):
+def get_field_of_points(protein, alphas, center, resolution, radius):
     """
     This function will take the coordinates of the protein and the coordinates of alpha carbons calculate the field of
     points (FOP).
@@ -232,7 +231,8 @@ if __name__ == "__main__":
     parser.add_argument("dcd_file", type=str, help="Define the dcd file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
     parser.add_argument("--csv", type=str, help="will save results in an csv file with the provided filename")
-    parser.add_argument("--timer", type=str, help="will add this to the end of the timer filename")
+    parser.add_argument("--fop_out",  type=str, help="will save FOP to XYZ or PDB file (depends on extension "
+                                                     "of filename")
     parser.add_argument("--debug", action="store_true", help="To keep all the files to debug any problem")
     args = parser.parse_args()
 
@@ -256,6 +256,8 @@ if __name__ == "__main__":
                                                                          str(settings["center"][1]),
                                                                          str(settings["center"][2]),
                                                                          str(settings["radius"])))
+
+    # select heavy atoms
     pocket_reference = pocket_reference.select_atoms("not name H")
 
     # Get the indexes of atoms selected in the reference
@@ -265,13 +267,12 @@ if __name__ == "__main__":
     selection_pocket = "bynum " + str(indexes[0] + 1)
     for i in indexes[1:]:
         selection_pocket += " or bynum " + str(i + 1)
-    # ensemble_pocket = ensemble.select_atoms(selection_pocket)
 
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
     reference_coordinates = reference.positions
     reference_alpha = reference.select_atoms("name CA").positions
     reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings["center"],
-                                        settings["resolution"], settings["radius"], settings["probe_radius"])
+                                        settings["resolution"], settings["radius"])
 
     # Obtain RMSD of  the backbone PROBABLY WILL HAVE TO CHANGE to backbone atoms of the pocket.
     if settings["calculated_points"] == -1:
@@ -286,32 +287,30 @@ if __name__ == "__main__":
     time_per_frame = []
 
     for frame in np.linspace(0, len(ensemble.trajectory) - 1, num_points, dtype=int):
-        start = time.time()
-        print("started doing frame {} at {}".format(frame, start))
         ensemble.trajectory[frame]
         protein = ensemble.select_atoms("protein")
-        MDAnalysis.analysis.align.alignto(protein, reference, select="backbone")
+        align.alignto(protein, reference, select="backbone")
         bb_rmsd.append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
                                                     protein.select_atoms("backbone").positions))
-        pocket_rmsd.append(
-            MDAnalysis.analysis.rms.rmsd(pocket_reference.positions, ensemble.select_atoms(selection_pocket).positions))
+        pocket_rmsd.append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
+                                                        ensemble.select_atoms(selection_pocket).positions))
         frame_coordinates = ensemble.select_atoms("protein").positions
         frame_calpha = ensemble.select_atoms("name CA").positions
         frame_fop = get_field_of_points(frame_coordinates, frame_calpha, settings["center"],
-                                        settings["resolution"], settings["radius"], settings["probe_radius"])
+                                        settings["resolution"], settings["radius"])
 
         pvol.append(len(frame_fop) * (settings['resolution'] ** 3))
         jaccard.append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
-        end = time.time()
-        time_per_frame.append(end - start)
 
-    # with open("time"+args.timer+".log", "w") as f:
-    #	for i, value in enumerate(time_per_frame):
-    #		f.write("It took "+str(value)+" s to run frame "+str(i))
+        if args.fop_out != None:
+            extension = args.fop_out.slpit(".")[-1]
+            if extension.lower == "xyz":
+                points_to_xyz_file(args.fop_out, frame_fop, settings['resolution'], settings['radius'])
+            if extension.lower == "pdb":
+                points_to_pdb(args.fop_out, frame_fop)
 
-    points_to_xyz_file('point2.xyz', frame_fop, settings['resolution'], settings['radius'])
-    points_to_xyz_file('ref2.xyz', reference_fop, settings['resolution'], settings['radius'])
-    # protein.write("last_frame.pdb")
+    for i, value in enumerate(jaccard):
+        print("{:.4f}    {:.4f}".format(value, pocket_rmsd[i]))
 
     if args.csv != None:
         import pandas as pd
@@ -323,3 +322,7 @@ if __name__ == "__main__":
         res_dict["Pocket volume"] = pvol
         results = pd.DataFrame(res_dict)
         results.to_csv(args.csv)
+
+    with open("pvol.txt", "w") as f:
+        for i in pvol:
+            f.write(str(i)+"\n")

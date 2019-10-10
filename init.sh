@@ -27,17 +27,7 @@ mkdir   seg_logs traj_segs istates
 rm -rf bstates/first_conformer
 mkdir bstates/first_conformer
 
-cp prep/equil9/system-hc_eq_9.coor bstates/first_conformer/seg.coor
-cp prep/equil9/system-hc_eq_9.dcd  bstates/first_conformer/seg.dcd
-cp prep/equil9/system-hc_eq_9.vel  bstates/first_conformer/seg.vel
-cp prep/equil9/system-hc_eq_9.xsc  bstates/first_conformer/seg.xsc
-
-#Copy files to reference directory
-cp prep/equil9/mol.psf   reference/mol.psf
-cp prep/equil9/mol.pdb   reference/mol.pdb
-cp prep/equil9/system-hc_eq_9.dcd  $WEST_SIM_ROOT/reference/seg.dcd
-
-# Define the arguments for the basis states (used for generating initial 
+# Define the arguments for the basis states (used for generating initial
 # states; in this case we only have one), and target states (used for
 # knowing when to recycle trajectories). In this example, we recycle
 # trajectories as they reach the bound state; we focus on sampling  
