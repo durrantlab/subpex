@@ -20,13 +20,19 @@ cd $WEST_STRUCT_DATA_REF
 rm -rf temp
 mkdir temp
 
-cp $WEST_STRUCT_DATA_REF/seg.dcd    temp/
 cp $WEST_SIM_ROOT/reference/mol.pdb temp/ref.pdb
+cp $WEST_SIM_ROOT/reference/mol.pdb temp/mol.pdb
 cp $WEST_SIM_ROOT/westpa_scripts/settings.json temp/
+
+ln -s $WEST_SIM_ROOT/reference/seg.coor .
+ln -s $WEST_SIM_ROOT/reference/seg.dcd .
+ln -s $WEST_SIM_ROOT/reference/seg.vel .
+ln -s $WEST_SIM_ROOT/reference/seg.xsc .
+
 
 # Use a custom script to calculate the jaccard distance between the starting 
 # structure and the initial state (should be 0 since we are copying the files).
-python $WEST_SIM_ROOT/westpa_scripts/jdistance.py temp/ref.pdb temp/seg.dcd temp/settings.json > pcoord.txt
+python3 $WEST_SIM_ROOT/westpa_scripts/bstate.py temp/ref.pdb temp/mol.pdb temp/settings.json > pcoord.txt
 
 #paste <(cat jaccard.dat | awk {'print $2'}) <(cat rmsd.dat | awk {'print $2'}) > $WEST_PCOORD_RETURN
 
