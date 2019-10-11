@@ -55,12 +55,18 @@ if __name__ == "__main__":
                                       settings["resolution"], settings["radius"])
 
     pvol = len(frame_fop) * settings['resolution'] ** 3
+    rog = calculate_pocket_gyration(frame_fop)
     jaccard = get_jaccard_distance(reference_fop, frame_fop, settings["resolution"])
-
     
-    print(str(jaccard)+"    "+str(bb_rmsd))
+    with open("pcoord.txt", "w") as f:
+        f.write(str(jaccard)+"    "+str(bb_rmsd))
 
     with open("pvol.txt", "w") as f:
         f.write(str(pvol))
 
+    with open("bb_rmsd.txt", "w") as f:
+        f.write(str(bb_rmsd))
+
+    with open("rog.txt", "w") as f:
+        f.write(str(rog))
 

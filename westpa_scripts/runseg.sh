@@ -39,7 +39,6 @@ cd $WEST_CURRENT_SEG_DATA_REF
 
 # Make symbolic links to the topology file and parameter files. These are not 
 # unique to each segment.
-ln -sv $WEST_SIM_ROOT/reference/mol.psf    structure.psf
 ln -sv $WEST_SIM_ROOT/reference/mol.pdb    structure.pdb
 ln -sv $WEST_SIM_ROOT/reference/mol.prmtop structure.prmtop
 ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd structure.inpcrd
@@ -70,6 +69,10 @@ ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 # Propagate the segment using namd2 
 $NAMD md.conf > seg.log 
 
+if grep -q RATTLE seg.log; then
+    $NAMD md.conf > seg.log
+fi
+
 ########################## Calculate and return data ###########################
 
 # Calculate the progress coordinate, which is the jaccard distance between the 
@@ -83,20 +86,25 @@ cp -sv $WEST_SIM_ROOT/westpa_scripts/settings.json .
 ###### Calculation of progress coordinate ######
 #################### SubPEx ####################
 
-# Check Chain for SubPEX Settings
-python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json > pcoord.txt
-
-#paste <(cat jaccard.dat | awk {'print $2'}) <(cat rmsd.dat | awk {'print $2'}) > $WEST_PCOORD_RETURN
-
-
-
-# this line just loops until we see the file 
-while read i; do if [ -e timer.txt ]; then break; fi; done
-
-#python2 $WEST_SIM_ROOT/westpa_scripts/test.py
+if [ -n "$SEG_DEBUG" ] ; then
+  python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json --debug
+else
+  python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json
+fi
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
+cp rog.txt $WEST_ROG_RETURN
+cp bb_rmsd.txt $WEST_BB_RETURN
 
 # Clean up
-rm -rf temp md.conf parent.coor parent.dcd parentpcoord.txt parentpvol.txt parent.vel parent.xsc ref.pdb settings.json timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
+if [ -n "$SEG_DEBUG" ] ; then
+  set -x
+  env | sort
+else
+  rm parent.coor parent.dcd  parent.vel parent.xsc structure.inpcrd structure.prmtop
+  rm ref.pdb settings.json timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
+  rm pcoord.txt pvol.txt rog.txt bb_rmsd.txt seg.restart.coor seg.restart.coor.old seg.restart.vel 
+  rm seg.restart.vel.old seg.restart.xsc seg.restart.xsc.old
+fi
+
