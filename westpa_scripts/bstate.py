@@ -59,7 +59,7 @@ if __name__ == "__main__":
     jaccard = get_jaccard_distance(reference_fop, frame_fop, settings["resolution"])
     
     with open("pcoord.txt", "w") as f:
-        f.write(str(jaccard)+"    "+str(bb_rmsd))
+        f.write(str(jaccard)+"    "+str(pocket_rmsd))
 
     with open("pvol.txt", "w") as f:
         f.write(str(pvol))

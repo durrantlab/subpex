@@ -4,7 +4,7 @@ import json
 import numpy as np
 import scipy as sp
 from MDAnalysis.analysis import rms, align
-
+import sys
 
 def points_to_pdb(filename, coordinates):
     """
