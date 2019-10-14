@@ -333,7 +333,7 @@ if __name__ == "__main__":
 
     with open("pcoord.txt", "w") as f:
         for i, value in enumerate(jaccard):
-            print("{:.4f}    {:.4f}".format(value, pocket[i]))
+            f.write("{:.4f}    {:.4f}".format(value, pocket[i]))
 
     with open("pvol.txt", "w") as f:
         for i in pvol:
