@@ -30,7 +30,7 @@ ln -s $WEST_SIM_ROOT/reference/seg.xsc .
 
 # Use a custom script to calculate the jaccard distance between the starting 
 # structure and the initial state (should be 0 since we are copying the files).
-python3 $WEST_SIM_ROOT/westpa_scripts/bstate.py ref.pdb mol.pdb settings.json 
+python3 $WEST_SIM_ROOT/westpa_scripts/bstate.py ref.pdb mol.pdb settings.json --pvol --rog --bb_rmsd
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN

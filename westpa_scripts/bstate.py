@@ -6,7 +6,10 @@ if __name__ == "__main__":
     parser.add_argument("reference", type=str, help="Define the reference PDB file. It is required")
     parser.add_argument("bstate", type=str, help="Define the bstate PDB file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
-    parser.add_argument("--debug", action="store_true", help="To keep all the files to debug any problem")
+    parser.add_argument("--pvol", action="store_true", help="will save pvol.txt file for auxiliary info in SubPEx run")
+    parser.add_argument("--rog", action="store_true", help="will save rog.txt file for auxiliary info in SubPEx run")
+    parser.add_argument("--bb_rmsd", action="store_true",
+                        help="will save bb_rmsd.txt file for auxiliary info in SubPEx run")
     args = parser.parse_args()
 
     try:
@@ -45,28 +48,31 @@ if __name__ == "__main__":
                                         settings["resolution"], settings["radius"])
 
 
-    bb_rmsd = MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions, bstate.select_atoms("backbone").positions, 
-        center=True, superposition=True)
     pocket_rmsd = MDAnalysis.analysis.rms.rmsd(pocket_reference.positions, bstate.select_atoms(selection_pocket).positions, 
         center=True, superposition=True)
     frame_coordinates = bstate.select_atoms("protein").positions
     frame_calpha = bstate.select_atoms("name CA").positions
     frame_fop = get_field_of_points(frame_coordinates, frame_calpha, settings["center"],
                                       settings["resolution"], settings["radius"])
-
-    pvol = len(frame_fop) * settings['resolution'] ** 3
-    rog = calculate_pocket_gyration(frame_fop)
     jaccard = get_jaccard_distance(reference_fop, frame_fop, settings["resolution"])
-    
+
     with open("pcoord.txt", "w") as f:
         f.write(str(jaccard)+"    "+str(pocket_rmsd))
 
-    with open("pvol.txt", "w") as f:
-        f.write(str(pvol))
+    if args.bb_rmsd:
+        bb_rmsd = MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
+                                               bstate.select_atoms("backbone").positions,
+                                               center=True, superposition=True)
+        with open("bb_rmsd.txt", "w") as f:
+            f.write(str(bb_rmsd))
 
-    with open("bb_rmsd.txt", "w") as f:
-        f.write(str(bb_rmsd))
+    if args.pvol:
+        pvol = len(frame_fop) * settings['resolution'] ** 3
+        with open("pvol.txt", "w") as f:
+            f.write(str(pvol))
 
-    with open("rog.txt", "w") as f:
-        f.write(str(rog))
+    if args.rog:
+        rog = calculate_pocket_gyration(frame_fop)
+        with open("rog.txt", "w") as f:
+            f.write(str(rog))
 

@@ -86,11 +86,8 @@ cp -sv $WEST_SIM_ROOT/westpa_scripts/settings.json .
 ###### Calculation of progress coordinate ######
 #################### SubPEx ####################
 
-if [ -n "$SEG_DEBUG" ] ; then
-  python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json --debug
-else
-  python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json
-fi
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json --pvol --rog --bb_rmsd
+
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
