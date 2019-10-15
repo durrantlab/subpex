@@ -6,6 +6,7 @@ import scipy as sp
 from MDAnalysis.analysis import rms, align
 import sys
 
+
 def points_to_pdb(filename, coordinates):
     """
     points_to_pdb will write a pdb file full of C-alphas to be able to load the file in a visualisation software and
@@ -15,7 +16,7 @@ def points_to_pdb(filename, coordinates):
     :param coordinates: (list of lists) XYZ coordinates of the field of points to write into pdb file.
     """
     with open(filename, "w") as f:
-        #f.write(header)
+        # f.write(header)
         atom_number = 1
         for i in coordinates:
             text = "ATOM" + "{:>7}".format(atom_number)
@@ -115,8 +116,8 @@ def get_trimmed_fop(field_of_points, atoms_points):
 
     # get indices of fop_tree that are close to atoms_tree
     # We use the Van der Waals radius of water and that of hydrogen atom
-    VdW_radius = 2.6
-    clash_indices = atoms_tree.query_ball_tree(fop_tree, VdW_radius, p=2, eps=0)
+    vdw_radius = 2.6
+    clash_indices = atoms_tree.query_ball_tree(fop_tree, vdw_radius, p=2, eps=0)
     for index in clash_indices:
         for item in index:
             field_of_points[item] = None
@@ -149,11 +150,8 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     # Obtain the points that are at less than resolution/2.5 (aka have the same coordinates)
     clash_indices = reference_tree.query_ball_tree(segment_tree, resolution / 2.5, p=2, eps=0)
 
-    # Count the points that intersect
-    intersection = 0
-    for index in clash_indices:
-        for item in index:
-            intersection += 1.0
+    # Count the points that intersect and convert to float
+    intersection = len([x for x in clash_indices if x])/1.0
 
     # Obtain the union of both FOP
     union = float(len(reference_fop) + len(segment_fop) - intersection)
@@ -217,14 +215,24 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
     points_in_hull = []
     trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
-        if (point_in_hull(point, trimmed_alpha_convex)):
+        if point_in_hull(point, trimmed_alpha_convex):
             points_in_hull.append(point)
     return points_in_hull
 
 
 def calculate_pocket_gyration(pocket):
-
+    """
+    calculate_pocket_gyration is a function that takes the xyz coordinates of a field of points and calculates the
+    radius of gyration. It assumes a mass of one for all the points.
+    :param pocket: list of xyz coordinates of the field of points
+    :return: float with the radius of gyration
+    """
     def get_centroid(pocket):
+        """
+        Calculates the centroid or the center of mass for equal masses of a field of points.
+        :param pocket: list of xyz coordinates of the field of points
+        :return: list with coordinates od the centroid [x, y, z]
+        """
         x = np.mean([x[0] for x in pocket])
         y = np.mean([y[1] for y in pocket])
         z = np.mean([z[2] for z in pocket])
@@ -248,7 +256,11 @@ if __name__ == "__main__":
     parser.add_argument("dcd_file", type=str, help="Define the dcd file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
     parser.add_argument("--csv", type=str, help="will save results in an csv file with the provided filename")
-    parser.add_argument("--debug", action="store_true", help="To keep all the files to debug any problem")
+    parser.add_argument("--pvol", action="store_true", help="will save pvol.txt file for auxiliary info in SubPEx run")
+    parser.add_argument("--rog", action="store_true", help="will save rog.txt file for auxiliary info in SubPEx run")
+    parser.add_argument("--bb_rmsd", action="store_true",
+                        help="will save bb_rmsd.txt file for auxiliary info in SubPEx run")
+
     args = parser.parse_args()
 
     try:
@@ -259,15 +271,18 @@ if __name__ == "__main__":
         print("make sure the file exists and is correctly formatted")
         raise IOError("Could not load the json file with the settings")
 
-    with open("seg.log", "r") as f:
-        line = f.readline()
-        while line:
-            if "RATTLE" in line:
-                print("There was an error with the simulation")
-                sys.exit("There was an error with the simulation")
-            else:
-                line = f.readline()
-
+    # Checking the the trajectory doesn't have a rattle error.
+    try:
+        with open("seg.log", "r") as f:
+            line = f.readline()
+            while line:
+                if "RATTLE" in line:
+                    print("There was an error with the simulation")
+                    sys.exit("There was an error with the simulation")
+                else:
+                    line = f.readline()
+    except:
+        print("Could not check log file. There could be a problem with the simulation")
 
     # Load reference pdb file and trajectory to then align the trajectory using the reference.
     ref_universe = MDAnalysis.Universe(args.reference)
@@ -295,7 +310,7 @@ if __name__ == "__main__":
     reference_coordinates = reference.positions
     reference_alpha = reference.select_atoms("name CA").positions
     reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings["center"],
-                                        settings["resolution"], settings["radius"])
+                                        settings["resolution"], settings["radius"]) #todo add function to trim the non contiguous points in the pocket.
 
     # Define the number of times that the progress coordinates and auxiliary info will be calculated.
     if settings["calculated_points"] == -1:
@@ -303,58 +318,75 @@ if __name__ == "__main__":
     else:
         num_points = settings["calculated_points"]
 
-    #Create a list of all elements to calculate
-    jaccard = []
-    pocket_rmsd = []
-    bb_rmsd = []
-    pvol = []
-    rog_pocket = []
+    # Create a list of all elements to calculate
+    results = {}
+    results["jaccard"] = []
+    results["pocket_rmsd"] = []
+    if args.csv != None:
+        results["bb_rmsd"] = []
+        results["pvol"] = []
+        results["rog_pocket"] = []
+    else:
+        if args.pvol:
+            results["pvol"] = []
+        if args.rog:
+            results["rog_pocket"] = []
+        if args.bb_rmsd:
+            results["bb_rmsd"] = []
 
     # go the the frames and do the calculations
     for frame in np.linspace(0, len(ensemble.trajectory) - 1, num_points, dtype=int):
         ensemble.trajectory[frame]
         protein = ensemble.select_atoms("protein")
-        # algin the frame to the reference
+        # align the frame to the reference
         align.alignto(protein, reference, select="backbone")
-        # calculate backbone RMSD
-        bb_rmsd.append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
-                                                    protein.select_atoms("backbone").positions))
         # calculate pocket RMSD
-        pocket_rmsd.append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
+        results["pocket_rmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
                                                         ensemble.select_atoms(selection_pocket).positions))
-        # The next lines calculate the jaccard distance of the pocket        
+        # The next lines calculate the jaccard distance of the pocket
         frame_coordinates = ensemble.select_atoms("protein").positions
         frame_calpha = ensemble.select_atoms("name CA").positions
         frame_fop = get_field_of_points(frame_coordinates, frame_calpha, settings["center"],
                                         settings["resolution"], settings["radius"])
-        pvol.append(len(frame_fop) * (settings['resolution'] ** 3))
-        jaccard.append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
-        rog_pocket.append(calculate_pocket_gyration(frame_fop))
+        results["jaccard"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
 
+        # calculate backbone RMSD
+        if args.bb_rmsd or (args.csv is not None):
+            results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
+                                                    protein.select_atoms("backbone").positions))
+        else:
+            pass
+        if args.pvol or (args.csv is not None):
+            results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
+        else:
+            pass
+        # calculate the radius of gyration of the pocket
+        if args.rog or (args.csv is not None):
+            results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
+        else:
+            pass
+
+    # saving all the files required for westpa to run
     with open("pcoord.txt", "w") as f:
-        for i, value in enumerate(jaccard):
-            f.write("{:.4f}    {:.4f}".format(value, pocket[i]))
+        for i, value in enumerate(results["jaccard"]):
+            f.write("{:.4f}    {:.4f}\n".format(value, results["pocket_rmsd"][i]))
 
-    with open("pvol.txt", "w") as f:
-        for i in pvol:
-            f.write(str(i)+"\n")
+    if args.pvol:
+        with open("pvol.txt", "w") as f:
+            for i in results["pvol"]:
+                f.write(str(i)+"\n")
 
-    with open("rog.txt", "w") as f:
-        for i in rog_pocket:
-            f.write(str(i)+"\n")
+    if args.rog:
+        with open("rog.txt", "w") as f:
+            for i in results["rog_pocket"]:
+                f.write(str(i)+"\n")
 
-    with open("bb_rmsd.txt", "w") as f:
-        for i in bb_rmsd:
-            f.write(str(i)+"\n")
+    if args.bb_rmsd:
+        with open("bb_rmsd.txt", "w") as f:
+            for i in results["bb_rmsd"]:
+                f.write(str(i)+"\n")
 
-    if args.csv != None:
+    if args.csv is not None:
         import pandas as pd
-
-        res_dict = {}
-        res_dict["Jaccard"] = jaccard
-        res_dict["Pocket RMSD"] = pocket_rmsd
-        res_dict["Backbone RMSD"] = bb_rmsd
-        res_dict["Pocket volume"] = pvol
-        results = pd.DataFrame(res_dict)
-        results.to_csv(args.csv)
-
+        results_pd = pd.DataFrame(results)
+        results_pd.to_csv(args.csv)
