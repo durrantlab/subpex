@@ -75,7 +75,7 @@ def calculate_distance_two_points(point1, point2):
 
 def field_of_points(center, resolution, radius):
     """
-    Function that snaps the provided center to the a center congruent to the resolution and radiuss given by the
+    Function that snaps the provided center to the a center congruent to the resolution and radius given by the
     user. Then it generates a spherical field of points (FOP) with radius = radius/2 with points at with a distance
     between them equal to the resolution.
 
@@ -133,6 +133,80 @@ def get_trimmed_fop(field_of_points, atoms_points):
     return trimmed_fop
 
 
+def get_neighbor_matrix(fop, resolution):
+    """
+    This is a function that creates a neighbors matrix. Neighbors are 1, everything else is 0.
+    :param fop: list of coordinates of the field of points
+    :param resolution: float resolution used to create field of points
+    :return: neighbors matrix
+    """
+    # create a distance matrix (this is because it is faster than looping anc calculating the distances)
+    dist_matrix = sp.spatial.distance_matrix(fop, fop)
+    dim = len(fop)
+    # create the distance matrix assuming no neighbors
+    neighbors = np.zeros([dim, dim])
+    # loop through the distance matrix to find the neighbors
+    for i in range(dim):
+        for j in range(dim):
+            # added a margin so there are no problems with float precision
+            if resolution*1.2 > dist_matrix[i,j] > resolution*0.8:
+                neighbors[i, j] = 1
+            else:
+                pass
+
+    return neighbors
+
+
+def get_contiguous(center, fop, resolution): #todo compare to Jacob's implementation
+    """
+    Function that performs all the operations to return all contiguous points to the center of the pocket.
+    :param center: list of x, y, z coordinates of the center of the pocket.
+    :param fop: list of coordinates of the field of points
+    :param resolution: float resolution used to create field of points
+    :return: list of coordinates of the contiguous field of points
+    """
+    # get the neighbors matrix
+    neighbors = get_neighbor_matrix(fop, resolution)
+    # create a list of values to check starting from the center
+    to_check = [center]
+
+    # create a list of visited points
+    visited = []
+
+    # loop that propagates a search from the center of the pocket to find all the contiguous points in the fop
+    while True:
+        # update visited list at the start of each loop
+        for i in to_check:
+            if i not in visited:
+                visited.append(i)
+            elif i in visited:
+                to_check.remove(i)
+        # create an empty list of the neighbors of the points we are checking
+        new_to_check = []
+        # loop through to_check list to find their neighbors an append them to new_to_check while making sure to
+        # modify the neighbors matrix so we do not count them again
+        for i in to_check:
+            for j, value in enumerate(neighbors[i]):
+                if value == 1:
+                    new_to_check.append(j)
+                else:
+                    pass
+                neighbors[j][i] = 0
+                neighbors[i][j] = 0
+        # update the to_check list
+        to_check = new_to_check
+        # if the list is empty exit the loop
+        if to_check == []:
+            break
+
+    # create the new field of points list and return it.
+    new_fop = []
+    for i in visited:
+        new_fop.append(fop[i])
+
+    return new_fop
+
+
 def get_jaccard_distance(reference_fop, segment_fop, resolution):
     """
     Function that calculates the Jaccard distance between the points in reference_fop and the segment_fop. Uses the
@@ -181,9 +255,10 @@ def get_field_of_points(protein, alphas, center, resolution, radius):
     # remove points in FOP that have steric clashes with protein.
     trimmed_fop = get_trimmed_fop(fop, trimmed_coords_protein)
     # trim protein alpha atoms to those in the pocket.
-    trimmed_alpha = [x for x in alphas if calculate_distance_two_points(x, center) < (radius * 1.25)]
+    trimmed_alpha = [x for x in alphas if calculate_distance_two_points(x, center) < (radius * 1.25)] # todo check this line, not sure I need it
     # remove points outside the convex hull created by the alpha carbons in the pocket.
     pocket = remove_convex_fop(trimmed_fop, trimmed_alpha)
+    pocket = get_contiguous(center, pocket, resolution)
 
     return pocket
 
