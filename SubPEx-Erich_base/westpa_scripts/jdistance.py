@@ -6,6 +6,7 @@ import scipy as sp
 from MDAnalysis.analysis import rms, align
 from sklearn.cluster import DBSCAN
 import sys
+import pickle
 
 
 def points_to_pdb(filename, coordinates):
@@ -68,7 +69,7 @@ def calculate_distance_two_points(point1, point2):
     :return distance: (float) distance between point1 and point2.
     """
     distance = 0
-    for i in range(3):
+    for i in range(len(point1)):
         distance += (point1[i] - point2[i]) ** 2
 
     return np.sqrt(distance)
@@ -157,8 +158,8 @@ def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
     trimmed_alpha = [x for x in alphas if calculate_distance_two_points(x, center) < (radius * 1.25)] # todo check this line, not sure I need it
     # remove points outside the convex hull created by the alpha carbons in the pocket.
     pocket = remove_convex_fop(trimmed_fop, trimmed_alpha)
-    pocket = cluster_dbscan(pocket)    
-    
+    pocket = cluster_dbscan(pocket)
+
     return pocket
 
 
@@ -184,7 +185,7 @@ def cluster_dbscan(fop):
             clusters["Cluster_"+str(labels[i]+1)].append(coord)
         else:
             pass
-        
+
     for i in clusters:
         #print(len(clusters[i]))
         if longest == "" or len(clusters[i]) > len(clusters[longest]):
@@ -222,33 +223,6 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     return jaccard
 
 
-def get_field_of_points(protein, alphas, center, resolution, radius):
-    """
-    This function will take the coordinates of the protein and the coordinates of alpha carbons calculate the field of
-    points (FOP).
-
-    :param protein: (list of list) coordinates of protein atoms.
-    :param alphas: (list of list) coordinates of all alpha carbons
-    :param center: (list) center of the pocket (user defined).
-    :param resolution: (float) resolution for the FOP (user defined).
-    :param radius: (float) radius of sphere for FOP (user defined).
-    :return: list of list with the pocket shape as a FOP.
-    """
-    # get starting FOP and snapped center
-    fop, center = field_of_points(center, resolution, radius)
-    # trim protein atoms to those within the FOP sphere.
-    trimmed_coords_protein = [x for x in protein if calculate_distance_two_points(x, center) < radius]
-    # remove points in FOP that have steric clashes with protein.
-    trimmed_fop = get_trimmed_fop(fop, trimmed_coords_protein)
-    # trim protein alpha atoms to those in the pocket.
-    trimmed_alpha = [x for x in alphas if calculate_distance_two_points(x, center) < (radius * 1.25)] # todo check this line, not sure I need it
-    # remove points outside the convex hull created by the alpha carbons in the pocket.
-    pocket = remove_convex_fop(trimmed_fop, trimmed_alpha)
-    pocket = get_contiguous(center, pocket, resolution)
-
-    return pocket
-
-
 def point_in_hull(point, hull, tolerance=1e-12):
     """
     a point is in the hull if and only if for every equation (describing the facets) the dot product between the point
@@ -273,6 +247,7 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
     :param trimmed_alpha:
     :return:
     """
+    #todo add documentation
     points_in_hull = []
     trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
@@ -370,8 +345,8 @@ if __name__ == "__main__":
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
     reference_coordinates = reference.positions
     reference_alpha = reference.select_atoms("name CA").positions
-    reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings["center"],
-                                        settings["resolution"], settings["radius"]) #todo add function to trim the non contiguous points in the pocket.
+    reference_fop = get_field_of_points_dbscan(reference_coordinates, reference_alpha, settings["center"],
+                                        settings["resolution"], settings["radius"])
 
     # Define the number of times that the progress coordinates and auxiliary info will be calculated.
     if settings["calculated_points"] == -1:
