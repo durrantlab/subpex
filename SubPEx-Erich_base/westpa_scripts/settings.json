@@ -1,7 +1,11 @@
 {
   "center": [45.27, 44.99, 52.56],
-  "chain": "S",
-  "radius": 12.5,
-  "resolution": 0.5,
-  "calculated_points": -1
+  "radius": RADIUS,
+  "resolution": RESOLUTION ,
+  "calculated_points": CALCULATED,
+  "reference": "FILE_PATH_TO_REFERENCE_PDB",
+  "reference_fop": "FILE_PATH_TO_REFERENCE_FOP",
+  "selection_file": "FILE_PATH_TO_SELECTION_FILE"
 }
+
+#TODO add new parameters here
