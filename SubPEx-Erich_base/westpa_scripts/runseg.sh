@@ -66,33 +66,39 @@ ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
 ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 
 ############################## Run the dynamics ################################
-# Propagate the segment using namd2 
-$NAMD md.conf > seg.log 
+# Propagate the segment using namd2
+export NAMD="$NAMD +devices 0,1,2,3"
+
+
+echo "NAMD:"
+echo $NAMD
+echo "done"
+$NAMD md.conf &> seg.log
 
 if grep -q RATTLE seg.log; then
-    $NAMD md.conf > seg.log
+    $NAMD md.conf &> seg.log
 fi
 
-########################## Calculate and return data ###########################
+if grep -q "FATAL ERROR" seg.log; then
+    $NAMD md.conf &> seg.log
+fi
+
+########################## Calculate and return progress coordiante ###########################
+######################################### SubPEx ##############################################
 
 # Calculate the progress coordinate, which is the jaccard distance between the 
 # bstate and this segment. 
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-cp -sv $WEST_SIM_ROOT/reference/mol.pdb ref.pdb
-cp -sv $WEST_SIM_ROOT/westpa_scripts/settings.json .
 
-###### Calculation of progress coordinate ######
-#################### SubPEx ####################
-
-python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py ref.pdb structure.prmtop seg.dcd settings.json --pvol --rog --bb_rmsd
-
+/ihome/jdurrant/erh91/miniconda3/bin/python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/westpa_scripts/settings.json
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
 cp rog.txt $WEST_ROG_RETURN
 cp bb_rmsd.txt $WEST_BB_RETURN
+cp fop.txt $WEST_FOP_RETURN
 
 # Clean up
 if [ -n "$SEG_DEBUG" ] ; then
@@ -100,7 +106,7 @@ if [ -n "$SEG_DEBUG" ] ; then
   env | sort
 else
   rm parent.coor parent.dcd  parent.vel parent.xsc structure.inpcrd structure.prmtop
-  rm ref.pdb settings.json timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
+  rm timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
   rm pcoord.txt pvol.txt rog.txt bb_rmsd.txt seg.restart.coor seg.restart.coor.old seg.restart.vel 
   rm seg.restart.vel.old seg.restart.xsc seg.restart.xsc.old
 fi

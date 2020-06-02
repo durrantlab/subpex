@@ -1,7 +1,7 @@
 from jdistance import *
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Obtain fop for the reference structure")
+    parser = argparse.ArgumentParser(description="Obtain FOP for the reference structure")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
     args = parser.parse_args()
     try:
@@ -22,7 +22,7 @@ if __name__ == "__main__":
                                                                          str(settings["center"][2]),
                                                                          str(settings["radius"])))
 
-    # obtain all residues in the pocket.
+    # obtain all residues in the pocket and create a selection pocket string.
     pocket_residues = []
     for i in pocket_reference:
         residue = str(i.residue)
@@ -31,23 +31,33 @@ if __name__ == "__main__":
             pocket_residues.append(residue)
         else:
             pass
+
     selection_pocket = "resid {} ".format(pocket_residues[0])
     for i in pocket_residues[1:]:
         selection_pocket += " or resid {} ".format(str(i))
 
-    pocket_reference = reference.select_atoms(selection_pocket)
+    selection_pocket += "and not name H"
 
+    # save the pocket selection string so it can be used in other places
     with open(settings["selection_file"], "w") as f:
         f.write(selection_pocket)
 
+    # use selection pocket string to select the pocket and generate the reference field of points (FOP)
+    pocket_reference = reference.select_atoms(selection_pocket)
     reference_coordinates = pocket_reference.positions
     reference_alpha = pocket_reference.select_atoms("name CA")
-
     reference_fop = get_field_of_points_dbscan(reference_coordinates, reference_alpha, settings["center"],
                                         settings["resolution"], settings["radius"])
 
-    # Save FOP to a xyz file.
-    # points_to_xyz_file(settings["reference_fop"], reference_fop, settings["resolution"], settings["radius"])
-    # Save fop as a pickle in file given in settings file.
-    with open(settings["reference_fop"], "wb") as f:
-        pickle.dump(ref_universe, f)
+    # Save FOP to a xyz, pdb or pickle file.
+
+    if settings["fop_filetype"] == "xyz":
+        points_to_xyz_file(settings["reference_fop"], reference_fop, settings["resolution"], settings["radius"])
+    elif settings["fop_filetype"] == "pickle":
+        import pickle
+        with open(settings["reference_fop"], "wb") as f:
+            pickle.dump(reference_fop, f)
+    elif settings["fop_filetype"] == "pdb":
+        points_to_pdb(settings["reference_fop"], reference_fop)
+    else:
+        print("Could not save FOP file")
