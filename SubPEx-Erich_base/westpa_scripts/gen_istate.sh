@@ -7,6 +7,9 @@ if [ -n "$SEG_DEBUG" ] ; then
     env | sort
 fi
 
+# Custom script to calculate the reference
+python3 $WEST_SIM_ROOT/westpa_scripts/get_reference_fop.py settings.json
+
 #Make the directories for each of the initial states and symlink the necessary files.
 cd $WEST_SIM_ROOT
 

@@ -22,8 +22,26 @@ if __name__ == "__main__":
                                                                          str(settings["center"][2]),
                                                                          str(settings["radius"])))
 
+    # obtain all residues in the pocket.
+    pocket_residues = []
+    for i in pocket_reference:
+        residue = str(i.residue)
+        residue = residue.split(",")[1][:-1].strip()
+        if residue not in pocket_residues:
+            pocket_residues.append(residue)
+        else:
+            pass
+    selection_pocket = "resid {} ".format(pocket_residues[0])
+    for i in pocket_residues[1:]:
+        selection_pocket += " or resid {} ".format(str(i))
+
+    pocket_reference = reference.select_atoms(selection_pocket)
+
     with open(settings["selection_file"], "w") as f:
         f.write(selection_pocket)
+
+    reference_coordinates = pocket_reference.positions
+    reference_alpha = pocket_reference.select_atoms("name CA")
 
     reference_fop = get_field_of_points_dbscan(reference_coordinates, reference_alpha, settings["center"],
                                         settings["resolution"], settings["radius"])
