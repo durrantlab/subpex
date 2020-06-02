@@ -1,17 +1,13 @@
 from jdistance import *
-
+#todo refactor this script
 if __name__ == "__main__":
     # Get arguments and load json settings file.
     parser = argparse.ArgumentParser(description="Obtain jaccard distance using a reference, a topology file and a MD trajectory file.")
-    parser.add_argument("reference", type=str, help="Define the reference PDB file. It is required")
-    parser.add_argument("bstate", type=str, help="Define the bstate PDB file. It is required")
+    parser.add_argument("istate", type=str, help="Define the istate or istate PDB file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
-    parser.add_argument("--pvol", action="store_true", help="will save pvol.txt file for auxiliary info in SubPEx run")
-    parser.add_argument("--rog", action="store_true", help="will save rog.txt file for auxiliary info in SubPEx run")
-    parser.add_argument("--bb_rmsd", action="store_true",
-                        help="will save bb_rmsd.txt file for auxiliary info in SubPEx run")
     args = parser.parse_args()
 
+    # try opening json file with the settings
     try:
         with open(args.settings, "r") as f:
             settings = json.load(f)
@@ -20,53 +16,76 @@ if __name__ == "__main__":
         print("make sure the file exists and is correctly formatted")
         raise IOError("Could not load the json file with the settings")
 
-    # Load reference pdb file and trajectory to then align the trajectory using the reference.
-    protein = MDAnalysis.Universe(args.reference)
-    reference = protein.select_atoms("protein")
-    bstate = MDAnalysis.Universe(args.bstate)
+    check_input_settings_file(settings)
 
+    # Load reference pdb file and trajectory to then align the trajectory using the reference.
+    protein = MDAnalysis.Universe(settings["reference"])
+    reference = protein.select_atoms("protein")
+
+    istate = MDAnalysis.Universe(args.istate)
+
+    # open file with selection string
     with open(settings["selection_file"], "r") as f:
         selection_pocket = f.readlines()[0]
 
-    with open(settings["reference_fop"], "rb") as f:
-        reference_fop = pickle.load(f)
+    # open file with reference field of points
+    if settings["fop_filetype"] == "xyz":
+        reference_fop = parse_xyz_fop(settings["reference_fop"])
+    elif settings["fop_filetype"] == "pdb":
+        reference_fop = parse_pdb_fop(settings["reference_fop"])
+    elif settings["fop_filetype"] == "pickle":
+        import pickle
+        with open(settings["reference_fop"], "rb") as f:
+            reference_fop = pickle.load(f)
+    else:
+        print("could not open reference FOP")
+        raise IOError("could not open reference FOP")
 
-    # Define the pocket atoms as all atoms that are at a radius distance of the center point as defined by the user.
+    # Using the selection string to select atoms in the pocket
     pocket_reference = reference.select_atoms(selection_pocket)
 
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
     reference_coordinates = reference.positions
-    reference_alpha = reference.select_atoms("name CA").positions
-    #reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings["center"],
-    #                                    settings["resolution"], settings["radius"])
 
-    pocket_rmsd = MDAnalysis.analysis.rms.rmsd(pocket_reference.positions, bstate.select_atoms(selection_pocket).positions, 
-        center=True, superposition=True)
-    frame_coordinates = bstate.select_atoms("protein").positions
-    frame_calpha = bstate.select_atoms("name CA").positions
-    frame_fop = get_field_of_points(frame_coordinates, frame_calpha, settings["center"],
+    # obtain pocket for istate or bstate and the CA
+    istate_pocket = istate.select_atoms(selection_pocket)
+    frame_coordinates = istate.select_atoms("protein").positions
+    frame_calpha = istate_pocket.select_atoms("name CA")
+
+    # calculate pocket rmsd
+    pocket_rmsd = MDAnalysis.analysis.rms.rmsd(pocket_reference.positions, istate_pocket.positions,
+                                               center=True, superposition=True)
+
+    frame_fop = get_field_of_points_dbscan(frame_coordinates, frame_calpha, settings["center"],
                                       settings["resolution"], settings["radius"])
     jaccard = get_jaccard_distance(reference_fop, frame_fop, settings["resolution"])
 
     with open("pcoord.txt", "w") as f:
         f.write(str(jaccard)+"    "+str(pocket_rmsd))
 
-    with open("fop.txt", "wb") as f:
-        pickle.dump(frame_fop, f)
+    # save fop in file so it can be piped to h5 file
+    if settings["fop_filetype"] == "xyz":
+        points_to_xyz_file("fop.txt", frame_fop, settings["resolution"], settings["radius"])
+    elif settings["fop_filetype"] == "pdb":
+        points_to_pdb("fop", results["fops"])
+    elif settings["fop_filetype"] == "pickle":
+        with open("fop.txt", "wb") as f:
+            pickle.dump(frame_fop, f)
 
-    if args.bb_rmsd:
+
+    if "bb_rmsd" in settings["auxdata"]:
         bb_rmsd = MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
-                                               bstate.select_atoms("backbone").positions,
+                                               istate.select_atoms("backbone").positions,
                                                center=True, superposition=True)
         with open("bb_rmsd.txt", "w") as f:
             f.write(str(bb_rmsd))
 
-    if args.pvol:
+    if "pvol" in settings["auxdata"]:
         pvol = len(frame_fop) * settings['resolution'] ** 3
         with open("pvol.txt", "w") as f:
             f.write(str(pvol))
 
-    if args.rog:
+    if "rog" in settings["auxdata"]:
         rog = calculate_pocket_gyration(frame_fop)
         with open("rog.txt", "w") as f:
             f.write(str(rog))
