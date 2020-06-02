@@ -4,7 +4,19 @@ import json
 import numpy as np
 import scipy as sp
 from MDAnalysis.analysis import rms, align
+from sklearn.cluster import DBSCAN
 import sys
+
+#todo refactor this so it works in new version of subpex
+
+
+def check_input_settings_file(settings):
+    """
+    #todo make check_input_settings_file function and documentation for it
+    :param settings:
+    :return:
+    """
+    return settings
 
 
 def points_to_pdb(filename, coordinates):
@@ -15,7 +27,7 @@ def points_to_pdb(filename, coordinates):
     :param filename: (str) name of the pdb file to create.
     :param coordinates: (list of lists) XYZ coordinates of the field of points to write into pdb file.
     """
-    with open(filename, "w") as f:
+    with open(filename, "w") as f: #todo modify to be able to do multiframe pdb
         # f.write(header)
         atom_number = 1
         for i in coordinates:
@@ -34,6 +46,29 @@ def points_to_pdb(filename, coordinates):
         f.write("\n")
 
 
+def parse_xyz_fop(filename):
+    """
+
+    :param filename:
+    :return:
+    """
+    # open reference fop xyz file
+    with open(filename, "r") as f:
+        text = f.readlines()
+
+    # parse xyz file
+    fop = []
+    for i in text[2:]:
+        line = i.split()
+        if len(line) == 4:
+            point = [float(line[1]), float(line[2]), float(line[3])]
+            fop.append(point)
+        else:
+            pass
+
+    return fop
+
+
 def points_to_xyz_file(filename, coordinates, resolution, radius):
     """
     points_to_xyz_file takes the coordinates and the resolution and coordinates to write an xyz file that can be read by
@@ -45,7 +80,7 @@ def points_to_xyz_file(filename, coordinates, resolution, radius):
     :param float radius: radius in Angstrom for FOP.
     """
     # calculate the volume using the resolution
-    volume = len(coordinates) * (resolution ** 3)
+    volume = len(coordinates) * (resolution ** 3) #todo modify to be able to do multiframe xyz
 
     # Writing the xyz file.
     with open(filename, "w") as f:
@@ -67,7 +102,7 @@ def calculate_distance_two_points(point1, point2):
     :return distance: (float) distance between point1 and point2.
     """
     distance = 0
-    for i in range(3):
+    for i in range(len(point1)):
         distance += (point1[i] - point2[i]) ** 2
 
     return np.sqrt(distance)
@@ -133,78 +168,60 @@ def get_trimmed_fop(field_of_points, atoms_points):
     return trimmed_fop
 
 
-def get_neighbor_matrix(fop, resolution):
+def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
     """
-    This is a function that creates a neighbors matrix. Neighbors are 1, everything else is 0.
-    :param fop: list of coordinates of the field of points
-    :param resolution: float resolution used to create field of points
-    :return: neighbors matrix
+    This function will take the coordinates of the protein and the coordinates of alpha carbons calculate the field of
+    points (FOP).
+
+    :param protein: (list of list) coordinates of protein atoms.
+    :param alphas: (list of list) coordinates of all alpha carbons
+    :param center: (list) center of the pocket (user defined).
+    :param resolution: (float) resolution for the FOP (user defined).
+    :param radius: (float) radius of sphere for FOP (user defined).
+    :return: list of list with the pocket shape as a FOP.
     """
-    # create a distance matrix (this is because it is faster than looping anc calculating the distances)
-    dist_matrix = sp.spatial.distance_matrix(fop, fop)
-    dim = len(fop)
-    # create the distance matrix assuming no neighbors
-    neighbors = np.zeros([dim, dim])
-    # loop through the distance matrix to find the neighbors
-    for i in range(dim):
-        for j in range(dim):
-            # added a margin so there are no problems with float precision
-            if resolution*1.2 > dist_matrix[i,j] > resolution*0.8:
-                neighbors[i, j] = 1
-            else:
-                pass
+    # get starting FOP and snapped center
+    fop, center = field_of_points(center, resolution, radius)
+    # trim protein atoms to those within the FOP sphere.
+    trimmed_coords_protein = [x for x in protein if calculate_distance_two_points(x, center) < radius]
+    # remove points in FOP that have steric clashes with protein.
+    trimmed_fop = get_trimmed_fop(fop, trimmed_coords_protein)
+    # remove points outside the convex hull created by the alpha carbons in the pocket.
+    pocket = remove_convex_fop(trimmed_fop, alphas)
+    pocket = cluster_dbscan(pocket)
 
-    return neighbors
+    return pocket
 
 
-def get_contiguous(center, fop, resolution): #todo compare to Jacob's implementation
+def cluster_dbscan(fop):
     """
-    Function that performs all the operations to return all contiguous points to the center of the pocket.
-    :param center: list of x, y, z coordinates of the center of the pocket.
-    :param fop: list of coordinates of the field of points
-    :param resolution: float resolution used to create field of points
-    :return: list of coordinates of the contiguous field of points
+    This function will take the coordinates of the field of points and perform a clustering algorithm to trim the fop
+    to the points in the same cluster thatn the center of the pocket.
+
+    :param protein: (list of list) coordinates of field of points.
+    :return: list of list with the FOP after clustering.
     """
-    # get the neighbors matrix
-    neighbors = get_neighbor_matrix(fop, resolution)
-    # create a list of values to check starting from the center
-    to_check = [center]
+    db = DBSCAN(eps=0.5, min_samples=2).fit(fop)
+    labels = db.labels_
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    #print(n_clusters_)
+    longest = ""
+    clusters = {}
+    for i in range(n_clusters_):
+        clusters["Cluster_"+str(i+1)] = []
 
-    # create a list of visited points
-    visited = []
+    for i, coord in enumerate(fop):
+        if labels[i] != -1:
+            clusters["Cluster_"+str(labels[i]+1)].append(coord)
+        else:
+            pass
 
-    # loop that propagates a search from the center of the pocket to find all the contiguous points in the fop
-    while True:
-        # update visited list at the start of each loop
-        for i in to_check:
-            if i not in visited:
-                visited.append(i)
-            elif i in visited:
-                to_check.remove(i)
-        # create an empty list of the neighbors of the points we are checking
-        new_to_check = []
-        # loop through to_check list to find their neighbors an append them to new_to_check while making sure to
-        # modify the neighbors matrix so we do not count them again
-        for i in to_check:
-            for j, value in enumerate(neighbors[i]):
-                if value == 1:
-                    new_to_check.append(j)
-                else:
-                    pass
-                neighbors[j][i] = 0
-                neighbors[i][j] = 0
-        # update the to_check list
-        to_check = new_to_check
-        # if the list is empty exit the loop
-        if to_check == []:
-            break
-
-    # create the new field of points list and return it.
-    new_fop = []
-    for i in visited:
-        new_fop.append(fop[i])
-
-    return new_fop
+    for i in clusters:
+        #print(len(clusters[i]))
+        if longest == "" or len(clusters[i]) > len(clusters[longest]):
+            longest = i
+    #print(len(clusters[longest]))
+    return clusters[longest]
 
 
 def get_jaccard_distance(reference_fop, segment_fop, resolution):
@@ -236,33 +253,6 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     return jaccard
 
 
-def get_field_of_points(protein, alphas, center, resolution, radius):
-    """
-    This function will take the coordinates of the protein and the coordinates of alpha carbons calculate the field of
-    points (FOP).
-
-    :param protein: (list of list) coordinates of protein atoms.
-    :param alphas: (list of list) coordinates of all alpha carbons
-    :param center: (list) center of the pocket (user defined).
-    :param resolution: (float) resolution for the FOP (user defined).
-    :param radius: (float) radius of sphere for FOP (user defined).
-    :return: list of list with the pocket shape as a FOP.
-    """
-    # get starting FOP and snapped center
-    fop, center = field_of_points(center, resolution, radius)
-    # trim protein atoms to those within the FOP sphere.
-    trimmed_coords_protein = [x for x in protein if calculate_distance_two_points(x, center) < radius]
-    # remove points in FOP that have steric clashes with protein.
-    trimmed_fop = get_trimmed_fop(fop, trimmed_coords_protein)
-    # trim protein alpha atoms to those in the pocket.
-    trimmed_alpha = [x for x in alphas if calculate_distance_two_points(x, center) < (radius * 1.25)] # todo check this line, not sure I need it
-    # remove points outside the convex hull created by the alpha carbons in the pocket.
-    pocket = remove_convex_fop(trimmed_fop, trimmed_alpha)
-    pocket = get_contiguous(center, pocket, resolution)
-
-    return pocket
-
-
 def point_in_hull(point, hull, tolerance=1e-12):
     """
     a point is in the hull if and only if for every equation (describing the facets) the dot product between the point
@@ -287,8 +277,9 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
     :param trimmed_alpha:
     :return:
     """
+    #todo add documentation
     points_in_hull = []
-    trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
+    trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha.positions)
     for point in trimmed_fop:
         if point_in_hull(point, trimmed_alpha_convex):
             points_in_hull.append(point)
@@ -326,21 +317,16 @@ if __name__ == "__main__":
     # Get arguments and load json settings file.
     parser = argparse.ArgumentParser(
         description="Obtain jaccard distance using a reference, a topology file and a MD trajectory file.")
-    parser.add_argument("reference", type=str, help="Define the reference PDB file. It is required")
-    parser.add_argument("topology", type=str, help="Define the topology file (e.g. prmtop). It is required")
     parser.add_argument("dcd_file", type=str, help="Define the dcd file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
     parser.add_argument("--csv", type=str, help="will save results in an csv file with the provided filename")
-    parser.add_argument("--pvol", action="store_true", help="will save pvol.txt file for auxiliary info in SubPEx run")
-    parser.add_argument("--rog", action="store_true", help="will save rog.txt file for auxiliary info in SubPEx run")
-    parser.add_argument("--bb_rmsd", action="store_true",
-                        help="will save bb_rmsd.txt file for auxiliary info in SubPEx run")
 
     args = parser.parse_args()
 
     try:
         with open(args.settings, "r") as f:
             settings = json.load(f)
+        settings = check_input_settings_file(settings)
     except IOError:
         print("Could not load the json file with the settings")
         print("make sure the file exists and is correctly formatted")
@@ -360,32 +346,32 @@ if __name__ == "__main__":
         print("Could not check log file. There could be a problem with the simulation")
 
     # Load reference pdb file and trajectory to then align the trajectory using the reference.
-    ref_universe = MDAnalysis.Universe(args.reference)
+    ref_universe = MDAnalysis.Universe(settings["reference"])
     reference = ref_universe.select_atoms("protein")
-    ensemble = MDAnalysis.Universe(args.topology, args.dcd_file)
+    ensemble = MDAnalysis.Universe(settings["topology"], args.dcd_file)
 
-    # Define the pocket atoms as all atoms that are at a radius distance of the center point as defined by the user.
-    pocket_reference = reference.select_atoms("point {} {} {} {}".format(str(settings["center"][0]),
-                                                                         str(settings["center"][1]),
-                                                                         str(settings["center"][2]),
-                                                                         str(settings["radius"])))
+    # open file with selection string
+    with open(settings["selection_file"], "r") as f:
+        selection_pocket = f.readlines()[0]
 
-    # select heavy atoms
-    pocket_reference = pocket_reference.select_atoms("not name H")
+    # open file with reference field of points
+    if settings["fop_filetype"] == "xyz":
+        reference_fop = parse_xyz_fop(settings["reference_fop"])
+    elif settings["fop_filetype"] == "pdb":
+        reference_fop = parse_pdb_fop(settings["reference_fop"]) #todo make parse_pdb_fop function
+    elif settings["fop_filetype"] == "pickle":
+        import pickle
+        with open(settings["reference_fop"], "rb") as f:
+            reference_fop = pickle.load(f)
+    else:
+        print("could not open reference FOP")
+        raise IOError("could not open reference FOP")
 
-    # Get the indexes of atoms selected in the reference
-    indexes = pocket_reference.ix
-
-    # Use the indexes to create a selection string to pass selection from reference to ensemble
-    selection_pocket = "bynum " + str(indexes[0] + 1)
-    for i in indexes[1:]:
-        selection_pocket += " or bynum " + str(i + 1)
+    # Using the selection string to select atoms in the pocket
+    pocket_reference = reference.select_atoms(selection_pocket)
 
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
     reference_coordinates = reference.positions
-    reference_alpha = reference.select_atoms("name CA").positions
-    reference_fop = get_field_of_points(reference_coordinates, reference_alpha, settings["center"],
-                                        settings["resolution"], settings["radius"]) #todo add function to trim the non contiguous points in the pocket.
 
     # Define the number of times that the progress coordinates and auxiliary info will be calculated.
     if settings["calculated_points"] == -1:
@@ -397,19 +383,16 @@ if __name__ == "__main__":
     results = {}
     results["jaccard"] = []
     results["pocket_rmsd"] = []
-    if args.csv != None:
-        results["bb_rmsd"] = []
-        results["pvol"] = []
-        results["rog_pocket"] = []
-    else:
-        if args.pvol:
-            results["pvol"] = []
-        if args.rog:
-            results["rog_pocket"] = []
-        if args.bb_rmsd:
-            results["bb_rmsd"] = []
+    results["fops"] = []
 
-    # go the the frames and do the calculations
+    if "pvol" in settings["auxdata"]:
+        results["pvol"] = []
+    if "rog" in settings["auxdata"]:
+        results["rog_pocket"] = []
+    if "bb_rmsd" in settings["auxdata"]:
+        results["bb_rmsd"] = []
+
+    # loop through frames of walker and calculate pcoord and auxdata
     for frame in np.linspace(0, len(ensemble.trajectory) - 1, num_points, dtype=int):
         ensemble.trajectory[frame]
         protein = ensemble.select_atoms("protein")
@@ -418,45 +401,52 @@ if __name__ == "__main__":
         # calculate pocket RMSD
         results["pocket_rmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
                                                         ensemble.select_atoms(selection_pocket).positions))
-        # The next lines calculate the jaccard distance of the pocket
+        # The next lines calculate the Jaccard distance of the pocket comapred to the reference
         frame_coordinates = ensemble.select_atoms("protein").positions
-        frame_calpha = ensemble.select_atoms("name CA").positions
-        frame_fop = get_field_of_points(frame_coordinates, frame_calpha, settings["center"],
+        pocket_calpha = ensemble.select_atoms(selection_pocket+" and name CA")
+        frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
                                         settings["resolution"], settings["radius"])
         results["jaccard"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
-
-        # calculate backbone RMSD
-        if args.bb_rmsd or (args.csv is not None):
-            results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
-                                                    protein.select_atoms("backbone").positions))
-        else:
-            pass
-        if args.pvol or (args.csv is not None):
+        results["fops"].append(frame_fop)
+        # calculate aux data
+        if "pvol" in settings["auxdata"]:
             results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
-        else:
-            pass
-        # calculate the radius of gyration of the pocket
-        if args.rog or (args.csv is not None):
-            results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
-        else:
-            pass
 
-    # saving all the files required for westpa to run
+        if "rog" in settings["auxdata"]:
+            results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
+
+        if "bb_rmsd" in settings["auxdata"]:
+            results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
+                                                                   protein.select_atoms("backbone").positions))
+
+    # writing in text files the progress coordinates and the required auxiliary data if needed calculate the auxdata
     with open("pcoord.txt", "w") as f:
         for i, value in enumerate(results["jaccard"]):
             f.write("{:.4f}    {:.4f}\n".format(value, results["pocket_rmsd"][i]))
 
-    if args.pvol:
+    # save fop in file so it can be piped to h5 file
+    if settings["fop_filetype"] == "xyz":
+        #points_to_xyz_file("fop.txt", results["fops"], settings["resolution"], settings["radius"])
+        with open("fop.txt", "w") as f:
+            for i in results["fops"]:
+                f.write(str(i))
+    elif settings["fop_filetype"] == "pdb":
+        points_to_pdb("fop", results["fops"])
+    elif settings["fop_filetype"] == "pickle":
+        with open("fop.txt", "wb") as f:
+            pickle.dump(frame_fop, f)
+
+    if "pvol" in settings["auxdata"]:
         with open("pvol.txt", "w") as f:
             for i in results["pvol"]:
                 f.write(str(i)+"\n")
 
-    if args.rog:
+    if "rog" in settings["auxdata"]:
         with open("rog.txt", "w") as f:
             for i in results["rog_pocket"]:
                 f.write(str(i)+"\n")
 
-    if args.bb_rmsd:
+    if "bb_rmsd" in settings["auxdata"]:
         with open("bb_rmsd.txt", "w") as f:
             for i in results["bb_rmsd"]:
                 f.write(str(i)+"\n")
