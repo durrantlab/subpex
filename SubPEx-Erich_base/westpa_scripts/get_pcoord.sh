@@ -26,10 +26,7 @@ ln -s $WEST_SIM_ROOT/reference/ref.dcd .
 ln -s $WEST_SIM_ROOT/reference/ref.vel .
 ln -s $WEST_SIM_ROOT/reference/ref.xsc .
 
-# Custom script to calculate the reference
-python3 $WEST_SIM_ROOT/westpa_scripts/get_reference_fop.py settings.json 
-
-# Use a custom script to calculate the jaccard distance between the starting 
+# Use a custom script to calculate the jaccard distance between the starting
 # structure and the initial state (should be 0 since we are copying the files).
 python3 $WEST_SIM_ROOT/westpa_scripts/pcoord_istate.py ref.pdb mol.pdb settings.json --pvol --rog --bb_rmsd
 

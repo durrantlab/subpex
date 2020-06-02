@@ -1,7 +1,7 @@
 {
   "center": [45.27, 44.99, 52.56],
   "radius": RADIUS,
-  "resolution": RESOLUTION ,
+  "resolution": RESOLUTION,
   "calculated_points": CALCULATED,
   "reference": "FILE_PATH_TO_REFERENCE_PDB",
   "reference_fop": "FILE_PATH_TO_REFERENCE_FOP",
