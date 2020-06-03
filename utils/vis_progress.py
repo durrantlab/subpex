@@ -6,6 +6,13 @@ import os
 
 
 def plot_num_walkers(num_walkers, outdir):
+    """
+    Function that will plot the number of walkers per iteration. The plot will
+    be saved to the specified directory.
+    :param num_walkers: list containing the number of walkers per iteration
+    :param outdir: string with the path to the output directory
+    """
+    # Plotting the num of walkers per iteration.
     fig = plt.subplots(1, figsize=(10, 7))
     plt.title("Number of Walkers per iteration", fontsize=32)
     plt.plot(range(len(num_walkers)), num_walkers, linewidth=4, color="blue", alpha=0.7)
@@ -15,7 +22,7 @@ def plot_num_walkers(num_walkers, outdir):
     plt.savefig(outdir + "/num_walkers.png")
 
 
-def plot_histogram(results, value, title, directory=None):
+def plot_histogram(results, value, title, directory=None): #todo refactor plot_histogram function
     min_1 = None
     max_1 = None
     for i in results[value]:
@@ -52,7 +59,7 @@ def plot(jd, rmsd, title, outdir, filename):
     plt.savefig(outdir + "/" + filename)
 
 
-def obtain_paths_higest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations):
+def obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations):
     """
 
     :param max_rmsd:
