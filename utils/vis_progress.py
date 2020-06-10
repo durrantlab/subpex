@@ -96,9 +96,9 @@ def obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_it
         weight["trajectory"].append(west["iterations"][iteration]['seg_index'][weight["trajectory"][-1]][1])
 
     results = {}
-    results["rmsd"] = rmsd
-    results["jaccard"] = jd
-    results["weight"] = weight
+    results["max_rmsd"] = rmsd
+    results["max_jaccard"] = jd
+    results["max_weight"] = weight
     for i in results:
         results[i]["jd"].reverse()
         results[i]["rmsd"].reverse()
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     num_walkers = [len(west["iterations"][k]["pcoord"][()]) for k in west["iterations"].keys()]
     plot_num_walkers(num_walkers, args.outdir)
 
-    reverse_iterations = []
+    reverse_iterations = [] #todo check ig I can reverse this in one line of code
     for i in range(1, len(list(west["iterations"].keys())) + 1):
         reverse_iterations.append(list(west["iterations"].keys())[-i])
 
@@ -148,12 +148,48 @@ if __name__ == "__main__":
             max_weight = [value[0], i]
 
     results = obtain_paths_higest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations)
-    plot(results["rmsd"]["jd"], results["rmsd"]["rmsd"], "Progress of walker with highest pocket HA RMSD",
+    plot(results["max_rmsd"]["jd"], results["max_rmsd"]["rmsd"], "Progress of walker with highest pocket HA RMSD",
          args.outdir, "highest_rmsd.png")
-    plot(results["jaccard"]["jd"], results["jaccard"]["rmsd"], "Progress of walker with highest Jaccard distance",
+    plot(results["max_jaccard"]["jd"], results["max_jaccard"]["rmsd"], "Progress of walker with highest Jaccard distance",
          args.outdir, "highest_jaccard.png")
-    plot(results["weight"]["jd"], results["weight"]["rmsd"], "Progress of walker with highest Jaccard distance",
+    plot(results["max_weight"]["jd"], results["max_weight"]["rmsd"], "Progress of walker with highest Jaccard distance",
          args.outdir, "highest_weight.png")
+    results["jaccard"] = []
+    results["pocket_rmsd"] = []
+
+    if "pvol" in settings["auxdata"]:
+        results["pvol"] = []
+    if "rog" in settings["auxdata"]:
+        results["rog_pocket"] = []
+    if "bb_rmsd" in settings["auxdata"]:
+        results["bb_rmsd"] = []
+
+    for key in west["iterations"].keys():
+        try:
+            if "pvol" in settings["auxdata"]:
+                for k in west["iterations"][key]["auxdata"]["pvol"][()]:
+                    results["pvol"].append(k[-1])
+            if "rog" in settings["auxdata"]:
+                for k in west["iterations"][key]["auxdata"]["rog"][()]:
+                    results["rog_pocket"].append(k[-1])
+            if "bb_rmsd" in settings["auxdata"]:
+                for k in west["iterations"][key]["auxdata"]["bb"][()]:
+                    results["bb_rmsd"].append(k[-1])
+            for k in west["iterations"][key]["pcoord"][()]:
+                results["jaccard"].append(k[-1][0])
+                results["pocket_rmsd"].append(k[-1][1])
+        except:
+            pass
+
+    plot_histogram(results, "jaccard", "jaccard distance", args.outdir)
+    plot_histogram(results, "pocket_rmsd", "pocket heavy atoms RMSD", args.outdir)
+    if "pvol" in settings["auxdata"]:
+        plot_histogram(results, "pvol", "pocket volume", args.outdir)
+    if "rog" in settings["auxdata"]:
+        plot_histogram(results, "rog_pocket", "pocket radius of gyration", args.outdir)
+    if "bb_rmsd" in settings["auxdata"]:
+        plot_histogram(results, "bb_rmsd", "backbone RMSD", args.outdir)
+
 
 
 
