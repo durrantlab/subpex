@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
+import json
 
 
 def plot_num_walkers(num_walkers, outdir):
@@ -147,7 +148,7 @@ if __name__ == "__main__":
         if value[0] > max_weight[0]:
             max_weight = [value[0], i]
 
-    results = obtain_paths_higest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations)
+    results = obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations)
     plot(results["max_rmsd"]["jd"], results["max_rmsd"]["rmsd"], "Progress of walker with highest pocket HA RMSD",
          args.outdir, "highest_rmsd.png")
     plot(results["max_jaccard"]["jd"], results["max_jaccard"]["rmsd"], "Progress of walker with highest Jaccard distance",
