@@ -1,22 +1,16 @@
 from jdistance import *
+
 #todo refactor this script
 if __name__ == "__main__":
     # Get arguments and load json settings file.
     parser = argparse.ArgumentParser(description="Obtain jaccard distance using a reference, a topology file and a MD trajectory file.")
     parser.add_argument("istate", type=str, help="Define the istate or istate PDB file. It is required")
-    parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
+    parser.add_argument("settings", type=str, help="Define the settings file. It is required")
     args = parser.parse_args()
 
-    # try opening json file with the settings
-    try:
-        with open(args.settings, "r") as f:
-            settings = json.load(f)
-    except IOError:
-        print("Could not load the json file with the settings")
-        print("make sure the file exists and is correctly formatted")
-        raise IOError("Could not load the json file with the settings")
-
-    check_input_settings_file(settings)
+    # Function that obtains and checks for settings in the settings json file.
+    print(args.settings)
+    settings = check_input_settings_file(args.settings)
 
     # Load reference pdb file and trajectory to then align the trajectory using the reference.
     protein = MDAnalysis.Universe(settings["reference"])
@@ -50,7 +44,7 @@ if __name__ == "__main__":
     # obtain pocket for istate or bstate and the CA
     istate_pocket = istate.select_atoms(selection_pocket)
     frame_coordinates = istate.select_atoms("protein").positions
-    frame_calpha = istate_pocket.select_atoms("name CA")
+    frame_calpha = istate_pocket.select_atoms("name CA").positions
 
     # calculate pocket rmsd
     pocket_rmsd = MDAnalysis.analysis.rms.rmsd(pocket_reference.positions, istate_pocket.positions,

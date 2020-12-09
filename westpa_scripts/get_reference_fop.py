@@ -5,8 +5,7 @@ if __name__ == "__main__":
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
     args = parser.parse_args()
     try:
-        with open(args.settings, "r") as f:
-            settings = json.load(f)
+        settings = check_input_settings_file(args.settings)
     except IOError:
         print("Could not load the json file with the settings")
         print("make sure the file exists and is correctly formatted")
@@ -36,7 +35,7 @@ if __name__ == "__main__":
     for i in pocket_residues[1:]:
         selection_pocket += " or resid {} ".format(str(i))
 
-    selection_pocket += "and not name H"
+    selection_pocket += "and (not name H*)"
 
     # save the pocket selection string so it can be used in other places
     with open(settings["selection_file"], "w") as f:
@@ -44,8 +43,8 @@ if __name__ == "__main__":
 
     # use selection pocket string to select the pocket and generate the reference field of points (FOP)
     pocket_reference = reference.select_atoms(selection_pocket)
-    reference_coordinates = pocket_reference.positions
-    reference_alpha = pocket_reference.select_atoms("name CA")
+    reference_coordinates = reference.positions
+    reference_alpha = pocket_reference.select_atoms("name CA").positions
     reference_fop = get_field_of_points_dbscan(reference_coordinates, reference_alpha, settings["center"],
                                         settings["resolution"], settings["radius"])
 

@@ -39,9 +39,8 @@ cd $WEST_CURRENT_SEG_DATA_REF
 
 # Make symbolic links to the topology file and parameter files. These are not 
 # unique to each segment.
-ln -sv $WEST_SIM_ROOT/reference/mol.pdb    structure.pdb
-ln -sv $WEST_SIM_ROOT/reference/mol.prmtop structure.prmtop
-ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd structure.inpcrd
+#ln -sv $WEST_SIM_ROOT/reference/mol.pdb    structure.pdb
+ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
 
 # Either continue an existing tractory, or start a new trajectory. Here, both
 # cases are the same.  If you need to handle the cases separately, you can
@@ -54,34 +53,26 @@ ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd structure.inpcrd
 # We'll use the "sed" command to replace the string "RAND" with a randomly
 # generated seed.
 sed "s/RAND/$WEST_RAND16/g" \
-  $WEST_SIM_ROOT/reference/md.conf > md.conf
+  $WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
-ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
-ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
-ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
-ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
+ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+
+ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
+ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
+ln -sv $WEST_PARENT_DATA_REF/bb_rmsd.txt  ./parent_bb.txt
+ln -sv $WEST_PARENT_DATA_REF/fop.txt  ./parent_fop.txt
+ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
 
 ############################## Run the dynamics ################################
-# Propagate the segment using namd2
-export NAMD="$NAMD +devices 0,1,2,3"
+# Propagate the segment using amber
 
+#amber md.conf &> seg.log
 
-echo "NAMD:"
-echo $NAMD
-echo "done"
-$NAMD md.conf &> seg.log
-
-if grep -q RATTLE seg.log; then
-    $NAMD md.conf &> seg.log
-fi
-
-if grep -q "FATAL ERROR" seg.log; then
-    $NAMD md.conf &> seg.log
-fi
+$AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
 
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
@@ -92,22 +83,21 @@ fi
 # child pcoord to a file called pcoord.txt.
 
 
-/ihome/jdurrant/erh91/miniconda3/bin/python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/westpa_scripts/settings.json
+/ihome/jdurrant/erh91/miniconda3/bin/python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/reference/settings.yaml --we
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
 cp rog.txt $WEST_ROG_RETURN
 cp bb_rmsd.txt $WEST_BB_RETURN
-cp fop.txt $WEST_FOP_RETURN
+#cp fop.xyz $WEST_FOP_RETURN
 
 # Clean up
 if [ -n "$SEG_DEBUG" ] ; then
   set -x
   env | sort
 else
-  rm parent.coor parent.dcd  parent.vel parent.xsc structure.inpcrd structure.prmtop
-  rm timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
-  rm pcoord.txt pvol.txt rog.txt bb_rmsd.txt seg.restart.coor seg.restart.coor.old seg.restart.vel 
-  rm seg.restart.vel.old seg.restart.xsc seg.restart.xsc.old
+  rm parent.* mol.prmtop
+  #rm timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
+  #rm *restart*
 fi
 
