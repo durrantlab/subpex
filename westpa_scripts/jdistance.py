@@ -1,22 +1,148 @@
 import argparse
 import MDAnalysis
-import json
 import numpy as np
 import scipy as sp
 from MDAnalysis.analysis import rms, align
 from sklearn.cluster import DBSCAN
 import sys
+import logging
 
-#todo refactor this so it works in new version of subpex
 
-
-def check_input_settings_file(settings):
+def check_input_settings_file(filename):
     """
-    #todo make check_input_settings_file function and documentation for it
-    :param settings:
+    check_input_settings_file is a function that loads the json file containing the settings for SubPEx and checks that 
+    all the parameters are available or sets defaults if it can be done.
+    :param filename: (str) filename of the settings json file. 
+    :return: (dict) settings for running SubPEx and some of the analysis tools  
+    """
+
+    import sys
+    import glob
+
+    if filename.split(".")[-1] == "json":
+        import json
+        try:
+            with open(filename, "r") as f:
+                settings = json.load(f)
+        except IOError:
+            print("Could not load the json file with the settings")
+            print("make sure the file exists and is correctly formatted")
+            raise IOError("Could not load the json file with the settings")
+    else:
+        import yaml
+        try:
+            with open(filename, "r") as f:
+                settings = yaml.safe_load(f.read())
+        except IOError:
+            print("Could not load the configuration file with the settings")
+            print("make sure the file exists and is correctly formatted")
+            raise IOError("Could not load the json file with the settings")
+
+    # Checking that the coordinates of the center of the pocket are in settings.
+    if "center" in settings:
+        if type(settings["center"]) == list and len(settings["center"]) == 3:
+            if type(settings["center"][0]) == float and type(settings["center"][0]) == float and type(
+                    settings["center"][0]) == float:
+                pass
+            else:
+                logging.critical(
+                    "There is an error with the center parameter in the settings file. Check if each element is a float")
+                sys.exit("Error with setting center")
+        else:
+            logging.critical(
+                "There is an error with the center parameter in the settings file. Check if it is a list with the XYZ coordinates")
+            sys.exit("Error with settings center")
+
+    # Checking that we specify which progress coordinates we will print in the pcoord file
+    if "pcoord" in settings:
+        if "jd" not in settings["pcoord"] and "prmsd" not in settings:
+            logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd and/or prsmd")
+            sys.exit("Error with setting pcoord")
+    else:
+        if "jd" not in settings["pcoord"] and "prmsd" not in settings:
+            logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd and/or prsmd")
+            sys.exit("Error with setting pcoord")
+
+    # Checking radius is in settings
+    if "radius" in settings and type(settings["radius"]) == float:
+        pass
+    else:
+        # The default value of 10.9 Angstrom comes from the most common volume for a pocket accordintg to https://doi.org/10.1002/pro.5560070905 and approximating the pocket as a spherical pocket.
+        settings["radius"] = 10.90
+        logging.warning(
+            "Using a default radius value of 10.90 Angstrom. Please check it will encompases all of your pocket.")
+
+    # Cheking resolution setting
+    if "resolution" in settings and type(settings["resolution"]) == float:
+        pass
+    else:
+        settings["resolution"] = 0.5
+        logging.warning("Using a default resolution value of 0.5 Angstrom.")
+
+    # Cheking calculated_points setting
+    if "calculated_points" in settings and type(settings["calculated_points"]) == int:
+        pass
+    else:
+        settings["calculated_points"] = -1
+        logging.warning(
+            "Using a default calculated_points value of -1. This will calculate progress coordinates for all the frames in the trajectory file")
+
+    # Checking west_home setting
+    if "west_home" not in settings or len(glob.glob(settings["west_home"])) != 1:
+        logging.critical("There is an error with the west home directory")
+        sys.exit("There is an error with the west home directory")
+    elif len(glob.glob(settings["west_home"] + "/traj_segs")) != 1:
+        logging.warning(
+            "Could not locate the traj_segs directory. Please be sure it exists and the trajectories are there before running the clustering script. Note: This should not exist if you have not run SubPEx")
+    else:
+        pass
+
+    # checking reference and topology files
+    check_file_exists(settings, "reference")
+    check_file_exists(settings, "topology")
+
+    # checking that the selection_file exists, it is different for get_reference_fop.py script
+    if __file__ == "jdistance.py" or __file__ == "clustering.py":
+        check_file_exists(settings, "selection_file")
+    else:
+        if "selection_file" not in settings:
+            settings["selection_file"] = settings["west_home"] + "/selection_string.txt"
+            logging.warning("Selection file was not determined used the default of {}/selection_string.txt".format(
+                settings["west_home"]))
+
+    # making sure the reference_fop exists and the format is in the settings file
+    accepted_fop_files = ["xyz", "pdb"]
+    if "fop_filetype" not in settings and settings["fop_filetype"] not in accepted_fop_files:
+        settings["fop_filetype"] = "xyz"
+
+    if __file__ == "jdistance.py":
+        check_file_exists(settings, "reference_fop")
+    else:
+        if "reference_fop" not in settings:
+            settings["reference_fop"] = settings["west_home"] + "/reference_fop.{}".format(settings["fop_filetype"])
+            logging.warning("Selection file was not determined used the default of {}/reference_fop.{}".format(
+                settings["west_home"]), settings["fop_filetype"])
+
+    logging.info("The parameters used for {} are {}".format(__file__, settings))
+    return settings
+
+
+def check_file_exists(settings, keyword):
+    """
+    A simple function that checks that the keyword is in the dictionary settings and that the file associated with the
+    keyword exists.
+    :param settings: dic dictionary with settings for subpex
+    :param keyword: str keyword of the setting to check the file exists.
     :return:
     """
-    return settings
+    import sys
+    import glob
+
+    if keyword not in settings or len(glob.glob(settings[keyword])) != 1:
+        logging.critical("There is an error with the {} parameter, could not locate the file".format(keyword))
+        sys.exit("There is an error with the {} file".format(keyword))
+    else:
+        pass
 
 
 def points_to_pdb(filename, coordinates):
@@ -195,11 +321,11 @@ def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
 
 def cluster_dbscan(fop):
     """
-    This function will take the coordinates of the field of points and perform a clustering algorithm to trim the fop
-    to the points in the same cluster thatn the center of the pocket.
+    This function will take the coordinates of the field of points and perform a clustering.py algorithm to trim the fop
+    to the points in the same cluster that the center of the pocket.
 
     :param protein: (list of list) coordinates of field of points.
-    :return: list of list with the FOP after clustering.
+    :return: list of list with the FOP after clustering.py.
     """
     db = DBSCAN(eps=0.5, min_samples=2).fit(fop)
     labels = db.labels_
@@ -279,7 +405,7 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
     """
     #todo add documentation
     points_in_hull = []
-    trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha.positions)
+    trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
         if point_in_hull(point, trimmed_alpha_convex):
             points_in_hull.append(point)
@@ -317,21 +443,15 @@ if __name__ == "__main__":
     # Get arguments and load json settings file.
     parser = argparse.ArgumentParser(
         description="Obtain jaccard distance using a reference, a topology file and a MD trajectory file.")
-    parser.add_argument("dcd_file", type=str, help="Define the dcd file. It is required")
+    parser.add_argument("crd_file", type=str, help="Define the coordiante file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
     parser.add_argument("--csv", type=str, help="will save results in an csv file with the provided filename")
+    parser.add_argument("--we", action="store_true", help="Use this when you are using this for a progress coordinate "
+                                                         "calculation in a weighted ensemble simulation")
 
     args = parser.parse_args()
-
-    try:
-        with open(args.settings, "r") as f:
-            settings = json.load(f)
-        settings = check_input_settings_file(settings)
-    except IOError:
-        print("Could not load the json file with the settings")
-        print("make sure the file exists and is correctly formatted")
-        raise IOError("Could not load the json file with the settings")
-
+    # Function that obtains and checks for settings in the settings json file.
+    settings = check_input_settings_file(args.settings)
     # Checking the the trajectory doesn't have a rattle error.
     try:
         with open("seg.log", "r") as f:
@@ -348,7 +468,7 @@ if __name__ == "__main__":
     # Load reference pdb file and trajectory to then align the trajectory using the reference.
     ref_universe = MDAnalysis.Universe(settings["reference"])
     reference = ref_universe.select_atoms("protein")
-    ensemble = MDAnalysis.Universe(settings["topology"], args.dcd_file)
+    ensemble = MDAnalysis.Universe(settings["topology"], args.crd_file)
 
     # open file with selection string
     with open(settings["selection_file"], "r") as f:
@@ -379,12 +499,16 @@ if __name__ == "__main__":
     else:
         num_points = settings["calculated_points"]
 
-    # Create a list of all elements to calculate
-    results = {}
-    results["jaccard"] = []
-    results["pocket_rmsd"] = []
-    results["fops"] = []
+    #if args.we:
+    #    num_points += 1
 
+    # Create a dictionary with all the elements to calculate
+    results = {}
+    if "jd" in settings["pcoord"]:
+        results["jaccard"] = []
+        results["fops"] = []
+    if "prmsd" in settings["pcoord"]:
+        results["pocket_rmsd"] = []
     if "pvol" in settings["auxdata"]:
         results["pvol"] = []
     if "rog" in settings["auxdata"]:
@@ -392,22 +516,50 @@ if __name__ == "__main__":
     if "bb_rmsd" in settings["auxdata"]:
         results["bb_rmsd"] = []
 
+    # this section is for the WESTPA analysis tools to work. The first point must be initial point.
+    if args.we:
+        with open("parent_pcoord.txt", "r") as f:
+            initial_pcoords = f.readlines()[-1].split()
+        for i, value in enumerate(initial_pcoords):
+            if settings["pcoord"][i] == "jd":
+                results["jaccard"].append(float(value))
+            elif settings["pcoord"][i] == "prmsd":
+                results["pocket_rmsd"].append(float(value))
+
+        if "jd" in settings["pcoord"]:
+            with open("parent_fop.txt", "r") as f:
+                results["fops"].append(f.readlines())
+
+        if "pvol" in settings["auxdata"]:
+            with open("parent_pvol.txt", "r") as f:
+                results["pvol"].append(float(f.readlines()[-1]))
+
+        if "rog" in settings["auxdata"]:
+            with open("parent_rog.txt", "r") as f:
+                results["rog_pocket"].append(float(f.readlines()[-1]))
+
+        if "bb_rmsd" in settings["auxdata"]:
+            with open("parent_bb.txt", "r") as f:
+                results["bb_rmsd"].append(float(f.readlines()[-1]))
+
     # loop through frames of walker and calculate pcoord and auxdata
     for frame in np.linspace(0, len(ensemble.trajectory) - 1, num_points, dtype=int):
         ensemble.trajectory[frame]
         protein = ensemble.select_atoms("protein")
         # align the frame to the reference
         align.alignto(protein, reference, select="backbone")
-        # calculate pocket RMSD
-        results["pocket_rmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
+        # calculate pocket RMSD if needed
+        if "prmsd" in settings["pcoord"]:
+            results["pocket_rmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
                                                         ensemble.select_atoms(selection_pocket).positions))
-        # The next lines calculate the Jaccard distance of the pocket comapred to the reference
-        frame_coordinates = ensemble.select_atoms("protein").positions
-        pocket_calpha = ensemble.select_atoms(selection_pocket+" and name CA")
-        frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
+        # The next lines calculate the Jaccard distance of the pocket comparing it to the reference
+        if "jd" in settings["pcoord"]:
+            frame_coordinates = ensemble.select_atoms("protein").positions
+            pocket_calpha = ensemble.select_atoms(selection_pocket+" and name CA*").positions
+            frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
                                         settings["resolution"], settings["radius"])
-        results["jaccard"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
-        results["fops"].append(frame_fop)
+            results["jaccard"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
+            results["fops"].append(frame_fop)
         # calculate aux data
         if "pvol" in settings["auxdata"]:
             results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
@@ -419,22 +571,28 @@ if __name__ == "__main__":
             results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
                                                                    protein.select_atoms("backbone").positions))
 
-    # writing in text files the progress coordinates and the required auxiliary data if needed calculate the auxdata
+    # writing in text files the progress coordinates and the required auxiliary data if needed. If both Jaccard distance
+    # and pocket rmsd are being calculated, the progress coordinate is going to be "{jd}    {prmsd}"
     with open("pcoord.txt", "w") as f:
-        for i, value in enumerate(results["jaccard"]):
-            f.write("{:.4f}    {:.4f}\n".format(value, results["pocket_rmsd"][i]))
+        if "jd" in settings["pcoord"]:
+            for i, value in enumerate(results["jaccard"]):
+                if "prmsd" in settings["pcoord"]:
+                    f.write("{:.4f}    {:.4f}\n".format(value, results["pocket_rmsd"][i]))
+                else:
+                    f.write("{:.4f}\n".format(value))
+        else:
+            for value in enumerate(results["pocket_rmsd"]):
+                f.write("{:.4f}\n".format(value))
 
     # save fop in file so it can be piped to h5 file
-    if settings["fop_filetype"] == "xyz":
-        #points_to_xyz_file("fop.txt", results["fops"], settings["resolution"], settings["radius"])
-        with open("fop.txt", "w") as f:
-            for i in results["fops"]:
-                f.write(str(i))
-    elif settings["fop_filetype"] == "pdb":
-        points_to_pdb("fop", results["fops"])
-    elif settings["fop_filetype"] == "pickle":
-        with open("fop.txt", "wb") as f:
-            pickle.dump(frame_fop, f)
+    if "jd" in settings["pcoord"]:
+        if settings["fop_filetype"] == "xyz":
+            points_to_xyz_file("fop.txt", results["fops"], settings["resolution"], settings["radius"])
+        elif settings["fop_filetype"] == "pdb":
+            points_to_pdb("fop", results["fops"])
+        elif settings["fop_filetype"] == "pickle":
+            with open("fop.txt", "wb") as f:
+                pickle.dump(frame_fop, f)
 
     if "pvol" in settings["auxdata"]:
         with open("pvol.txt", "w") as f:
