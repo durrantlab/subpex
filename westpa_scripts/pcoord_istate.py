@@ -79,7 +79,7 @@ if __name__ == "__main__":
         with open("pvol.txt", "w") as f:
             f.write(str(pvol))
 
-    if "rog" in settings["auxdata"]:
+    if "rog_pocket" in settings["auxdata"]:
         rog = calculate_pocket_gyration(frame_fop)
         with open("rog.txt", "w") as f:
             f.write(str(rog))
