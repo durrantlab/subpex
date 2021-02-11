@@ -1,3 +1,6 @@
+"""Summary
+This script will generate files for clustering or cluster itself the output of a SubPEx run
+"""
 import MDAnalysis as mda
 from jdistance import check_input_settings_file
 import glob
@@ -10,12 +13,17 @@ import numpy as np
 
 
 def check_clustering_parameters(settings):
+    """Summary
+    
+    Args:
+        settings (dictionary): A dictionary with the 
+    """
     if "clustering" not in settings or type(settings["clustering"]) is not dict:
         logging.critical("There is a problem with the clustering parameters. Please check the settings file.")
         sys.exit("There is a problem with the clustering parameters. Please check the settings file.")
     else:
         pass
-    # todo finish the function
+
 
 
 def get_bins_dictionary(west, settings, max_clusters_per_bin, final_clusters):
@@ -27,6 +35,15 @@ def get_bins_dictionary(west, settings, max_clusters_per_bin, final_clusters):
     :param max_clusters_per_bin: maximum number of clusters to calculate per bin.
     :param final_clusters: number of final clusters.
     :return bins: A dictionary containing walker identifiers per bin.
+    
+    Args:
+        west (TYPE): Description
+        settings (TYPE): Description
+        max_clusters_per_bin (TYPE): Description
+        final_clusters (TYPE): Description
+    
+    Returns:
+        TYPE: Description
     """
     # initialize an empty directory which will contain all the occupied bins and walker per bin.
     bins = {}
@@ -64,6 +81,11 @@ def calculate_clusters_per_bin(bins, max_clusters_per_bin, minimum_number_cluste
     :param max_clusters_per_bin: int maximum number of clusters to obtain per bin,
     :param minimum_number_clusters: int the minimum number of clusters to calculate per bin.
     :return:
+    
+    Args:
+        bins (TYPE): Description
+        max_clusters_per_bin (TYPE): Description
+        minimum_number_clusters (int, optional): Description
     """
     # determine the maximum number of walkers in a bin for normalization of clusters per bin
     max_num_walkers = 0
@@ -85,10 +107,27 @@ def calculate_clusters_per_bin(bins, max_clusters_per_bin, minimum_number_cluste
 
 
 def concatenate_trajectories(bin_dictionary, directory, num_clust):
+    """Summary
+    
+    Args:
+        bin_dictionary (TYPE): Description
+        directory (TYPE): Description
+        num_clust (TYPE): Description
+    """
     pass
 
 
 def get_clustering_command_cpptraj(method, num_clusters, selection_string):
+    """Summary
+    
+    Args:
+        method (TYPE): Description
+        num_clusters (TYPE): Description
+        selection_string (TYPE): Description
+    
+    Returns:
+        TYPE: Description
+    """
     if method == "hierarchical":
         text = """cluster C0 \ 
     hieragglo clusters {num_clust} averagelinkage epsilonplot epsilonplot.dat \ 
@@ -109,12 +148,18 @@ def get_clustering_command_cpptraj(method, num_clusters, selection_string):
 
 def cluster_cpptaj(bins, settings, dir, residues_pocket):
     """
-
+    
     :param bins:
     :param settings:
     :param dir:
     :param residues_pocket:
     :return:
+    
+    Args:
+        bins (TYPE): Description
+        settings (TYPE): Description
+        dir (TYPE): Description
+        residues_pocket (TYPE): Description
     """
     # Create text for final clustering script, and list containing all the files so it can be written later.
     final_clustering = "parm {} \n".format(settings["topology"])
@@ -166,11 +211,18 @@ def cluster_cpptaj(bins, settings, dir, residues_pocket):
     with open("{}/final_clustering/clustering.in".format(dir), "w") as f:
         f.write(final_clustering)
 
+
 def make_cpptraj_pdb_extractor(walkers):
     """
     This is a function that ...
     :param walkers:
     :return:
+    
+    Args:
+        walkers (TYPE): Description
+    
+    Returns:
+        TYPE: Description
     """
     text = "blah"
     return text
@@ -182,12 +234,40 @@ def get_selection_cpptraj(residues_pocket):
     cpptraj. The selection will take all heavy atoms of each of the residues.
     :param residues_pocket: list of residue numbers
     :return: selection string formatted for cpptraj
+    
+    Args:
+        residues_pocket (TYPE): Description
+    
+    Returns:
+        TYPE: Description
     """
     selection_string = "'("
     for resid in residues_pocket[:-1]:
         selection_string += ":{}|".format(resid)
     selection_string += ":{})&!@H'".format(residues_pocket[-1])
     return selection_string
+
+
+def cluster_per_bin(bins, directory):
+    """<FRESHLY_INSERTED>
+    
+    Args:
+        bins (TYPE): Description
+        directory (TYPE): Description
+    
+    Returns:
+        TYPE: Description
+    """
+    a = bins + directory
+    return a 
+
+
+def cluster_per_generation():
+    """Summary
+    """
+    for gen in west:
+        centroids = cluster_generation(gen, centroids)
+
 
 
 if __name__ == "__main__":
@@ -223,12 +303,12 @@ if __name__ == "__main__":
     residues_pocket = [x.strip(" ") for x in text_split]
     residues_pocket = [int(x.strip("resid")) for x in residues_pocket]
 
-    # sdjjfaskdjf
+    # if clustering per bin
     bins = get_bins_dictionary(west, settings, args.max_clust_num, args.num_clust)
 
     if args.cpptraj:
         cluster_cpptaj(bins, settings, args.dir, residues_pocket)
     else:
-        cluster_per_bin(bins, dir, settings["west_home"])
+        cluster_per_bin(bins, directory, settings["west_home"])
 
     #concatenate_trajectories(bins, args.dir,)

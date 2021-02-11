@@ -8,27 +8,27 @@ ensemble of protein conformations for the use in ensemble docking.
 
 ## How to use it?
 
-This code at the moment only works for users with NAMD2, though there is a version 
-that can use Amber's pmemd. Make sure you have WESTPA installed and that it calls 
-the right python. For the calculation of the progress coordinate SubPEx needs the following packages: 
+Make sure you have WESTPA installed and that it calls the right python environment, or install the westpa conda environment. For the calculation of the progress coordinate SubPEx needs the following packages: 
 
 - MDAnalysis 
 - NumPy
 - SciPy
 - scikit-learn
+- yaml or json
 
 At the moment manual input is needed for the user to be able to adapt it to the protein
 of interest. Hopefully this will be changed soon.
 
-First run env.sh to load all of the WESTPA variables. Then, run init.sh which will 
-calculate the basis state progress coordinates and then create the initial states and 
+Before running anything you need to create the reference field of points and the selection string. To do so, you need to run the __westpa\_scripts/get\_reference\_fop.py__.
+
+Then, run init.sh which will calculate the basis state progress coordinates and then create the initial states and 
 calculate their progress coordinate. After that you will need to run the run.sh script.
 
 For more information on these scripts go to the comments in the files.
 
 ## Notes and ideas
 
-This a WORKING alpha version of SubPEx.
+This a WORKING beta version of SubPEx.
 
 Things that need to be changed:
 

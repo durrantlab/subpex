@@ -514,10 +514,10 @@ if __name__ == "__main__":
 
     """
     if "jd" in settings["pcoord"] or "jd" in settings["auxdata"]:
-        results["jaccard"] = []
+        results["jd"] = []
         results["fops"] = []
     if "prmsd" in settings["pcoord"]:
-        results["pocket_rmsd"] = []
+        results["prmsd"] = []
     if "pvol" in settings["auxdata"]:
         results["pvol"] = []
     if "rog" in settings["auxdata"]:
@@ -530,10 +530,11 @@ if __name__ == "__main__":
     if args.we:
         with open("parent_pcoord.txt", "r") as f:
             initial_pcoords = f.readlines()[-1].split()
+        
         for i, value in enumerate(initial_pcoords):
             results[settings["pcoord"][i]].append(float(value))
         
-        if "jd" in results.keys():
+        if "jd" in results.keys() and "fops" in settings["auxdata"]:
             with open("parent_fop.txt", "r") as f:
                 results["fops"].append(f.readlines())
 
@@ -541,7 +542,7 @@ if __name__ == "__main__":
             with open("parent_pvol.txt", "r") as f:
                 results["pvol"].append(float(f.readlines()[-1]))
 
-        if "rog" in settings["auxdata"]:
+        if "rog_pocket" in settings["auxdata"]:
             with open("parent_rog.txt", "r") as f:
                 results["rog_pocket"].append(float(f.readlines()[-1]))
 
@@ -566,7 +567,7 @@ if __name__ == "__main__":
         align.alignto(protein, reference, select="backbone")
         # calculate pocket RMSD if needed
         if "prmsd" in results.keys():
-            results["pocket_rmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
+            results["prmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
                                                         ensemble.select_atoms(selection_pocket).positions))
         # The next lines calculate the Jaccard distance of the pocket comparing it to the reference
         if "jd" in results.keys():
@@ -574,13 +575,14 @@ if __name__ == "__main__":
             pocket_calpha = ensemble.select_atoms(selection_pocket+" and name CA*").positions
             frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
                                         settings["resolution"], settings["radius"])
-            results["jaccard"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
+            results["jd"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
+        if "fops" in results.keys():
             results["fops"].append(frame_fop)
         # calculate aux data
         if "pvol" in results.keys():
             results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
 
-        if "rog" in results.keys():
+        if "rog_pocket" in results.keys():
             results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
 
         if "bb_rmsd" in results.keys():
@@ -589,7 +591,7 @@ if __name__ == "__main__":
 
     # writing in text files the progress coordinates and the required auxiliary data if needed. 
     with open("pcoord.txt", "w") as f:
-        for i in range(len(results[settings[settings["pcoord"].keys()[0]]])):
+        for i in range(len(results[settings["pcoord"][0]])):
             line = ""
             for pcoord in settings["pcoord"]:
                 line += "{:.4f}    ".format(results[pcoord][i])
@@ -598,7 +600,7 @@ if __name__ == "__main__":
             f.write(line + "\n")
 
     # save fop in file so it can be piped to h5 file
-    if "jd" in results.keys():
+    if "fops" in results.keys():
         if settings["fop_filetype"] == "xyz":
             points_to_xyz_file("fop.txt", results["fops"], settings["resolution"], settings["radius"])
         elif settings["fop_filetype"] == "pdb":
@@ -613,7 +615,7 @@ if __name__ == "__main__":
             for i in results["pvol"]:
                 f.write(str(i)+"\n")
 
-    if "rog" in settings["auxdata"]:
+    if "rog_pocket" in settings["auxdata"]:
         with open("rog.txt", "w") as f:
             for i in results["rog_pocket"]:
                 f.write(str(i)+"\n")
