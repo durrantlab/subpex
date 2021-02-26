@@ -1,0 +1,29 @@
+250 ns unrestrained NPT equilibration using Langevin thermostat and MC barostat
+&cntrl
+  irest     = 0,                                 ! flag to restart sim
+  ntx       = 1,                                 ! option to read initial coords and vel
+  ig        = RAND,                              ! Random number generator
+  dt        = 0.002,                             ! timestep
+  nstlim    = 10000,                             ! Number of MD-steps to be performed
+  nscm      = 500,                               ! For Langevin dynamics, the position of the center-of-mass of the molecule is reset to zero.
+  ntr       = 0,                                 ! Flag for restraining
+  ntb       = 2,                                 ! periodic boundaries  1=cteV 2=cteP
+  ntp       = 1,                                 ! Flag for constant pressure dynamics.
+  barostat  = 2,                                 ! control barostat. 1=brendensen 2=montecarlo
+  pres0     = 1.01325,                           ! reference pressure
+  mcbarint  = 100,                               ! Number of steps between volume change attempts performed as part of the Monte Carlo barostat.
+  comp      = 44.6,                              ! compressibility of the system. This value is fine for water systems
+  taup      = 1.0,                               ! Pressure relaxation time (in ps), when NTP not 0. larger than 1  if unstable.
+  ntt       = 3,                                 ! Switch for temperature scaling
+  temp0     = 310.0,                             ! final temp
+  gamma_ln  = 5.0,                               ! collision frequency
+  ntf       = 2,                                 ! force evaluation
+  ntc       = 2,                                 ! SHAKE algorithm, 1 = no shake, 2 = hydrogen, 3 = all atoms
+  cut       = 10.0,                              ! non-bonded cutoff
+  ntpr      = 500,                               ! out file write frequency
+  ntxo      = 2,                                 ! format of coordinate file
+  ntwr      = 500,                              ! restart file write frequency
+  ioutfm    = 1,                                 ! The format of coordinate and velocity trajectory files 
+  ntwx      = 500,                              ! coordinate file write frequency 
+  iwrap     = 1,                                 ! trajectory files will be "wrapped" into a primary 
+&end
