@@ -1,26 +1,52 @@
 #!/bin/bash
 #SBATCH --job-name=subpex_1
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=24
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=20
 #SBATCH --output=job_logs/slurm.out
 #SBATCH --error=job_logs/slurm.err
-#SBATCH --time=128:00:00
-#SBATCH --cluster=smp
+#SBATCH --time=2:00:00
+#SBATCH --cluster=mpi
+#SBATCH --partition=ib
+##SBATCH --partition=opa-high-mem
+#SBATCH --mail-user=erh91@pitt.edu
+#SBATCH --mail-type=END,FAIL  #BEGIN
 #
 # run.sh
 #
 # Run the weighted ensemble simulation. Make sure you ran init.sh first!
 #
 
-module purge
-module load namd/2.13-multicore
-module unload python
+# Choose the md engine to use (AMBER or NAMD)
+export MD_ENGINE="AMBER"
 source env.sh
-export WEST_PYTHON="/ihome/jdurrant/erh91/miniconda3/envs/py2_md/bin/python2.7"
+SERVER_INFO=$WEST_SIM_ROOT/west_zmq_info-$SLURM_JOBID.json
 echo $WEST_PYTHON 
-#source env.sh
 
-rm -f west.log
-$WEST_ROOT/bin/w_run --work-manager processes "$@" &> west.log
+w_run --work-manager=zmq --n-workers=0 --zmq-mode=master --zmq-write-host-info=$SERVER_INFO --zmq-comm-mode=tcp &> west-$SLURM_JOBID.log &
 
-#echo $WEST_PYTHON
+# wait on host info file up to one minute
+for ((n=0; n<60; n++)); do
+    if [ -e $SERVER_INFO ] ; then
+        echo "== server info file $SERVER_INFO =="
+        cat $SERVER_INFO
+        break
+    fi
+    sleep 1
+done
+
+# exit if host info file doesn't appear in one minute
+if ! [ -e $SERVER_INFO ] ; then
+    echo 'server failed to start'
+    exit 1
+fi
+
+# start clients, with the proper number of cores on each
+
+scontrol show hostname $SLURM_NODELIST > slurm_nodelist.txt
+
+for node in $(scontrol show hostname $SLURM_NODELIST); do
+    ssh -o StrictHostKeyChecking=no $node $PWD/node.sh $SLURM_SUBMIT_DIR $SLURM_JOBID $node $CUDA_VISIBLE_DEVICES --work-manager=zmq --n-workers=1 --zmq-mode=client --zmq-read-host-info=$SERVER_INFO --zmq-comm-mode=tcp &
+done
+
+
+wait

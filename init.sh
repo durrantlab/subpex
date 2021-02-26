@@ -10,7 +10,6 @@
 #
 
 source env.sh
-source _make_westpa_work_from_commandline.sh
 
 # Make sure that WESTPA is not already running.  Running two instances of 
 # WESTPA on a single node/machine can cause problems.
@@ -47,4 +46,3 @@ $WEST_ROOT/bin/w_init \
   $TSTATE_ARGS \
   --segs-per-state 4 \
   --work-manager=$WORKMANAGER "$@"
-
