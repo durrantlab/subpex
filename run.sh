@@ -11,6 +11,7 @@ rm -f west.log
 
 # For multiple threads. But not accross nodes. For more, see:
 # https://github.com/westpa/westpa/wiki/Running-WESTPA-in-a-multi-node-environment
+WORKMANAGER="processes"
 $WEST_ROOT/bin/w_run --work-manager $WORKMANAGER "$@" &> west.log
 
 
