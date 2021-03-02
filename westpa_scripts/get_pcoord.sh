@@ -20,30 +20,24 @@ cd $WEST_SIM_ROOT
 source env.sh
 cd $WEST_STRUCT_DATA_REF
 
-if [ $MD_ENGINE == "NAMD" ]
-then
-    ln -s $WEST_SIM_ROOT/reference/mol.pdb .
-    ln -s $WEST_SIM_ROOT/reference/mol.prmtop . 
-    ln -s $WEST_SIM_ROOT/reference/mol.inpcrd .
+ln -s $WEST_SIM_ROOT/reference/mol.pdb .
+ln -s $WEST_SIM_ROOT/reference/mol.prmtop . 
+ln -s $WEST_SIM_ROOT/reference/mol.inpcrd .
 
-    ln -s $WEST_SIM_ROOT/reference/seg.coor .
-    ln -s $WEST_SIM_ROOT/reference/seg.dcd .
-    ln -s $WEST_SIM_ROOT/reference/seg.vel .
-    ln -s $WEST_SIM_ROOT/reference/seg.xsc .
-elif [ $MD_ENGINE == "AMBER" ]
-then 
-    ln -s $WEST_SIM_ROOT/reference/ref.pdb mol.pdb
-    ln -s $WEST_SIM_ROOT/reference/equil_npt.rst seg.rst
-    ln -s $WEST_SIM_ROOT/reference/mol.prmtop . 
-else
-    echo "md engine not supported"
-fi
+ln -s $WEST_SIM_ROOT/reference/seg.coor .
+ln -s $WEST_SIM_ROOT/reference/seg.dcd .
+ln -s $WEST_SIM_ROOT/reference/seg.vel .
+ln -s $WEST_SIM_ROOT/reference/seg.xsc .
+
+#ln -s $WEST_SIM_ROOT/reference/ref.pdb mol.pdb
+#ln -s $WEST_SIM_ROOT/reference/equil_npt.rst seg.rst
+#ln -s $WEST_SIM_ROOT/reference/mol.prmtop . 
 
 
 # Use a custom script to calculate the jaccard distance between the starting
 # structure and the initial state (should be 0 since we are copying the files).
 
-/ihome/jdurrant/erh91/miniconda3/bin/python3 $WEST_SIM_ROOT/westpa_scripts/pcoord_istate.py mol.pdb $WEST_SIM_ROOT/reference/settings.cfg
+python3 $WEST_SIM_ROOT/westpa_scripts/pcoord_istate.py mol.pdb $WEST_SIM_ROOT/reference/settings.cfg
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
