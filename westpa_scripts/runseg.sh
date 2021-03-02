@@ -104,9 +104,9 @@ fi
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-/ihome/jdurrant/erh91/miniconda3/bin/python $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
 
-#/ihome/jdurrant/erh91/miniconda3/bin/python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/reference/settings.cfg --we
+#python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/reference/settings.cfg --we
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
