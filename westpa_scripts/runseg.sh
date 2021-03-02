@@ -54,62 +54,47 @@ ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
 # generated seed.
 
 # if [$MD_ENGINE == "AMBER"]; then echo "Hello world", fi
-if [ $MD_ENGINE == "NAMD" ]
-then
-    sed "s/RAND/$WEST_RAND16/g" \
-    $WEST_SIM_ROOT/reference/md.conf > md.conf
+sed "s/RAND/$WEST_RAND16/g" \
+$WEST_SIM_ROOT/reference/md.conf > md.conf
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
-    ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
-    ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
-    ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
-    ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
-    ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
-    ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
+ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
+ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
+ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
+ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
+ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 
-    ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
-    ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
-    ln -sv $WEST_PARENT_DATA_REF/bb_rmsd.txt  ./parent_bb.txt
-    #ln -sv $WEST_PARENT_DATA_REF/fop.txt  ./parent_fop.txt
-    ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
-elif [ $MD_ENGINE == "AMBER" ]
-then 
-    sed "s/RAND/$WEST_RAND16/g" \
-    $WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
+ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
+ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
+ln -sv $WEST_PARENT_DATA_REF/bb_rmsd.txt  ./parent_bb.txt
+#ln -sv $WEST_PARENT_DATA_REF/fop.txt  ./parent_fop.txt
+ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
 
-    # This trajectory segment will start off where its parent segment left off.
-    # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
-    # and trr files. This is preferable to copying the files, since it doesn't
-    # require writing all the data again.
-    ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+# Files needed to run amber's md engine
+#sed "s/RAND/$WEST_RAND16/g" \
+#$WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
 
-    ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
-    ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
-    ln -sv $WEST_PARENT_DATA_REF/bb_rmsd.txt  ./parent_bb.txt
-    ln -sv $WEST_PARENT_DATA_REF/fop.txt  ./parent_fop.txt
-    ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
-else
-    echo "md engine not supported"
-fi
+# This trajectory segment will start off where its parent segment left off.
+# The "ln" command makes symbolic links to the parent segment's edr, gro, and 
+# and trr files. This is preferable to copying the files, since it doesn't
+# require writing all the data again.
+#ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+
+
 
 ############################## Run the dynamics ################################
 
-if [ $MD_ENGINE == "NAMD" ]
-then
-    $NAMD md.conf > seg.log
+$NAMD md.conf > seg.log
 
-    if grep -q RATTLE seg.log; then
-            $NAMD md.conf > seg.log
-    fi
-elif [ $MD_ENGINE == "AMBER" ]
-then 
-   $AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
-else
-    echo "md engine not supported"
+if grep -q RATTLE seg.log; then
+        $NAMD md.conf > seg.log
 fi
+
+#$AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
 
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
@@ -119,15 +104,9 @@ fi
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-if [ $MD_ENGINE == "NAMD" ]
-then
-    /ihome/jdurrant/erh91/miniconda3/bin/python $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
-elif [ $MD_ENGINE == "AMBER" ]
-then 
-   /ihome/jdurrant/erh91/miniconda3/bin/python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/reference/settings.cfg --we
-else
-    echo "md engine not supported"
-fi
+/ihome/jdurrant/erh91/miniconda3/bin/python $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
+
+#/ihome/jdurrant/erh91/miniconda3/bin/python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/reference/settings.cfg --we
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
