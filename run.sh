@@ -13,5 +13,4 @@ rm -f west.log
 # https://github.com/westpa/westpa/wiki/Running-WESTPA-in-a-multi-node-environment
 $WEST_ROOT/bin/w_run --work-manager $WORKMANAGER "$@" &> west.log
 
-# NAMD is itself parallel. So I'd recommend just running it "serial".
-#$WEST_ROOT/bin/w_run --work-manager serial "$@" &> west.log
+

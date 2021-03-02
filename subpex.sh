@@ -16,8 +16,6 @@
 # Run the weighted ensemble simulation. Make sure you ran init.sh first!
 #
 
-# Choose the md engine to use (AMBER or NAMD)
-export MD_ENGINE="AMBER"
 source env.sh
 SERVER_INFO=$WEST_SIM_ROOT/west_zmq_info-$SLURM_JOBID.json
 echo $WEST_PYTHON 

@@ -9,7 +9,7 @@
 module purge 
 #KFW export PATH='/ihome/jdurrant/erh91/miniconda3/bin:$PATH'
 export PATH="/ihome/jdurrant/erh91/miniconda3/bin:$PATH"
-. ~/.bashrc
+#. ~/.bashrc
 #module load python/anaconda3.6-5.2.0
 conda activate /ihome/jdurrant/erh91/miniconda3/envs/westpa-2020.02
 
@@ -22,7 +22,8 @@ conda activate /ihome/jdurrant/erh91/miniconda3/envs/westpa-2020.02
 # necessary but nonetheless demonstrates good practice.
 
 
-source env-crc-namd/mpi.sh
+source env-crc/mpi_namd.sh
+#source env-crc/mpi_amber.sh
 
 export NODELOC=$LOCAL
 export USE_LOCAL_SCRATCH=1
