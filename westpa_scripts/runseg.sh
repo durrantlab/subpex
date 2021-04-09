@@ -40,7 +40,7 @@ cd $WEST_CURRENT_SEG_DATA_REF
 # Make symbolic links to the topology file and parameter files. These are not 
 # unique to each segment.
 #ln -sv $WEST_SIM_ROOT/reference/mol.pdb    structure.pdb
-ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+ln -sv $WEST_SIM_ROOT/reference/2hty_a_final.prmtop mol.prmtop
 
 # Either continue an existing tractory, or start a new trajectory. Here, both
 # cases are the same.  If you need to handle the cases separately, you can
@@ -54,47 +54,35 @@ ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
 # generated seed.
 
 # if [$MD_ENGINE == "AMBER"]; then echo "Hello world", fi
-sed "s/RAND/$WEST_RAND16/g" \
-$WEST_SIM_ROOT/reference/md.conf > md.conf
+#sed "s/RAND/$WEST_RAND16/g" \
+#$WEST_SIM_ROOT/reference/md.conf > md.conf
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
-ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
-ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
-ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
-ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
-ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
-ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
+ln -sv $WEST_SIM_ROOT/reference/2hty_a_final.inpcrd mol.inpcrd
 
 ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
 ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
 ln -sv $WEST_PARENT_DATA_REF/bb_rmsd.txt  ./parent_bb.txt
-#ln -sv $WEST_PARENT_DATA_REF/fop.txt  ./parent_fop.txt
 ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
 
 # Files needed to run amber's md engine
-#sed "s/RAND/$WEST_RAND16/g" \
-#$WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
+sed "s/RAND/$WEST_RAND16/g" \
+$WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
-#ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
 
 
 
 ############################## Run the dynamics ################################
 
-$NAMD md.conf > seg.log
-
-if grep -q RATTLE seg.log; then
-        $NAMD md.conf > seg.log
-fi
-
-#$AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
+$AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
 
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
@@ -104,9 +92,9 @@ fi
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
+#python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
 
-#python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/reference/settings.cfg --we
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/west.cfg --we
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN

@@ -18,9 +18,29 @@ if __name__ == "__main__":
 
     istate = MDAnalysis.Universe(args.istate)
 
+    results = {}
+    for i in settings["pcoord"]:
+        results[i] = []
+    for i in settings["auxdata"]:
+        results[i] = []
+    if "composite" in results.keys():
+        if "prmsd" not in results:
+            results["prmsd"] = []
+        if "bb_rmsd" not in results:
+            results["bb_rmsd"] = []
+
     # open file with selection string
     with open(settings["selection_file"], "r") as f:
         selection_pocket = f.readlines()[0]
+
+    selection_alignment = selection_pocket + " and backbone"
+
+    # if we are calculating composite progress coordiante (or auxiliary data) check that we have sigma
+    if "composite" in results.keys():
+        if "sigma" in settings:
+            sigma = settings["sigma"]
+        else:
+            sigma = (1 - len(reference.select_atoms(selection_alignment))/len(reference.select_atoms("backbone"))) / 2
 
     # open file with reference field of points
     if settings["fop_filetype"] == "xyz":
@@ -35,51 +55,91 @@ if __name__ == "__main__":
         print("could not open reference FOP")
         raise IOError("could not open reference FOP")
 
+    align.alignto(istate, reference, select=selection_alignment)
+    
     # Using the selection string to select atoms in the pocket
     pocket_reference = reference.select_atoms(selection_pocket)
 
-    # Obtain coordinates for reference atoms and coordinates for alpha carbons.
-    reference_coordinates = reference.positions
-
     # obtain pocket for istate or bstate and the CA
-    istate_pocket = istate.select_atoms(selection_pocket)
-    frame_coordinates = istate.select_atoms("protein").positions
-    frame_calpha = istate_pocket.select_atoms("name CA").positions
+    #istate_pocket = istate.select_atoms(selection_pocket)
+    #frame_coordinates = istate.select_atoms("protein").positions
+    #frame_calpha = istate_pocket.select_atoms("name CA").positions
 
     # calculate pocket rmsd
-    pocket_rmsd = MDAnalysis.analysis.rms.rmsd(pocket_reference.positions, istate_pocket.positions,
-                                               center=True, superposition=True)
 
-    frame_fop = get_field_of_points_dbscan(frame_coordinates, frame_calpha, settings["center"],
-                                      settings["resolution"], settings["radius"])
-    jaccard = get_jaccard_distance(reference_fop, frame_fop, settings["resolution"])
+    if "prmsd" in results.keys():
+        results["prmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
+                                                    istate.select_atoms(selection_pocket).positions))
 
+    if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog_pocket" in results.keys():
+        frame_coordinates = istate.select_atoms("protein").positions
+        pocket_calpha = istate.select_atoms(selection_pocket + " and name CA*").positions
+        frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
+                                    settings["resolution"], settings["radius"])
+        results["jd"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
+
+    if "fops" in results.keys():
+        results["fops"].append(frame_fop)
+
+    if "pvol" in results.keys():
+        results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
+
+    if "rog_pocket" in results.keys():
+        results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
+
+    if "bb_rmsd" in results.keys():
+        align.alignto(istate, reference, select="backbone")
+        results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
+                                                               istate.select_atoms("backbone").positions))
+
+    if "composite" in results.keys():
+        results["composite"].append(results["prmsd"][-1] + (sigma * results["bb_rmsd"][-1]))
+
+    # writing in text files the progress coordinates and the required auxiliary data if needed. 
     with open("pcoord.txt", "w") as f:
-        f.write(str(jaccard)+"    "+str(pocket_rmsd))
+        for i in range(len(results[settings["pcoord"][0]])):
+            line = ""
+            for pcoord in settings["pcoord"]:
+                line += "{:.4f}    ".format(results[pcoord][i])    
+            f.write(line + "\n")
 
     # save fop in file so it can be piped to h5 file
-    if settings["fop_filetype"] == "xyz":
-        points_to_xyz_file("fop.txt", frame_fop, settings["resolution"], settings["radius"])
-    elif settings["fop_filetype"] == "pdb":
-        points_to_pdb("fop", results["fops"])
-    elif settings["fop_filetype"] == "pickle":
-        with open("fop.txt", "wb") as f:
-            pickle.dump(frame_fop, f)
-
-
-    if "bb_rmsd" in settings["auxdata"]:
-        bb_rmsd = MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
-                                               istate.select_atoms("backbone").positions,
-                                               center=True, superposition=True)
-        with open("bb_rmsd.txt", "w") as f:
-            f.write(str(bb_rmsd))
+    if "fops" in results.keys():
+        if settings["fop_filetype"] == "xyz":
+            points_to_xyz_file("fop.txt", results["fops"], settings["resolution"], settings["radius"])
+        elif settings["fop_filetype"] == "pdb":
+            points_to_pdb("fop", results["fops"])
+        # not sure pickles work
+        elif settings["fop_filetype"] == "pickle":
+            with open("fop.txt", "wb") as f:
+                pickle.dump(frame_fop, f)
 
     if "pvol" in settings["auxdata"]:
-        pvol = len(frame_fop) * settings['resolution'] ** 3
         with open("pvol.txt", "w") as f:
-            f.write(str(pvol))
+            for i in results["pvol"]:
+                f.write(str(i)+"\n")
 
     if "rog_pocket" in settings["auxdata"]:
-        rog = calculate_pocket_gyration(frame_fop)
         with open("rog.txt", "w") as f:
-            f.write(str(rog))
+            for i in results["rog_pocket"]:
+                f.write(str(i)+"\n")
+
+    if "bb_rmsd" in settings["auxdata"]:
+        with open("bb_rmsd.txt", "w") as f:
+            for i in results["bb_rmsd"]:
+                f.write(str(i)+"\n")
+
+    if "prmsd" in settings["auxdata"]:
+        with open("prmsd.txt", "w") as f:
+            for i in results["prmsd"]:
+                f.write(str(i)+"\n")
+
+    if "jd" in settings["auxdata"]:
+        with open("jd.txt", "w") as f:
+            for i in results["jd"]:
+                f.write(str(i)+"\n")
+
+    if "composite" in settings["auxdata"]:
+        with open("composite.txt", "w") as f:
+            for i in results["composite"]:
+                f.write(str(i)+"\n")
