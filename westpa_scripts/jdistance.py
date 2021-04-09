@@ -19,24 +19,15 @@ def check_input_settings_file(filename):
     import sys
     import glob
 
-    if filename.split(".")[-1] == "json":
-        import json
-        try:
-            with open(filename, "r") as f:
-                settings = json.load(f)
-        except IOError:
-            print("Could not load the json file with the settings")
-            print("make sure the file exists and is correctly formatted")
-            raise IOError("Could not load the json file with the settings")
-    else:
-        import yaml
-        try:
-            with open(filename, "r") as f:
-                settings = yaml.safe_load(f.read())
-        except IOError:
-            print("Could not load the configuration file with the settings")
-            print("make sure the file exists and is correctly formatted")
-            raise IOError("Could not load the json file with the settings")
+    import yaml
+    try:
+        with open(filename, "r") as f:
+            settings = yaml.safe_load(f.read())
+        settings = settings["subpex"]
+    except IOError:
+        print("Could not load the configuration file with the settings")
+        print("make sure the file exists and is correctly formatted")
+        raise IOError("Could not load the json file with the settings")
 
     # Checking that the coordinates of the center of the pocket are in settings.
     if "center" in settings:
@@ -55,7 +46,7 @@ def check_input_settings_file(filename):
 
     # Checking that we specify which progress coordinates we will print in the pcoord file
     if "pcoord" in settings:
-        available_pcoords = ["jd", "prmsd", "bb_rmsd"]
+        available_pcoords = ["jd", "prmsd", "bb_rmsd", "composite", "pvol", "rog_pocket"]
         if len(settings["pcoord"]) < 1:
             logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb_rmsd and/or prsmd")
             sys.exit("Error with setting pcoord")
@@ -511,20 +502,11 @@ if __name__ == "__main__":
         results[i] = []
     for i in settings["auxdata"]:
         results[i] = []
-
-    """
-    if "jd" in settings["pcoord"] or "jd" in settings["auxdata"]:
-        results["jd"] = []
-        results["fops"] = []
-    if "prmsd" in settings["pcoord"]:
-        results["prmsd"] = []
-    if "pvol" in settings["auxdata"]:
-        results["pvol"] = []
-    if "rog" in settings["auxdata"]:
-        results["rog_pocket"] = []
-    if "bb_rmsd" in settings["auxdata"]:
-        results["bb_rmsd"] = []
-    """
+    if "composite" in results.keys():
+        if "prmsd" not in results:
+            results["prmsd"] = []
+        if "bb_rmsd" not in results:
+            results["bb_rmsd"] = []
 
     # this section is for the WESTPA analysis tools to work. The first point must be initial point.
     if args.we:
@@ -558,27 +540,41 @@ if __name__ == "__main__":
             with open("parent_jd.txt", "r") as f:
                 results["jd"].append(float(f.readlines()[-1]))
 
+        if "composite" in settings["auxdata"]:
+            with open("parent_composite.txt", "r") as f:
+                results["composite"].append(float(f.readlines()[-1]))
+
+    # get selction string for alignment
+    selection_alignment = selection_pocket + " and backbone"
+
+    # if we are calculating the composite 
+    if "composite" in results.keys():
+        if "sigma" in settings:
+            sigma = settings["sigma"]
+        else:
+            sigma = (1 - len(reference.select_atoms(selection_alignment))/len(reference.select_atoms("backbone"))) / 2
 
     # loop through frames of walker and calculate pcoord and auxdata
     for frame in np.linspace(0, len(ensemble.trajectory) - 1, num_points, dtype=int):
         ensemble.trajectory[frame]
         protein = ensemble.select_atoms("protein")
         # align the frame to the reference
-        align.alignto(protein, reference, select="backbone")
+        align.alignto(protein, reference, select=selection_alignment)
         # calculate pocket RMSD if needed
         if "prmsd" in results.keys():
             results["prmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
                                                         ensemble.select_atoms(selection_pocket).positions))
         # The next lines calculate the Jaccard distance of the pocket comparing it to the reference
-        if "jd" in results.keys():
+        if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog_pocket" in results.keys():
             frame_coordinates = ensemble.select_atoms("protein").positions
-            pocket_calpha = ensemble.select_atoms(selection_pocket+" and name CA*").positions
+            pocket_calpha = ensemble.select_atoms(selection_pocket + " and name CA*").positions
             frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
                                         settings["resolution"], settings["radius"])
             results["jd"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
+
         if "fops" in results.keys():
             results["fops"].append(frame_fop)
-        # calculate aux data
+
         if "pvol" in results.keys():
             results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
 
@@ -586,17 +582,19 @@ if __name__ == "__main__":
             results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
 
         if "bb_rmsd" in results.keys():
+            align.alignto(protein, reference, select="backbone")
             results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
                                                                    protein.select_atoms("backbone").positions))
+
+        if "composite" in results.keys():
+            results["composite"].append(results["prmsd"][-1] + (sigma * results["bb_rmsd"][-1]))
 
     # writing in text files the progress coordinates and the required auxiliary data if needed. 
     with open("pcoord.txt", "w") as f:
         for i in range(len(results[settings["pcoord"][0]])):
             line = ""
             for pcoord in settings["pcoord"]:
-                line += "{:.4f}    ".format(results[pcoord][i])
-
-                
+                line += "{:.4f}    ".format(results[pcoord][i])    
             f.write(line + "\n")
 
     # save fop in file so it can be piped to h5 file
@@ -633,6 +631,11 @@ if __name__ == "__main__":
     if "jd" in settings["auxdata"]:
         with open("jd.txt", "w") as f:
             for i in results["jd"]:
+                f.write(str(i)+"\n")
+
+    if "composite" in settings["auxdata"]:
+        with open("composite.txt", "w") as f:
+            for i in results["composite"]:
                 f.write(str(i)+"\n")
 
     if args.csv is not None:
