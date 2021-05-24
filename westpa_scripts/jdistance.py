@@ -159,7 +159,7 @@ def points_to_pdb(filename, coordinates):
         filename (str): name of the pdb file to create.
         coordinates (list of lists): XYZ coordinates of the field of points to write into pdb file.
     """
-    with open(filename, "w") as f: # //TODO modify to be able to do multiframe pdb
+    with open(filename, "w") as f: # TODO modify to be able to do multiframe pdb
         # f.write(header)
         atom_number = 1
         for i in coordinates:
@@ -216,7 +216,7 @@ def points_to_xyz_file(filename, coordinates, resolution, radius):
         radius (float): radius in Angstrom for FOP.
     """
     # calculate the volume using the resolution
-    volume = len(coordinates) * (resolution ** 3) #//TODO modify to be able to do multiframe xyz
+    volume = len(coordinates) * (resolution ** 3) # TODO modify to be able to do multiframe xyz
 
     # Writing the xyz file.
     with open(filename, "w") as f:
@@ -413,7 +413,7 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
     :param trimmed_alpha:
     :return:
     """
-    # //TODO add documentation
+    # TODO add documentation
     points_in_hull = []
     trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
@@ -488,7 +488,7 @@ if __name__ == "__main__":
     if settings["fop_filetype"] == "xyz":
         reference_fop = parse_xyz_fop(settings["reference_fop"])
     elif settings["fop_filetype"] == "pdb":
-        reference_fop = parse_pdb_fop(settings["reference_fop"]) # //TODO make parse_pdb_fop function
+        reference_fop = parse_pdb_fop(settings["reference_fop"]) # TODO make parse_pdb_fop function
     elif settings["fop_filetype"] == "pickle":
         import pickle
         with open(settings["reference_fop"], "rb") as f:
