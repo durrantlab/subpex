@@ -2,18 +2,25 @@ import argparse
 import MDAnalysis
 import numpy as np
 import scipy as sp
-from MDAnalysis.analysis import rms, align
+from MDAnalysis.analysis import align
 from sklearn.cluster import DBSCAN
 import sys
 import logging
 
 
 def check_input_settings_file(filename):
-    """
+    """    
     check_input_settings_file is a function that loads the json file containing the settings for SubPEx and checks that 
     all the parameters are available or sets defaults if it can be done.
-    :param filename: (str) filename of the settings json file. 
-    :return: (dict) settings for running SubPEx and some of the analysis tools  
+
+    Args:
+        filename (str): filename of the settings json file. 
+
+    Raises:
+        IOError: raises error if files do not exist or can't be read.
+
+    Returns:
+        settings (dict): settings for running SubPEx and some of the analysis tools.
     """
 
     import sys
@@ -63,7 +70,8 @@ def check_input_settings_file(filename):
     if "radius" in settings and type(settings["radius"]) == float:
         pass
     else:
-        # The default value of 10.9 Angstrom comes from the most common volume for a pocket accordintg to https://doi.org/10.1002/pro.5560070905 and approximating the pocket as a spherical pocket.
+        # The default value of 10.9 Angstrom comes from the most common volume for a pocket accordintg to https://doi.org/10.1002/pro.5560070905 
+        # and approximating the pocket as a spherical pocket.
         settings["radius"] = 10.90
         logging.warning(
             "Using a default radius value of 10.90 Angstrom. Please check it will encompases all of your pocket.")
@@ -127,9 +135,10 @@ def check_file_exists(settings, keyword):
     """
     A simple function that checks that the keyword is in the dictionary settings and that the file associated with the
     keyword exists.
-    :param settings: dic dictionary with settings for subpex
-    :param keyword: str keyword of the setting to check the file exists.
-    :return:
+
+    Args:
+        settings (dict): dictionary with settings for subpex
+        keyword (str): keyword of the setting to check the file exists.
     """
     import sys
     import glob
@@ -146,10 +155,11 @@ def points_to_pdb(filename, coordinates):
     points_to_pdb will write a pdb file full of C-alphas to be able to load the file in a visualisation software and
     represent the field of points.
 
-    :param filename: (str) name of the pdb file to create.
-    :param coordinates: (list of lists) XYZ coordinates of the field of points to write into pdb file.
+    Args:
+        filename (str): name of the pdb file to create.
+        coordinates (list of lists): XYZ coordinates of the field of points to write into pdb file.
     """
-    with open(filename, "w") as f: #todo modify to be able to do multiframe pdb
+    with open(filename, "w") as f: # //TODO modify to be able to do multiframe pdb
         # f.write(header)
         atom_number = 1
         for i in coordinates:
@@ -170,9 +180,13 @@ def points_to_pdb(filename, coordinates):
 
 def parse_xyz_fop(filename):
     """
+    parse_xyz_fop will read the filename and parse the field of points to convert it into a list of lists
 
-    :param filename:
-    :return:
+    Args:
+        filename (str): filename of the field of points to open and parse
+
+    Returns:
+        fop (list of lists): x, y, z coordinates of the field of points
     """
     # open reference fop xyz file
     with open(filename, "r") as f:
@@ -192,17 +206,17 @@ def parse_xyz_fop(filename):
 
 
 def points_to_xyz_file(filename, coordinates, resolution, radius):
-    """
-    points_to_xyz_file takes the coordinates and the resolution and coordinates to write an xyz file that can be read by
+    """points_to_xyz_file takes the coordinates and the resolution and coordinates to write an xyz file that can be read by
     a visualization software.
 
-    :param filename: (str) name for the xyz file to be created.
-    :param coordinates: (list of lists) contains XYZ coordinates for each atom.
-    :param float resolution: Resolution in Angstroms.
-    :param float radius: radius in Angstrom for FOP.
+    Args:
+        filename (str): name for the xyz file to be created.
+        coordinates (list of lists): contains XYZ coordinates for each atom.
+        resolution (float): Resolution in Angstroms.
+        radius (float): radius in Angstrom for FOP.
     """
     # calculate the volume using the resolution
-    volume = len(coordinates) * (resolution ** 3) #todo modify to be able to do multiframe xyz
+    volume = len(coordinates) * (resolution ** 3) #//TODO modify to be able to do multiframe xyz
 
     # Writing the xyz file.
     with open(filename, "w") as f:
@@ -399,7 +413,7 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
     :param trimmed_alpha:
     :return:
     """
-    #todo add documentation
+    # //TODO add documentation
     points_in_hull = []
     trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
@@ -474,7 +488,7 @@ if __name__ == "__main__":
     if settings["fop_filetype"] == "xyz":
         reference_fop = parse_xyz_fop(settings["reference_fop"])
     elif settings["fop_filetype"] == "pdb":
-        reference_fop = parse_pdb_fop(settings["reference_fop"]) #todo make parse_pdb_fop function
+        reference_fop = parse_pdb_fop(settings["reference_fop"]) # //TODO make parse_pdb_fop function
     elif settings["fop_filetype"] == "pickle":
         import pickle
         with open(settings["reference_fop"], "rb") as f:
