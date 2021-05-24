@@ -2,6 +2,21 @@ from jdistance import *
 
 
 def get_pocket_selection(universe, center, radius, selection_file, distance_constraint=6.7):
+    """
+    get_pocket_selection is a function that will take the protein and center of the pocket and will obtain the initial 
+    selection of the pockets. It uses the radius and if water molecules are present it will use them as a first approximation
+    of the surface residues. 
+
+    Args:
+        universe (MDAnalysis Universe): MDA universe with protein 
+        center (list): x, y, z coordiantes of the center
+        radius (float): radius of the pocket to be considered
+        selection_file (str): filename for the selection pocket
+        distance_constraint (float, optional): Constraint to use for proximity to calculate surface residues. Defaults to 6.7.
+
+    Returns:
+        selection_pocket (str): selection string of the pocket as used in MDAnalysis
+    """
     water_pocket = universe.select_atoms("point {} {} {} {} and resname WAT".format(center[0], center[1], center[2], radius))
     residues_pocket = universe.select_atoms("protein and point {} {} {} {}".format(center[0], center[1], center[2], radius))
     list_close_water = []

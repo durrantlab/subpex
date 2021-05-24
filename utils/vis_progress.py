@@ -3,27 +3,53 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
-import json
+from .westpa_scripts.jdistance import check_input_settings_file, check_file_exists
 
 
-def plot_num_walkers(num_walkers, outdir):
+def rolling_average(data, window):
+    """
+    Function that gets you the rolling average. The end of the list will only
+    make the window smaller.
+
+    Args:
+        data (list): list of the data to obtain the rolling average.
+        window (int): size of the window to use.
+
+    Returns:
+        average (list): list containing the rolling average.
+    """
+    average = []
+    for i in range(len(data)):
+        if i+window < len(data):
+            average.append(np.mean(data[i:i+window]))
+        else:
+            average.append(np.mean(data[i:])) 
+            
+    return average 
+
+
+def plot_num_walkers(west, outdir):
     """
     Function that will plot the number of walkers per iteration. The plot will
     be saved to the specified directory.
-    :param num_walkers: list containing the number of walkers per iteration
-    :param outdir: string with the path to the output directory
+
+    Args:
+        west (h5file): h5 file containing all the info for the simulation.
+        outdir (str): path to outdir.
     """
+    # get number of walkers on each iteration
+    num_walkers = [len(west["iterations"][k]["pcoord"][()]) for k in west["iterations"].keys()]
     # Plotting the num of walkers per iteration.
     fig = plt.subplots(1, figsize=(10, 7))
     plt.title("Number of Walkers per iteration", fontsize=32)
-    plt.plot(range(len(num_walkers)), num_walkers, linewidth=4, color="blue", alpha=0.7)
+    plt.plot(range(1, len(num_walkers) + 1), num_walkers, linewidth=3, color="blue", alpha=0.7)
     plt.tick_params(width=1.0, labelsize=16)
     plt.xlabel("Iteration", fontsize=28)
     plt.ylabel("Number of walkers", fontsize=28)
     plt.savefig(outdir + "/num_walkers.png")
 
 
-def plot_histogram(results, value, title, directory=None): #todo refactor plot_histogram function
+def plot_histogram(results, value, title, directory=None): #//TODO refactor plot_histogram function
     min_1 = None
     max_1 = None
     for i in results[value]:
@@ -60,7 +86,46 @@ def plot(jd, rmsd, title, outdir, filename):
     plt.savefig(outdir + "/" + filename)
 
 
-def obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations):
+def get_pcoords_for_plotting(westfile, settings):
+
+    results = {}
+
+    for i in settings["pcoord"]:
+        results[i] = []
+    for i in settings["auxdata"]:
+        results[i] = []
+    if "composite" in results.keys():
+        if "prmsd" not in results:
+            results["prmsd"] = []
+        if "bb_rmsd" not in results:
+            results["bb_rmsd"] = []
+
+    west = h5py.File(westfile, "r")
+
+    for iteration in list(west["iterations"].keys())[:-1]:
+        if len(settings["pcoord"]) == 1:
+            results[settings["pcoord"]] = results[settings["pcoord"]] + list(west["iterations"][iteration]["pcoord"][:,1:].flatten())
+            for j in settings["auxdata"]:
+                results[j] = results[j] + list(west["iterations"][iteration]["auxdata"][j][:,1:].flatten())
+
+    return results
+
+
+def plot_stuff(jd, min_md_jd, max_md_jd, average_jd, jd_max, jd_min, jd_sd): #//TODO this plot needs to  be redone
+    fig = plt.subplots(1,1, figsize=(10, 8))
+    plt.title("Jaccard distance against iteration", fontsize=20)
+    plt.ylabel("JD", fontsize=18)
+    plt.errorbar(range(len(jd)), jd, yerr=jd_sd, ls='--', marker='o', capsize=3, capthick=1, ecolor='gray', color="black", label="Jaccard distance")
+    plt.plot(range(len(jd)), rolling_average(jd, 5), color="red", alpha=0.7, linewidth=3, label="JD rolling average")
+    plt.plot(range(len(jd)), rolling_average(jd_max, 5), color="blue", alpha=0.7, linewidth=3, label="Max value rolling average")
+    plt.plot(range(len(jd)), rolling_average(jd_min, 5), color="purple", alpha=0.7, linewidth=3, label="Min value rolling average")
+    plt.hlines(min_md_jd, 0, len(jd), color="purple", linestyles="dashed", alpha=0.9)
+    plt.hlines(max_md_jd, 0, len(jd), color="blue", linestyles="dashed", alpha=0.9)
+    plt.hlines(average_jd, 0, len(jd), color="black", linestyles="dashed", alpha=0.9, label="MD simulation average")
+    plt.legend(loc="upper left", bbox_to_anchor=(0, 0.95, 0, 0))
+
+
+def obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations): #//TODO I may need to erase this plot
     """
 
     :param max_rmsd:
@@ -111,90 +176,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that will read the h5 file and create plots to visualize the progress of the simulation.")
     parser.add_argument("h5file", type=str, help="Define the h5 file file with the settings. It is required")
-    parser.add_argument("outdir", type=str, help="Define the output directory to put the files in. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
+    parser.add_argument("outdir", type=str, help="Define the output directory to put the files in, it will creat it if it does not exist. It is required")
     args = parser.parse_args()
 
-    try:
-        with open(args.settings, "r") as f:
-            settings = json.load(f)
-    except IOError:
-        print("Could not load the json file with the settings")
-        print("make sure the file exists and is correctly formatted")
-        raise IOError("Could not load the json file with the settings")
+    settings = check_input_settings_file(args.settings)
 
     # read h5 file and create outdir
     west = h5py.File(args.h5file, "r")
-    os.system("mkdir {}".format(args.outdir))
+
+    # make sure outdir exists if not, creat it
+    if not os.path.isdir(args.outdir):
+        os.system("mkdir {}".format(args.outdir))
 
     # plot num of walkers vs generation
-    num_walkers = [len(west["iterations"][k]["pcoord"][()]) for k in west["iterations"].keys()]
-    plot_num_walkers(num_walkers, args.outdir)
+    if settings["subpex"]["plotting"]["num_walkers"]:
+        plot_num_walkers(west, args.outdir)
 
-    reverse_iterations = [] #todo check ig I can reverse this in one line of code
-    for i in range(1, len(list(west["iterations"].keys())) + 1):
-        reverse_iterations.append(list(west["iterations"].keys())[-i])
-
-    # Obtain walkers with the highest RMSD of pocket atoms and Jaccard distance in the last iteration
-    max_rmsd = [0, 0]
-    max_jd = [0, 0]
-    max_weight = [0, 0]
-    for i, value in enumerate(west["iterations"][reverse_iterations[0]]["pcoord"]):
-        if value[1][0] > max_jd[0]:
-            max_jd = [value[1][0], i]
-        if value[1][1] > max_rmsd[0]:
-            max_rmsd = [value[1][1], i]
-    for i, value in enumerate(west["iterations"][reverse_iterations[0]]['seg_index']):
-        if value[0] > max_weight[0]:
-            max_weight = [value[0], i]
-
-    results = obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations)
-    plot(results["max_rmsd"]["jd"], results["max_rmsd"]["rmsd"], "Progress of walker with highest pocket HA RMSD",
-         args.outdir, "highest_rmsd.png")
-    plot(results["max_jaccard"]["jd"], results["max_jaccard"]["rmsd"], "Progress of walker with highest Jaccard distance",
-         args.outdir, "highest_jaccard.png")
-    plot(results["max_weight"]["jd"], results["max_weight"]["rmsd"], "Progress of walker with highest Jaccard distance",
-         args.outdir, "highest_weight.png")
-    results["jaccard"] = []
-    results["pocket_rmsd"] = []
-
-    if "pvol" in settings["auxdata"]:
-        results["pvol"] = []
-    if "rog" in settings["auxdata"]:
-        results["rog_pocket"] = []
-    if "bb_rmsd" in settings["auxdata"]:
-        results["bb_rmsd"] = []
-
-    for key in west["iterations"].keys():
-        try:
-            if "pvol" in settings["auxdata"]:
-                for k in west["iterations"][key]["auxdata"]["pvol"][()]:
-                    results["pvol"].append(k[-1])
-            if "rog" in settings["auxdata"]:
-                for k in west["iterations"][key]["auxdata"]["rog"][()]:
-                    results["rog_pocket"].append(k[-1])
-            if "bb_rmsd" in settings["auxdata"]:
-                for k in west["iterations"][key]["auxdata"]["bb"][()]:
-                    results["bb_rmsd"].append(k[-1])
-            for k in west["iterations"][key]["pcoord"][()]:
-                results["jaccard"].append(k[-1][0])
-                results["pocket_rmsd"].append(k[-1][1])
-        except:
-            pass
-
-    plot_histogram(results, "jaccard", "jaccard distance", args.outdir)
-    plot_histogram(results, "pocket_rmsd", "pocket heavy atoms RMSD", args.outdir)
-    if "pvol" in settings["auxdata"]:
-        plot_histogram(results, "pvol", "pocket volume", args.outdir)
-    if "rog" in settings["auxdata"]:
-        plot_histogram(results, "rog_pocket", "pocket radius of gyration", args.outdir)
-    if "bb_rmsd" in settings["auxdata"]:
-        plot_histogram(results, "bb_rmsd", "backbone RMSD", args.outdir)
-
-
-
-
-
-
-
-
+    
