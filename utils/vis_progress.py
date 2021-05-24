@@ -49,7 +49,7 @@ def plot_num_walkers(west, outdir):
     plt.savefig(outdir + "/num_walkers.png")
 
 
-def plot_histogram(results, value, title, directory=None): #//TODO refactor plot_histogram function
+def plot_histogram(results, value, title, directory=None): # TODO refactor plot_histogram function
     min_1 = None
     max_1 = None
     for i in results[value]:
@@ -111,7 +111,7 @@ def get_pcoords_for_plotting(westfile, settings):
     return results
 
 
-def plot_stuff(jd, min_md_jd, max_md_jd, average_jd, jd_max, jd_min, jd_sd): #//TODO this plot needs to  be redone
+def plot_stuff(jd, min_md_jd, max_md_jd, average_jd, jd_max, jd_min, jd_sd): # TODO this plot needs to  be redone
     fig = plt.subplots(1,1, figsize=(10, 8))
     plt.title("Jaccard distance against iteration", fontsize=20)
     plt.ylabel("JD", fontsize=18)
@@ -125,7 +125,7 @@ def plot_stuff(jd, min_md_jd, max_md_jd, average_jd, jd_max, jd_min, jd_sd): #//
     plt.legend(loc="upper left", bbox_to_anchor=(0, 0.95, 0, 0))
 
 
-def obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations): #//TODO I may need to erase this plot
+def obtain_paths_highest_rmsd_jd_weight(max_rmsd, max_jd, max_weight, reverse_iterations): # TODO I may need to erase this plot
     """
 
     :param max_rmsd:
