@@ -206,13 +206,14 @@ def parse_xyz_fop(filename):
 
 
 def points_to_xyz_file(filename, coordinates, resolution, radius):
-    """points_to_xyz_file takes the coordinates and the resolution and coordinates to write an xyz file that can be read by
+    """
+    points_to_xyz_file takes the coordinates and the resolution and coordinates to write an xyz file that can be read by
     a visualization software.
 
     Args:
         filename (str): name for the xyz file to be created.
         coordinates (list of lists): contains XYZ coordinates for each atom.
-        resolution (float): Resolution in Angstroms.
+        resolution (float): resolution in Angstroms.
         radius (float): radius in Angstrom for FOP.
     """
     # calculate the volume using the resolution
@@ -233,9 +234,12 @@ def calculate_distance_two_points(point1, point2):
     """
     This function calculates the distance between two points in a 3D coordinate system.
 
-    :param point1: (list) coordinates of first point. [x, y, z]
-    :param point2: (list) coordinates of second point. [x, y, z]
-    :return distance: (float) distance between point1 and point2.
+    Args:
+        point1 (list): coordinates of first point. [x, y, z]
+        point2 (list): coordinates of second point. [x, y, z]
+
+    Returns:
+        distance (flaot): distance between point1 and point2.
     """
     distance = 0
     for i in range(len(point1)):
@@ -250,10 +254,14 @@ def field_of_points(center, resolution, radius):
     user. Then it generates a spherical field of points (FOP) with radius = radius/2 with points at with a distance
     between them equal to the resolution.
 
-    :param list center: provided center coordinates. [X, Y, Z]
-    :param float resolution: Distance between points which give resolution of the pocket volume calculator method.
-    :param float radius: Defines the radius of the sphere of the FOP.
-    :return list of lists : a spherical FOP
+    Args:
+        center (list): provided center coordinates. [X, Y, Z]
+        resolution (float): Distance between points which give resolution of the pocket volume calculator method.
+        radius (float): Defines the radius of the sphere of the FOP.
+
+    Returns:
+        field_of_points (list of lists): a spherical FOP
+        center (list): cneter of the FOP
     """
     # This part of the code will get a new center, a snapped center.
     snapped_x = np.around(center[0] / resolution) * resolution
@@ -277,9 +285,12 @@ def get_trimmed_fop(field_of_points, atoms_points):
     """
     Removes points that clash with atoms within the FOP.
 
-    :param field_of_points: List of list containing all the points for hte FOP.
-    :param atoms_points: List of list containing the coordinates of atoms within the FOP.
-    :return: Returns a list of list that has the trimmed FOP.
+    Args:
+        field_of_points (list of lists): a field of points to be trimmed of collisions with atoms
+        atoms_points (list of lists): coordinates of atoms within the FOP.
+
+    Returns:
+        trimmed_fop (list of lists): a FOP without clashes
     """
     # Generating cKDTrees to obtain distances
     atoms_tree = sp.spatial.cKDTree(atoms_points)
@@ -309,12 +320,15 @@ def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
     This function will take the coordinates of the protein and the coordinates of alpha carbons calculate the field of
     points (FOP).
 
-    :param protein: (list of list) coordinates of protein atoms.
-    :param alphas: (list of list) coordinates of all alpha carbons
-    :param center: (list) center of the pocket (user defined).
-    :param resolution: (float) resolution for the FOP (user defined).
-    :param radius: (float) radius of sphere for FOP (user defined).
-    :return: list of list with the pocket shape as a FOP.
+    Args:
+        protein (list of lists): coordinates of protein atoms.
+        alphas (list of lists): coordinates of all alpha carbons.
+        center (list): center of the pocket (user defined).
+        resolution (float): resolution for the FOP (user defined).
+        radius (float): radius of sphere for FOP (user defined).
+
+    Returns:
+        pocket (list of lists): pocket shape as a FOP.
     """
     # get starting FOP and snapped center
     fop, center = field_of_points(center, resolution, radius)
@@ -331,11 +345,14 @@ def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
 
 def cluster_dbscan(fop):
     """
-    This function will take the coordinates of the field of points and perform a clustering.py algorithm to trim the fop
+    This function will take the coordinates of the field of points and perform a clustering algorithm to trim the fop
     to the points in the same cluster that the center of the pocket.
 
-    :param protein: (list of list) coordinates of field of points.
-    :return: list of list with the FOP after clustering.py.
+    Args:
+        fop (list of list): coordinates of field of points.
+
+    Returns:
+        fop (list of list): FOP after clustering
     """
     db = DBSCAN(eps=0.5, min_samples=2).fit(fop)
     labels = db.labels_
@@ -365,10 +382,13 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     Function that calculates the Jaccard distance between the points in reference_fop and the segment_fop. Uses the
     distance between points to calculate the intersection.
 
-    :param reference_fop: list of list containing the reference FOP.
-    :param segment_fop: list of list containing the segment FOP.
-    :param resolution: resolution used to create FOP.
-    :return: float with the Jaccard distance.
+    Args:
+        reference_fop (list of lists): reference FOP.
+        segment_fop (list of lists): segment FOP.
+        resolution (float): resolution used to create FOP.
+
+    Returns:
+        jaccard (float): Jaccard distance.
     """
     # Obtaining the trees for both field of points
     reference_tree = sp.spatial.cKDTree(reference_fop)
@@ -391,15 +411,18 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
 
 def point_in_hull(point, hull, tolerance=1e-12):
     """
-    a point is in the hull if and only if for every equation (describing the facets) the dot product between the point
+    A point is in the hull if and only if for every equation (describing the facets) the dot product between the point
     and the normal vector (eq[:-1]) plus the offset (eq[-1]) is less than or equal to zero. You may want to compare to a
     small, positive constant tolerance = 1e-12 rather than to zero because of issues of numerical precision (otherwise,
     you may find that a vertex of the convex hull is not in the convex hull).
 
-    :param point:
-    :param hull:
-    :param tolerance:
-    :return:
+    Args:
+        point (list): coordinates of the point to be considered.
+        hull (scipy.spatial.ConvexHull): Convex hulls in N dimensions.
+        tolerance (flaot, optional): tolerance for the calcualtion. Defaults to 1e-12.
+
+    Returns:
+        (bool): returns True if point in hull, False otherwise 
     """
     return all(
         (np.dot(eq[:-1], point) + eq[-1] <= tolerance)
@@ -408,12 +431,15 @@ def point_in_hull(point, hull, tolerance=1e-12):
 
 def remove_convex_fop(trimmed_fop, trimmed_alpha):
     """
+    Function that uses a convex hull to trim points of the field of points that are outside of the protein. 
 
-    :param trimmed_fop:
-    :param trimmed_alpha:
-    :return:
+    Args:
+        trimmed_fop (list of lists): field of points trimmed of clashes with atoms.
+        trimmed_alpha ([type]): alpha atoms to define the convex hull.
+
+    Returns:
+        points_in_hull (list of lists): FOP trimmed of points outside the convex hull defined by the protein. 
     """
-    # TODO add documentation
     points_in_hull = []
     trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
@@ -426,20 +452,13 @@ def calculate_pocket_gyration(pocket):
     """
     calculate_pocket_gyration is a function that takes the xyz coordinates of a field of points and calculates the
     radius of gyration. It assumes a mass of one for all the points.
-    :param pocket: list of xyz coordinates of the field of points
-    :return: float with the radius of gyration
-    """
-    def get_centroid(pocket):
-        """
-        Calculates the centroid or the center of mass for equal masses of a field of points.
-        :param pocket: list of xyz coordinates of the field of points
-        :return: list with coordinates od the centroid [x, y, z]
-        """
-        x = np.mean([x[0] for x in pocket])
-        y = np.mean([y[1] for y in pocket])
-        z = np.mean([z[2] for z in pocket])
-        return [x, y, z]
 
+    Args:
+        pocket (list of lists): the field of points defining the pocket shape.
+
+    Returns:
+        radius_of_gyration (float): radisu of gyration of the pocket.
+    """
     centroid = get_centroid(pocket)
     mass = len(pocket)
     gyration_radius = 0
@@ -447,6 +466,22 @@ def calculate_pocket_gyration(pocket):
         gyration_radius += (calculate_distance_two_points(i, centroid))**2
 
     return np.sqrt(gyration_radius/mass)
+
+
+def get_centroid(pocket):
+    """
+    Calculates the centroid or the center of mass for equal masses of a field of points.
+
+    Args:
+        pocket (list of lists):  the field of points defining the pocket shape.
+
+    Returns:
+        centroid (list): coordinates of the centroid of the pocket.
+    """
+    x = np.mean([x[0] for x in pocket])
+    y = np.mean([y[1] for y in pocket])
+    z = np.mean([z[2] for z in pocket])
+    return [x, y, z]
 
 
 if __name__ == "__main__":
