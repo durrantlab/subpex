@@ -60,11 +60,6 @@ if __name__ == "__main__":
     # Using the selection string to select atoms in the pocket
     pocket_reference = reference.select_atoms(selection_pocket)
 
-    # obtain pocket for istate or bstate and the CA
-    #istate_pocket = istate.select_atoms(selection_pocket)
-    #frame_coordinates = istate.select_atoms("protein").positions
-    #frame_calpha = istate_pocket.select_atoms("name CA").positions
-
     # calculate pocket rmsd
 
     if "prmsd" in results.keys():
