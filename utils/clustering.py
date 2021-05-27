@@ -214,14 +214,14 @@ def get_selection_cpptraj(filename):
 def get_clustering_generation_cpptraj(west_file, settings, directory):
     # will generate the selection string that will be used
     if settings["clustering"]["clustering_region"] == "pocket":
-        selection_string = get_selection_cpptraj(settings["subpex"]["selection_file"])
+        selection_string = get_selection_cpptraj(settings["selection_file"])
     elif settings["clustering"]["clustering_region"] == "backbone":
         selection_string = "'@CA,C,O,N'"
     else:
         pass
-    west_home = glob.glob(settings["subpex"]["west_home"])[0]
+    west_home = glob.glob(settings["west_home"])[0]
     all_in_files = []
-    number_clusters = get_number_clusters(west_file, settings["subpex"]["clustering"]["max_number_clusters_generation_bin"])
+    number_clusters = get_number_clusters(west_file, settings["clustering"]["max_number_clusters_generation_bin"])
     for i, iteration in enumerate(west_file["iterations"].keys()):
         directory_gen = west_home + "traj_segs/{}".format(iteration.split("_")[1][-6:])
         generation_number = directory_gen.split("/")[-2]
@@ -268,10 +268,10 @@ def make_input_file_cpptraj(directory, walkers_list, settings, num_clusters, sel
         settings ([type]): [description]
         selection_string ([type]): [description]
     """
-    text = "parm {} \n".format(settings["subpex"]["topology"])
+    text = "parm {} \n".format(settings["topology"])
     for walker in walkers_list:
         text += "trajin {} \n".format(walker)
-    text += get_clustering_command_cpptraj(settings["subpex"]["clustering"]["method"], num_clusters, selection_string)
+    text += get_clustering_command_cpptraj(settings["clustering"]["method"], num_clusters, selection_string)
     with open(directory + "clustering.in", "w") as f:
         f.write(text)
 
