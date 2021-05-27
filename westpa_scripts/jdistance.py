@@ -357,7 +357,6 @@ def cluster_dbscan(fop):
     db = DBSCAN(eps=0.5, min_samples=2).fit(fop)
     labels = db.labels_
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-    #print(n_clusters_)
     longest = ""
     clusters = {}
     for i in range(n_clusters_):
@@ -370,10 +369,8 @@ def cluster_dbscan(fop):
             pass
 
     for i in clusters:
-        #print(len(clusters[i]))
         if longest == "" or len(clusters[i]) > len(clusters[longest]):
             longest = i
-    #print(len(clusters[longest]))
     return clusters[longest]
 
 
