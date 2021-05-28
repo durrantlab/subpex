@@ -244,7 +244,7 @@ def get_clustering_generation_cpptraj(west_file, settings, directory):
             f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
             f.write("cd ../ \n")
         f.write("cd last_clustering \n")
-        f.write("cpptraj.OMP -i last_clustering > last_clustering.log \n")
+        f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
     with open(directory + "/last_clustering/clustering.in", "w") as f:
         f.write("parm {} \n".format(settings["topology"]))
         for i, numgen in enumerate(all_in_files):
