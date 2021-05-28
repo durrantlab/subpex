@@ -222,9 +222,11 @@ def get_clustering_generation_cpptraj(west_file, settings, directory):
     west_home = glob.glob(settings["west_home"])[0]
     all_in_files = []
     number_clusters = get_number_clusters(west_file, settings["clustering"]["max_number_clusters_generation_bin"])
+    if not os.path.isdir(directory + "/last_clustering"):
+        os.system("mkdir {}".format(directory + "/last_clustering" ))
     for i, iteration in enumerate(west_file["iterations"].keys()):
         directory_gen = west_home + "traj_segs/{}".format(iteration.split("_")[1][-6:])
-        generation_number = directory_gen.split("/")[-2]
+        generation_number = directory_gen.split("/")[-1]
         # make sure the directory exists (this is because the last iter that appears on the 
         # h5 file has not yet started)
         if os.path.isdir(directory_gen):
@@ -233,13 +235,26 @@ def get_clustering_generation_cpptraj(west_file, settings, directory):
             continue
         # now create a directory where the input file for cpptraj will be created.
         if not os.path.isdir(directory + generation_number):
-            os.system("mkdir {}".format(directory + generation_number))
-        all_in_files.append(directory + generation_number + "clustering.in")
-        make_input_file_cpptraj(directory + generation_number, walkers, settings, number_clusters[i], selection_string)
-    with open(directory + "run_cpptraj_per_bin.sh", "w") as f:
+            os.system("mkdir {}".format(directory + "/" + generation_number))
+        all_in_files.append(generation_number)
+        make_input_file_cpptraj(directory + "/" + generation_number, walkers, settings, number_clusters[i], selection_string)
+    with open(directory + "/run_cpptraj_per_generation.sh", "w") as f:
         for i in all_in_files:
-            f.write("cpptraj.OMP -i {} > {}.log \n".format(i, i.split(".")[0]))
-
+            f.write("cd {} \n".format(i)) 
+            f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
+            f.write("cd ../ \n")
+        f.write("cd last_clustering \n")
+        f.write("cpptraj.OMP -i last_clustering > last_clustering.log \n")
+    with open(directory + "/last_clustering/clustering.in", "w") as f:
+        f.write("parm {} \n".format(settings["topology"]))
+        for i, numgen in enumerate(all_in_files):
+            for j in range(number_clusters[i]):
+                f.write("trajin ../{}/rep.c{}.pdb \n".format(numgen, j))
+        text = get_clustering_command_cpptraj(settings["clustering"]["method"], 
+                                   settings["clustering"]["number_clusters"], selection_string)
+        for i in text:
+            f.write(i)
+            
 
 def get_generation_walkers_list(directory_gen):
     # will check later what the extension for coordinate files is. will work for dcd and nc.
@@ -272,7 +287,7 @@ def make_input_file_cpptraj(directory, walkers_list, settings, num_clusters, sel
     for walker in walkers_list:
         text += "trajin {} \n".format(walker)
     text += get_clustering_command_cpptraj(settings["clustering"]["method"], num_clusters, selection_string)
-    with open(directory + "clustering.in", "w") as f:
+    with open(directory + "/clustering.in", "w") as f:
         f.write(text)
 
 
