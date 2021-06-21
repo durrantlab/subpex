@@ -178,6 +178,32 @@ def points_to_pdb(filename, coordinates):
         f.write("\n")
 
 
+def parse_pdb_fop(filename):
+    """
+    parse_pdb_fop will open the fop that is stored in a pdb file with name 'filename', parse it and return the fop as a list 
+    of lists.
+
+    Args:
+        filename (string): name of the pdb file with the field of points.
+
+    Returns:
+        fop (list of lists): XYZ coordinates of the field of points
+    """
+    with open(filename, "r") as f:
+        text = f.readlines()
+    fop = []
+    for line in text:
+        if line.startswith("ATOM"):
+            split = line.split()
+            x = float(split[4])
+            y = float(split[5])
+            z = float(split[6])
+            fop.append([x, y, z])
+        else:
+            pass
+    return fop
+
+
 def parse_xyz_fop(filename):
     """
     parse_xyz_fop will read the filename and parse the field of points to convert it into a list of lists
