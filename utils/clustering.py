@@ -342,7 +342,7 @@ def get_clustering_bins_cpptraj(west, settings):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Script that reads the concateneted dcd files and performs clustering.")
+        description="Script that performs clustering or prepares files to run clustering using cpptraj. It can cluster per generation or divided the space in bins according to what the user wants.")
     parser.add_argument("west", type=str, help="Define the west.h5 file. It is required")
     parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
     parser.add_argument("dir", type=str, help="Define the directory were results will be stored. It is required")
