@@ -30,6 +30,26 @@ def check_clustering_parameters(settings):
     return settings
 
 
+def get bins(settings):
+    
+    return bins
+
+
+def place_walker_in_bin(west, settings, bins, iteration, walker):
+    pass
+
+def get_bins_dictionary(west, settings):
+    # get bins list, it is a list of lists
+    bins = get_bins(settings)
+    # create an empty dictionary to store the bins info
+    # now place each walker into a bin
+    for iteration in west["iterations"]:
+        for walker in range(len(west["iterations"][iteration]["pcoord"])):
+            place_walker_in_bin(west, settings, bins, iteration, walker)
+    return bins
+    
+
+
 def get_bins_dictionary(west, settings, max_clusters_per_bin, final_clusters):
     """
     get_bins_dictionary is a function that created a dictionary with unique keys for each occupied bin. And the elements
@@ -221,7 +241,7 @@ def get_clustering_generation_cpptraj(west_file, settings, directory):
         pass
     west_home = glob.glob(settings["west_home"])[0]
     all_in_files = []
-    number_clusters = get_number_clusters(west_file, settings["clustering"]["max_number_clusters_generation_bin"])
+    number_clusters = get_number_clusters_generation(west_file, settings["clustering"]["max_number_clusters_generation_bin"])
     if not os.path.isdir(directory + "/last_clustering"):
         os.system("mkdir {}".format(directory + "/last_clustering" ))
     for i, iteration in enumerate(west_file["iterations"].keys()):
@@ -320,7 +340,7 @@ def get_clustering_command_cpptraj(method, num_clusters, selection_string):
     return text
 
 
-def get_number_clusters(west_file, max_clusters, min_clusters=3):
+def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
     number_walkers = []
     for iteration in west_file["iterations"].keys():
         number_walkers.append(len(west["iterations"][iteration]['seg_index']))
@@ -337,7 +357,8 @@ def get_number_clusters(west_file, max_clusters, min_clusters=3):
 
 
 def get_clustering_bins_cpptraj(west, settings):
-    print("hiiiii")
+    bins = get_bins_dictionary()
+    create_bins_directories(bins)
 
 
 if __name__ == "__main__":
