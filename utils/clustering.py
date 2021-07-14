@@ -21,180 +21,90 @@ def check_clustering_parameters(settings):
     Args:
         settings ([type]): [description]
     """
-    if "clustering" not in settings or type(settings["clustering"]) is not dict:
+    if "clustering" not in settings or type(settings["subpex"]["clustering"]) is not dict:
         logging.critical("There is a problem with the clustering parameters. Please check the settings file.")
         sys.exit("There is a problem with the clustering parameters. Please check the settings file.")
     else:
         pass
-    #TODO finish check_clustering_parameters
+    # TODO finish check_clustering_parameters
     return settings
 
 
-def get bins(settings):
-    
-    return bins
-
-
-def place_walker_in_bin(west, settings, bins, iteration, walker):
-    pass
-
 def get_bins_dictionary(west, settings):
-    # get bins list, it is a list of lists
-    bins = get_bins(settings)
     # create an empty dictionary to store the bins info
+    bins = {}
     # now place each walker into a bin
     for iteration in west["iterations"]:
         for walker in range(len(west["iterations"][iteration]["pcoord"])):
-            place_walker_in_bin(west, settings, bins, iteration, walker)
-    return bins
-    
-
-
-def get_bins_dictionary(west, settings, max_clusters_per_bin, final_clusters):
-    """
-    get_bins_dictionary is a function that created a dictionary with unique keys for each occupied bin. And the elements
-    are the walker generation/iteration and the walker number.
-    :param west: The h5 file containing the results of the SubPEx (weighted ensemble) simulation.
-    :param settings: the settings dictionary.
-    :param max_clusters_per_bin: maximum number of clusters to calculate per bin.
-    :param final_clusters: number of final clusters.
-    :return bins: A dictionary containing walker identifiers per bin.
-    
-    Args:
-        west (TYPE): Description
-        settings (TYPE): Description
-        max_clusters_per_bin (TYPE): Description
-        final_clusters (TYPE): Description
-    
-    Returns:
-        TYPE: Description
-    """
-    # initialize an empty directory which will contain all the occupied bins and walker per bin.
-    bins = {}
-    # iterate over all generations and walkers to save them into the bin dictionary
-    for iteration in west["iterations"]:
-        for walker, pcoord in enumerate(west["iterations"][iteration]["pcoord"]):
-            # checking Jaccard distance
-            for i, value in enumerate(settings["clustering"]["bins"]["jd"]):
-                if pcoord[-1][0] < value:
-                    break
-            # checking pocket HA RMSD
-            for n, value in enumerate(settings["clustering"]["bins"]["rmsd"]):
-                if pcoord[-1][1] < value:
-                    break
-            # check if it is the first element in the bin
-            if "bin_{}_{}".format(i, n) in bins:
-                bins["bin_{}_{}".format(i, n)].append([iteration, walker])
+            name = ""
+            for key in settings["subpex"]["clustering"]["bins"]:
+                if key in settings["subpex"]["pcoord"]:
+                    for i in range(len(settings["subpex"]["pcoord"])):
+                        if key == settings["subpex"]["pcoord"][i]:
+                            value = west["iterations"][iteration]["pcoord"][-1][-1][i]
+                elif key in settings["subpex"]["auxdata"]:
+                    value = west["iterations"][iteration]["auxdata"][key][walker]
+                for a, bin_val in enumerate(settings["subpex"]["clustering"]["bins"][key]):
+                    if value > bin_val:
+                        pass
+                    else:
+                        name += "{}_".format(a)
+                        break
+            name  = name[:-1] # I only need to take the last underscore
+            if name in bins.keys():
+                bins[name]["walkers"].append((iteration, walker))
             else:
-                bins["bin_{}_{}".format(i, n)] = []
-                bins["bin_{}_{}".format(i, n)].append([iteration, walker])
-
-    # calculate how many clusters we will get for each bin (it will be proportional to the number of walkers)
-    calculate_clusters_per_bin(bins, max_clusters_per_bin)
-    bins["final_clusters"] = final_clusters
-
+                bins[name] = {"walkers": [(iteration, walker)]}
     return bins
-
-
-def calculate_clusters_per_bin(bins, max_clusters_per_bin, minimum_number_clusters=3):
-    """
-    calculate_clusters_per_bin is a function that takes teh bins dictionary, the maximum number of clusters to obtain
-    per bin and can take the minimum number of clusters per bin and appends to each bin the number of clusters to
-    calculate for that specific bin.
-    :param bins: dictionary with bins list containing walker generation and walker number in said bin.
-    :param max_clusters_per_bin: int maximum number of clusters to obtain per bin,
-    :param minimum_number_clusters: int the minimum number of clusters to calculate per bin.
-    :return:
     
-    Args:
-        bins (TYPE): Description
-        max_clusters_per_bin (TYPE): Description
-        minimum_number_clusters (int, optional): Description
-    """
+
+def calculate_clusters_per_bin(bins, settings):
     # determine the maximum number of walkers in a bin for normalization of clusters per bin
     max_num_walkers = 0
     for key in bins.keys():
-        if len(bins[key]) > max_num_walkers:
+        if len(bins[key]["walkers"]) > max_num_walkers:
             max_num_walkers = len(bins[key])
         else:
             pass
-
     # append as the last element of the list the number of clusters we will obtain in said bin
     for key in bins.keys():
-        if len(bins[key]) <= minimum_number_clusters:
-            bins[key].append(len(bins[key]))
-        elif (len(bins[key]) / max_num_walkers) * max_clusters_per_bin <= 3:
-            bins[key].append(3)
+        if len(bins[key]["walkers"]) <= settings["subpex"]["clustering"]["min_number_clusters_generation_bin"]:
+            bins[key]["clusters"] = len(bins[key]["walkers"])
+        elif (len(bins[key]["walkers"]) / max_num_walkers) * settings["subpex"]["clustering"]["max_number_clusters_generation_bin"] <= 3:
+            bins[key]["clusters"] = 3
         else:
-            value = int(round((len(bins[key]) / max_num_walkers) * max_clusters_per_bin, 0))
-            bins[key].append(value)
+            value = int(round((len(bins[key]["walkers"]) / max_num_walkers) * settings["subpex"]["clustering"]["max_number_clusters_generation_bin"], 0))
+            bins[key]["clusters"] = value
 
 
-def cluster_cpptaj(bins, settings, dir, residues_pocket):
-    """
-    
-    :param bins:
-    :param settings:
-    :param dir:
-    :param residues_pocket:
-    :return:
-    
-    Args:
-        bins (TYPE): Description
-        settings (TYPE): Description
-        dir (TYPE): Description
-        residues_pocket (TYPE): Description
-    """
-    # Create text for final clustering script, and list containing all the files so it can be written later.
-    final_clustering = "parm {} \n".format(settings["topology"])
-    all_in_files = []
-    # obtain selection string for cpptraj from residue numbers
-    selection_string = get_selection_cpptraj(residues_pocket)
-    # loop over bins to create a the directory and infile for clustering
-    for bin in bins.keys():
-        # make directory for the bin, results of clustering will be saved here.
-        os.system("mkdir {}/{}".format(dir, bin))
-        # avoid final cluster since it is only a holder for number of clusters
-        if bin != "final_clusters":
-            # add file to all_in_files for bash script
-            all_in_files.append("{}/{}/cluster_{}.in".format(dir, bin, bin))
-            # crate input file for clustering in a specific bin
-            with open("{}/{}/cluster_{}.in".format(dir, bin, bin), "w") as f:
-                # load parameter file
-                f.write("parm {} \n".format(settings["topology"]))
-                # the last element of the list is the number of clusters to calculate
-                num_clusters = bins[bin].pop()
-                # make sure we have more walkers than the necessary number of clusters
-                if num_clusters >= len(bins[bin]):
-                    # if not, just extract the last frame from each trajectory
-                    text = make_cpptraj_pdb_extractor(bins[bin])
-                else:
-                    text = ""
-                    # obtain the text for the clustering commands for the cpptraj infile.
-                    for walker in bins[bin]:
-                        iteration = walker[0].split("_")[1]
-                        iteration = iteration[np.absolute(len(iteration) - 6):]
-                        walker_number = (np.absolute(6 - len(str(walker[1])))) * "0" + str(walker[1])
-                        filename = "{}/{}/{}/{}/seg.dcd".format(settings["west_home"], "traj_segs", iteration,
-                                                                       walker_number)
-                        # make sure the file exists (may be redundant)
-                        if len(glob.glob(filename)) == 1:
-                            text += ("trajin {} \n".format(filename))
-                    text += get_clustering_command_cpptraj(settings["clustering"]["method"], num_clusters,
-                                                          selection_string)
-                f.write(text)
-                bins[bin].append(num_clusters)
-            for i in range(num_clusters):
-                final_clustering += "trajin {}/{}/rep.c{}.pdb \n".format(dir, bin, i)
-    text = get_clustering_command_cpptraj(settings["clustering"]["method"], bins["final_clusters"], selection_string)
-    final_clustering += text
-    with open("run_cpptraj_per_bin.sh", "w") as f:
-        for i in all_in_files:
-            f.write("cpptraj.OMP -i {} > {}.log \n".format(i, i.split(".")[0]))
-    os.system("mkdir {}/final_clustering".format(dir))
-    with open("{}/final_clustering/clustering.in".format(dir), "w") as f:
-        f.write(final_clustering)
+def create_bin_cpptraj_files(bins, settings, directory):
+    calculate_clusters_per_bin(bins, settings)
+    # will generate the selection string that will be used
+    if settings["clustering"]["clustering_region"] == "pocket":
+        selection_string = get_selection_cpptraj(settings["selection_file"])
+    elif settings["clustering"]["clustering_region"] == "backbone":
+        selection_string = "'@CA,C,O,N'"
+    else:
+        pass
+    for key in bins.keys():
+        os.system("mkdir {}".format(directory + "/{}".format(key)))
+        create_cpptraj_file_bins(bins, settings, directory, key, selection_string)
 
+
+def create_cpptraj_file_bins(bins, settings, directory, key, selection_string):
+    with open(directory + "/{}/clustering.in".format(key), "w") as f:
+        f.write("parm {} \n".format(settings["subpex"]["topology"]))
+        for walker in bins[key]["walkers"]:
+            filename = glob.glob(settings["west_home"])[0]
+            iteration = int(walker[0].split("_")[1])
+            walker_num = walker[1]
+            filename += "traj_segs/{:06}/{:06}/seg.dcd".format(iteration, walker_num)
+            if os.path.exists(filename):
+                f.write("trajin {} \n".format(filename))
+        clustering_command = get_clustering_command_cpptraj(settings["clustering"], bins[key]["walkers"]["clusters"], selection_string)
+        f.write(clustering_command)
+        f.write("\n")
+        
 
 def get_selection_cpptraj(filename):
     """
@@ -356,16 +266,16 @@ def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
     return number_clusters
 
 
-def get_clustering_bins_cpptraj(west, settings):
-    bins = get_bins_dictionary()
-    create_bins_directories(bins)
+def get_clustering_bins_cpptraj(west, settings, directory):
+    bins = get_bins_dictionary(west, settings)
+    create_bin_cpptraj_files(bins, settings, directory)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that performs clustering or prepares files to run clustering using cpptraj. It can cluster per generation or divided the space in bins according to what the user wants.")
     parser.add_argument("west", type=str, help="Define the west.h5 file. It is required")
-    parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
+    parser.add_argument("settings", type=str, help="Define the yaml file with the settings. It is required")
     parser.add_argument("dir", type=str, help="Define the directory were results will be stored. It is required")
     args = parser.parse_args()
 

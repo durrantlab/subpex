@@ -26,8 +26,8 @@ if __name__ == "__main__":
     if "composite" in results.keys():
         if "prmsd" not in results:
             results["prmsd"] = []
-        if "bb_rmsd" not in results:
-            results["bb_rmsd"] = []
+        if "bb" not in results:
+            results["bb"] = []
 
     # open file with selection string
     with open(settings["selection_file"], "r") as f:
@@ -82,13 +82,13 @@ if __name__ == "__main__":
     if "rog_pocket" in results.keys():
         results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
 
-    if "bb_rmsd" in results.keys():
+    if "bb" in results.keys():
         align.alignto(istate, reference, select="backbone")
-        results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
+        results["bb"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
                                                                istate.select_atoms("backbone").positions))
 
     if "composite" in results.keys():
-        results["composite"].append(results["prmsd"][-1] + (sigma * results["bb_rmsd"][-1]))
+        results["composite"].append(results["prmsd"][-1] + (sigma * results["bb"][-1]))
 
     # writing in text files the progress coordinates and the required auxiliary data if needed. 
     with open("pcoord.txt", "w") as f:
@@ -119,9 +119,9 @@ if __name__ == "__main__":
             for i in results["rog_pocket"]:
                 f.write(str(i)+"\n")
 
-    if "bb_rmsd" in settings["auxdata"]:
-        with open("bb_rmsd.txt", "w") as f:
-            for i in results["bb_rmsd"]:
+    if "bb" in settings["auxdata"]:
+        with open("bb.txt", "w") as f:
+            for i in results["bb"]:
                 f.write(str(i)+"\n")
 
     if "prmsd" in settings["auxdata"]:

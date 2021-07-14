@@ -53,17 +53,17 @@ def check_input_settings_file(filename):
 
     # Checking that we specify which progress coordinates we will print in the pcoord file
     if "pcoord" in settings:
-        available_pcoords = ["jd", "prmsd", "bb_rmsd", "composite", "pvol", "rog_pocket"]
+        available_pcoords = ["jd", "prmsd", "bb", "composite", "pvol", "rog_pocket"]
         if len(settings["pcoord"]) < 1:
-            logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb_rmsd and/or prsmd")
+            logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb and/or prsmd")
             sys.exit("Error with setting pcoord")
         else:
             for i in settings["pcoord"]:
                 if i not in available_pcoords:
-                    logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb_rmsd and/or prsmd")
+                    logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb and/or prsmd")
                     sys.exit("Error with setting pcoord")
     else:
-        logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb_rmsd and/or prsmd")
+        logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb and/or prsmd")
         sys.exit("Error with setting pcoord")
 
     # Checking radius is in settings
@@ -577,8 +577,8 @@ if __name__ == "__main__":
     if "composite" in results.keys():
         if "prmsd" not in results:
             results["prmsd"] = []
-        if "bb_rmsd" not in results:
-            results["bb_rmsd"] = []
+        if "bb" not in results:
+            results["bb"] = []
 
     # this section is for the WESTPA analysis tools to work. The first point must be initial point.
     if args.we:
@@ -600,9 +600,9 @@ if __name__ == "__main__":
             with open("parent_rog.txt", "r") as f:
                 results["rog_pocket"].append(float(f.readlines()[-1]))
 
-        if "bb_rmsd" in settings["auxdata"]:
+        if "bb" in settings["auxdata"]:
             with open("parent_bb.txt", "r") as f:
-                results["bb_rmsd"].append(float(f.readlines()[-1]))
+                results["bb"].append(float(f.readlines()[-1]))
 
         if "prmsd" in settings["auxdata"]:
             with open("parent_prmsd.txt", "r") as f:
@@ -653,13 +653,13 @@ if __name__ == "__main__":
         if "rog_pocket" in results.keys():
             results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
 
-        if "bb_rmsd" in results.keys():
+        if "bb" in results.keys():
             align.alignto(protein, reference, select="backbone")
-            results["bb_rmsd"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
+            results["bb"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
                                                                    protein.select_atoms("backbone").positions))
 
         if "composite" in results.keys():
-            results["composite"].append(results["prmsd"][-1] + (sigma * results["bb_rmsd"][-1]))
+            results["composite"].append(results["prmsd"][-1] + (sigma * results["bb"][-1]))
 
     # writing in text files the progress coordinates and the required auxiliary data if needed. 
     with open("pcoord.txt", "w") as f:
@@ -690,9 +690,9 @@ if __name__ == "__main__":
             for i in results["rog_pocket"]:
                 f.write(str(i)+"\n")
 
-    if "bb_rmsd" in settings["auxdata"]:
-        with open("bb_rmsd.txt", "w") as f:
-            for i in results["bb_rmsd"]:
+    if "bb" in settings["auxdata"]:
+        with open("bb.txt", "w") as f:
+            for i in results["bb"]:
                 f.write(str(i)+"\n")
 
     if "prmsd" in settings["auxdata"]:
