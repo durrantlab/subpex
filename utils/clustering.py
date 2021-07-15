@@ -269,7 +269,7 @@ def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
 def get_clustering_bins_cpptraj(west, settings, directory):
     bins = get_bins_dictionary(west, settings)
     create_bin_cpptraj_files(bins, settings, directory)
-    for 
+    #for key in bins.keys:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
