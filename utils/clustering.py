@@ -21,7 +21,7 @@ def check_clustering_parameters(settings):
     Args:
         settings ([type]): [description]
     """
-    if "clustering" not in settings["subpex"] or type(settings["subpex"]["clustering"]) is not dict:
+    if "clustering" not in settings or type(settings["clustering"]) is not dict:
         logging.critical("There is a problem with the clustering parameters. Please check the settings file.")
         sys.exit("There is a problem with the clustering parameters. Please check the settings file.")
     else:
@@ -37,14 +37,14 @@ def get_bins_dictionary(west, settings):
     for iteration in west["iterations"]:
         for walker in range(len(west["iterations"][iteration]["pcoord"])):
             name = ""
-            for key in settings["subpex"]["clustering"]["bins"]:
-                if key in settings["subpex"]["pcoord"]:
-                    for i in range(len(settings["subpex"]["pcoord"])):
-                        if key == settings["subpex"]["pcoord"][i]:
+            for key in settings["clustering"]["bins"]:
+                if key in settings["pcoord"]:
+                    for i in range(len(settings["pcoord"])):
+                        if key == settings["pcoord"][i]:
                             value = west["iterations"][iteration]["pcoord"][-1][-1][i]
-                elif key in settings["subpex"]["auxdata"]:
+                elif key in settings["auxdata"]:
                     value = west["iterations"][iteration]["auxdata"][key][walker]
-                for a, bin_val in enumerate(settings["subpex"]["clustering"]["bins"][key]):
+                for a, bin_val in enumerate(settings["clustering"]["bins"][key]):
                     if value > bin_val:
                         pass
                     else:
@@ -68,12 +68,12 @@ def calculate_clusters_per_bin(bins, settings):
             pass
     # append as the last element of the list the number of clusters we will obtain in said bin
     for key in bins.keys():
-        if len(bins[key]["walkers"]) <= settings["subpex"]["clustering"]["min_number_clusters_generation_bin"]:
+        if len(bins[key]["walkers"]) <= settings["clustering"]["min_number_clusters_generation_bin"]:
             bins[key]["clusters"] = len(bins[key]["walkers"])
-        elif (len(bins[key]["walkers"]) / max_num_walkers) * settings["subpex"]["clustering"]["max_number_clusters_generation_bin"] <= 3:
+        elif (len(bins[key]["walkers"]) / max_num_walkers) * settings["clustering"]["max_number_clusters_generation_bin"] <= 3:
             bins[key]["clusters"] = 3
         else:
-            value = int(round((len(bins[key]["walkers"]) / max_num_walkers) * settings["subpex"]["clustering"]["max_number_clusters_generation_bin"], 0))
+            value = int(round((len(bins[key]["walkers"]) / max_num_walkers) * settings["clustering"]["max_number_clusters_generation_bin"], 0))
             bins[key]["clusters"] = value
 
 
@@ -93,7 +93,7 @@ def create_bin_cpptraj_files(bins, settings, directory):
 
 def create_cpptraj_file_bins(bins, settings, directory, key, selection_string):
     with open(directory + "/{}/clustering.in".format(key), "w") as f:
-        f.write("parm {} \n".format(settings["subpex"]["topology"]))
+        f.write("parm {} \n".format(settings["topology"]))
         for walker in bins[key]["walkers"]:
             filename = glob.glob(settings["west_home"])[0]
             iteration = int(walker[0].split("_")[1])
