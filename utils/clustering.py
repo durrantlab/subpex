@@ -269,7 +269,11 @@ def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
 def get_clustering_bins_cpptraj(west, settings, directory):
     bins = get_bins_dictionary(west, settings)
     create_bin_cpptraj_files(bins, settings, directory)
-    #for key in bins.keys:
+    with open(directory + "/run_clustering_bins.sh", "w") as f:
+        for key in bins.keys:
+            f.write("cd {} \n".format(directory + "/" + key))
+            f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
