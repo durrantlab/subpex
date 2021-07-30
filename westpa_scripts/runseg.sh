@@ -60,6 +60,8 @@ ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
 ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
 ln -sv $WEST_PARENT_DATA_REF/bb.txt  ./parent_bb.txt
 ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
+ln -sv $WEST_PARENT_DATA_REF/jd.txt ./parent_jd.txt
+ln -sv $WEST_PARENT_DATA_REF/prmsd.txt ./parent_prmsd.txt
 
 # Files needed to run amber's md engine
 sed "s/RAND/$WEST_RAND16/g" \
@@ -104,15 +106,16 @@ fi
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-#python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
+python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.dcd  $WEST_SIM_ROOT/reference/settings.cfg --we
 
 python3 $WEST_SIM_ROOT/westpa_scripts/jdistance.py seg.nc  $WEST_SIM_ROOT/west.cfg --we
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
 cp rog.txt $WEST_ROG_RETURN
-cp bb_rmsd.txt $WEST_BB_RETURN
-#cp fop.xyz $WEST_FOP_RETURN
+cp bb.txt $WEST_BB_RETURN
+cp jd.txt $WEST_FOP_RETURN
+cp prmsd $WEST_PRMSD_RETURN
 
 # Clean up
 if [ -n "$SEG_DEBUG" ] ; then
