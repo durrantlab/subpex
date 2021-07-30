@@ -39,8 +39,6 @@ cd $WEST_CURRENT_SEG_DATA_REF
 
 # Make symbolic links to the topology file and parameter files. These are not 
 # unique to each segment.
-#ln -sv $WEST_SIM_ROOT/reference/mol.pdb    structure.pdb
-ln -sv $WEST_SIM_ROOT/reference/2hty_a_final.prmtop mol.prmtop
 
 # Either continue an existing tractory, or start a new trajectory. Here, both
 # cases are the same.  If you need to handle the cases separately, you can
@@ -53,36 +51,50 @@ ln -sv $WEST_SIM_ROOT/reference/2hty_a_final.prmtop mol.prmtop
 # We'll use the "sed" command to replace the string "RAND" with a randomly
 # generated seed.
 
-# if [$MD_ENGINE == "AMBER"]; then echo "Hello world", fi
-#sed "s/RAND/$WEST_RAND16/g" \
-#$WEST_SIM_ROOT/reference/md.conf > md.conf
-
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
-ln -sv $WEST_SIM_ROOT/reference/2hty_a_final.inpcrd mol.inpcrd
 
 ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
 ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
-ln -sv $WEST_PARENT_DATA_REF/bb_rmsd.txt  ./parent_bb.txt
+ln -sv $WEST_PARENT_DATA_REF/bb.txt  ./parent_bb.txt
 ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
 
 # Files needed to run amber's md engine
 sed "s/RAND/$WEST_RAND16/g" \
 $WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
 
+sed "s/RAND/$WEST_RAND16/g" \
+$WEST_SIM_ROOT/reference/md.conf > md.conf
+
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
+
+# amber files
 ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
 
-
+# NAMD files
+ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
+ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
+ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
+ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
+ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 
 ############################## Run the dynamics ################################
 
+# Amber MD engine
 $AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
+
+# NAMD MD engine
+$NAMD md.conf > seg.log
+
+if grep -q RATTLE seg.log; then
+    $NAMD md.conf > seg.log
+fi
 
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
