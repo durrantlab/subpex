@@ -20,9 +20,9 @@ cd $WEST_SIM_ROOT
 source env.sh
 cd $WEST_STRUCT_DATA_REF
 
-ln -s $WEST_SIM_ROOT/reference/last_frame_no_water.pdb mol.pdb
-ln -s $WEST_SIM_ROOT/reference/equil_07_npt.rst seg.rst
-ln -s $WEST_SIM_ROOT/reference/2hty_a_final.prmtop mol.prmtop
+ln -s $WEST_SIM_ROOT/reference/REFERENCE.pdb mol.pdb
+ln -s $WEST_SIM_ROOT/reference/RESTART_FILE seg.dcd
+ln -s $WEST_SIM_ROOT/reference/TOPOLOGY_FILE mol.prmtop
 
 # Use a custom script to calculate the jaccard distance between the starting
 # structure and the initial state (should be 0 since we are copying the files).
@@ -32,7 +32,7 @@ python3 $WEST_SIM_ROOT/westpa_scripts/pcoord_istate.py mol.pdb $WEST_SIM_ROOT/we
 cp pcoord.txt $WEST_PCOORD_RETURN
 cp pvol.txt $WEST_PVOL_RETURN
 cp rog.txt $WEST_ROG_RETURN
-cp bb_rmsd.txt $WEST_BB_RETURN
+cp bb.txt $WEST_BB_RETURN
 cp fop.txt $WEST_FOP_RETURN
 
 # If we are running in debug mode, then output a lot of extra information.
