@@ -20,7 +20,7 @@ pkill -9 -f w_run
 # from each trajectory segment), and istates (initial states for starting new
 # trajectories) directories exist and are empty. 
 rm -rf traj_segs seg_logs istates west.h5 
-mkdir   seg_logs traj_segs istates
+mkdir   seg_logs traj_segs istates job_logs
 
 # Copy over the equilibrated conformation from ./prep to bstates/unbound,
 # including coordinates, velocities, and box information
