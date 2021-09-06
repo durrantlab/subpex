@@ -143,3 +143,22 @@ if __name__ == "__main__":
         points_to_pdb(settings["reference_fop"], reference_fop)
     else:
         print("Could not save FOP file")
+    
+    pocket_list = []
+    for i in pocket_reference.residues:
+        residue = ref_universe.select_atoms("resid {}".format(i.resid))
+        for j in reference_fop:
+            distance = calculate_distance_two_points(residue.center_of_geometry(), j)
+            if distance > 2.0:
+                if residue.resid not in pocket_list:
+                        pocket_list.append(residue.resid)
+    
+    selection_pocket = "resid {} ".format(pocket_list[0])
+        for i in pocket_list[1:]:
+            selection_pocket += " or resid {} ".format(str(i))
+
+        selection_pocket += "and (not name H*)"
+        
+    with open(settings["selection_file"], "w") as f:
+            f.write(selection_pocket)
+
