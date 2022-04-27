@@ -26,15 +26,43 @@ calculate their progress coordinate. After that you will need to run the run.sh 
 
 For more information on these scripts go to the comments in the files.
 
-## Notes and ideas
+## how to run SubpEx
 
-This a WORKING beta version of SubPEx.
+1. Clone the repository (https://git.durrantlab.pitt.edu/erh91/SubPEx-Erich.git).
+2. Soft link or copy the equilibrated trajectories and necessary restart files to the reference directory.
+    - If using NAMD the dcd file is fine.
+    - If using Amber the filetype that works with the SubPEx algorithm is the .nc.
+3. Extract the last frame of the equilibrated trajectory.
+4. Find the coordinates for center of the pocket and the radius you want to use.
+    - you will be able to change this later once you visually inspect it.
+5. Open the west.cfg file and modify it.
+    - add the center, radius and resolution.
+    - Make sure that the WESTPA progress coordinate and auxdata matches the SubPEx ones.
+    - Make sure the paths to selection_file, topology, west_home, reference and reference_fop exist and are valid.
+    - the reference is the pdb file that will used in EVERY SINGLE progress coordinate calculation.
+    - selection_file and reference_fop will be calculated later but still need the names that will be used.
+6. Run the westpa_scripts/get_reference_fop.py script. It used the west.cfg as config file. Here is where the selection_file and reference_fop files are generated. 
+7. Visually inspect the pocket field of points and the selection string (it uses MDAnalysis syntax) you can re-run the westpa_scripts/get_reference_fop.py script to recalculate them.
+8. Change the adaptive_binning/adaptive.py file to reflect the bins minimum and maximum values the progress coordinate must take and the number of bins and dimensions. 
+9. Revise env.sh, you need to export the MD engine, this file can get complicated if using a supercomputing center. There are some extra files in the env-crc directory that will help with setup at the CRC (University of Pittsburgh's supercomputing center).
+10. Change westpa_scripts/get_pcoord.sh.
+    - Make sure to link the files needed to start the simulations.
+    - make sure that you are copying all the auxdata files to their respective WESTPA variable.
+11. Activate the westpa conda environment and run the init.sh file.
+12. If errors occur, check the job_logs directory.
+13. Modify the runseg.sh
+    - link files necessary files to restart simulation.
+    - link all parent auxdata files as parent_AUXDATA.txt
+    - make sure the random seed number gets added to the configuration file (comment out the one you are not using).
+    - make sure the way to call the MD engine is correct.
+    - make sure to call the right trajectory file for the jdistance.py script.
+    - make sure that you are copying all the auxdata files to the westpa variables.
+14. Modify the MD configuration file in reference (check names and other parameters)
+    - Make sure the number of frames corresponds to pcoordlength - 1 (pcoordlength is in the adaptive_binning/adaptive.py file)
+15. run the run.sh file (unless you are running it in a supercomputing center).
 
-Things that need to be changed:
-
-- add a file with all the different pocket shapes or a directory with protein 
-conformations. (can be done at the end of the each generation, for this I probably need to modify the WESTPA code)
-- add script to help with setting things up.  
+Notes:
+There are a LOT of parts that need to be perfect for it to run, since WESTPA sims are not that easy to set up. To debug stuff check the west.log file and also the output in the job_logs directory.
 
 ## Important scripts and files and what they do 
 
