@@ -27,7 +27,7 @@ We have provided a yaml file to create your conda environment with all the depen
 
 At the moment manual input is needed to set-up the simualtion on the protein of interest. Hopefully this will be changed soon.
 
-## how to run SubpEx
+## How to run SubpEx
 
 Before we start with the steps, we highly recommend visually inspecting the selected pocket. A way of visualizing the center of the pocket is to create a PDB file with one CA atom at the coordinates of your pocket and load it into your prefered visualization software (ChimeraX, PyMol, VMD, etc.) with the initial state of the protein of interest.
 
