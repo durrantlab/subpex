@@ -8,7 +8,7 @@
 #SBATCH --cluster=mpi
 #SBATCH --partition=ib
 ##SBATCH --partition=opa-high-mem
-#SBATCH --mail-user=erh91@pitt.edu
+#SBATCH --mail-user=user@email.domain
 #SBATCH --mail-type=END,FAIL  #BEGIN
 #
 # run.sh

@@ -67,6 +67,7 @@ ln -sv $WEST_PARENT_DATA_REF/prmsd.txt ./parent_prmsd.txt
 sed "s/RAND/$WEST_RAND16/g" \
 $WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
 
+# Files needed to run NAMD md engine
 sed "s/RAND/$WEST_RAND16/g" \
 $WEST_SIM_ROOT/reference/md.conf > md.conf
 
