@@ -14,11 +14,11 @@ pcoord_dtype = numpy.float32
 
 #THESE ARE THE PARAMETERS YOU CAN CHANGE
 bintargetcount=3 #number of walkers per bin
-numberofdim=2  # number of dimensions
-binsperdim=[10,10]   # You will have prod(binsperdim)+numberofdim*(2+2*splitIsolated)+activetarget bins total
+numberofdim=1  # number of dimensions
+binsperdim=[15]   # You will have prod(binsperdim)+numberofdim*(2+2*splitIsolated)+activetarget bins total
 pcoordlength=3 # length of the pcoord
-maxcap=[1, 6] #for each dimension enter the maximum number at which binning can occur, if you do not wish to have a cap use inf
-mincap=[-inf, -inf]  #for each dimension enter the minimum number at which binning can occur, if you do not wish to have a cap use -inf
+maxcap=[5] #for each dimension enter the maximum number at which binning can occur, if you do not wish to have a cap use inf
+mincap=[-inf]  #for each dimension enter the minimum number at which binning can occur, if you do not wish to have a cap use -inf
 targetstate=[2.6]    #enter boundaries for target state or None if there is no target state in that dimension
 targetstatedirection=[-1]  #if your target state is meant to be greater that the starting pcoor use 1 or else use -1. This will be done for each dimension in your simulation
 activetarget=0      #if there is no target state make this zero

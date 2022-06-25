@@ -107,4 +107,3 @@ dependencies:
   - zeromq=4.3.4=h9c3ff4c_0
   - zlib=1.2.11=h516909a_1010
   - zstd=1.4.8=ha95c52a_1
-prefix: /home/erh91/.conda/envs/westpa
