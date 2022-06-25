@@ -44,7 +44,7 @@ calculate the progress coordinate:
 - yaml
 
 Manual input is needed to set up the simulation of the protein of interest.
-Hopefully, this will be changed soon and a autobuilder will be available.
+Hopefully, this will be changed soon and an autobuilder will be available.
 
 1. Soft link or copy the equilibrated trajectories and necessary restart files
    to the reference directory.
@@ -52,9 +52,9 @@ Hopefully, this will be changed soon and a autobuilder will be available.
 
     - If using Amber, the filetype that works with the SubPEx algorithm is the
       .nc.
-    ```bash
+```bash
 ln -s \file\path\to\trajectory\files \WEST\ROOT\reference
-    ```
+```
 2. Extract the last frame of the equilibrated trajectory with your prefered package.
 3. Find the coordinates for the center of the pocket and the radius you want to
    use.
