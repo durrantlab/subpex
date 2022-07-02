@@ -59,13 +59,13 @@ Hopefully, this will be changed soon and an autobuilder will be available.
       `.nc`.
 
       ```bash
-      ln -s \file\path\to\trajectory\files \WEST\ROOT\reference
+      ln -s \file\path\to\trajectory\files \WEST\ROOT\reference\
       ```
 
       (***JDD: Repository already has reference/***)
 
-2. Extract the last frame of the equilibrated trajectory with your preferred
-   package. (***JDD: What format for last frame? Does it matter?***)
+2. Extract the last frame of the equilibrated trajectory as a pdb file with your preferred
+   package. 
 3. Find the coordinates for the center of the pocket and the radius you want to
    use, using the extracted last frame.
     - you will be able to change this later once you visually inspect it.
@@ -81,24 +81,25 @@ Hopefully, this will be changed soon and an autobuilder will be available.
        - `prmsd`: pocket heavy atoms RMSD
        - `bb`: backbone RMSD
        - `composite`: composite RMSD
-    - select the auxiliary data (`auxdata`) to calculate and save (***JDD: Could you describe the aux data listed in `west.cfg` by default, just briefly?***)
-       - `prmsd`: ***???***
-       - `pvol`: ***???***
-       - `bb`: ***???***
-       - `rog_pocket`: ***???***
-       - `jd`: ***???***
+    - select the auxiliary data (`auxdata`) to calculate and save 
+       - `composite`: composite RMSD
+       - `prmsd`: pocket heavy atoms RMSD*
+       - `pvol`: pocket volume
+       - `bb`: backbone RMSD
+       - `rog_pocket`: radius of gyration of the pocket
+       - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
-      ones. (***JDD: Meaning unclear***)
+      ones. These section are both found in the west.cfg file. 
     - make sure to specify the path variables: 
-        - `topology`: (***JDD: description needed here***)
-        - `west_home`: (***JDD: description needed here***)
+        - `topology`: topology file needed for the MD simulations
+        - `west_home`: home directory of the run
         - `reference`: the PDB file that will be used in EVERY SINGLE
           progress-coordinate calculation (the last frame of the equilibration
           simulation mentioned in step 2).
-        - `selection_file`: (***JDD: description needed here***). This file will
+        - `selection_file`: Selection string using MDAnalysis convention. This file will
           be automatically generated in a subsequent step.
-        - `reference_fop`: (***JDD: description needed here***). This file will
-          be automatically generated in a subsequent step.
+        - `reference_fop`: Coordinates for the field of points need to calcualte jd. 
+          This file will be automatically generated in a subsequent step.
 5. Run the `westpa_scripts/get_reference_fop.py` script. It uses the west.cfg as
    the configuration file. Here is where the `selection_file` and
    `reference_fop` files are generated. 
