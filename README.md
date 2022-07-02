@@ -25,11 +25,17 @@ The first step to start running SubPEx simulations is to download this repositor
 git clone https://git.durrantlab.pitt.edu/erh91/SubPEx-Erich.git
 ```
 
-In the reposirtory we have provided a yaml file to create a `conda` environment with all the necessary
-dependencies. Simply run this command:
+In the repository we have provided a yaml file to create a `conda` environment
+with all the necessary dependencies. Simply run this command:
 
 ```bash
 conda env create -f environment.yaml
+```
+
+To activate the new `conda` environment, run:
+
+```bash
+conda activate westpa
 ```
 
 Some users may wish to create their own environments or to use an existing
@@ -47,48 +53,68 @@ Manual input is needed to set up the simulation of the protein of interest.
 Hopefully, this will be changed soon and an autobuilder will be available.
 
 1. Soft link or copy the equilibrated trajectories and necessary restart files
-   to the reference directory.
-    - If using NAMD, the .dcd file is fine.
-
+   (***JDD: Possible to be more descritive?***) to the reference directory.
+    - If using NAMD, the `.dcd` file is fine.
     - If using Amber, the filetype that works with the SubPEx algorithm is the
-      .nc.
-```bash
-ln -s \file\path\to\trajectory\files \WEST\ROOT\reference
-```
-2. Extract the last frame of the equilibrated trajectory with your prefered package.
+      `.nc`.
+
+      ```bash
+      ln -s \file\path\to\trajectory\files \WEST\ROOT\reference
+      ```
+
+      (***JDD: Repository already has reference/***)
+
+2. Extract the last frame of the equilibrated trajectory with your preferred
+   package. (***JDD: What format for last frame? Does it matter?***)
 3. Find the coordinates for the center of the pocket and the radius you want to
-   use.
+   use, using the extracted last frame.
     - you will be able to change this later once you visually inspect it.
-    - visual inspection can be done by creating a PDB file with the with one
-      CA atom at the coordinates of your pocket and load it into your preferred
-      visualization software (ChimeraX, PyMol, VMD, etc.) with the extracted last frame 
-      of the previous step.
-4. Open the west.cfg file and modify it. 
-    - add the center, radius, and resolution.
-    - select which progress coordinate and auxiliary data you want to calculate.
+    - visual inspection can be done by creating a PDB file with one CA atom at
+      the coordinates of your pocket and load it into your preferred
+      visualization software (ChimeraX, PyMol, VMD, etc.) with the extracted
+      last frame of the previous step.
+4. Open the `west.cfg` file and modify it. 
+    - add the `center`, `radius`, and `resolution` parameters. (***JDD: Need to
+      explain what resolution is?***)
+    - select which progress coordinate (`pcoord`) to use.
+       - `jd`: Jaccard distance
+       - `prmsd`: pocket heavy atoms RMSD
+       - `bb`: backbone RMSD
+       - `composite`: composite RMSD
+    - select the auxiliary data (`auxdata`) to calculate and save (***JDD: Could you describe the aux data listed in `west.cfg` by default, just briefly?***)
+       - `prmsd`: ***???***
+       - `pvol`: ***???***
+       - `bb`: ***???***
+       - `rog_pocket`: ***???***
+       - `jd`: ***???***
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
-      ones.
-    - make sure the paths to selection_file, topology, west_home, reference, and
-      reference_fop exist and are valid.
-    - the reference is the PDB file that will be used in EVERY SINGLE progress
-      coordinate calculation (the one obtained in step 2).
-    - selection_file and reference_fop will be calculated later but still need
-      the names used.
-5. Run the westpa_scripts/get_reference_fop.py script. It uses the west.cfg as
-   the configuration file. Here is where the selection_file and reference_fop
-   files are generated. 
+      ones. (***JDD: Meaning unclear***)
+    - make sure to specify the path variables: 
+        - `topology`: (***JDD: description needed here***)
+        - `west_home`: (***JDD: description needed here***)
+        - `reference`: the PDB file that will be used in EVERY SINGLE
+          progress-coordinate calculation (the last frame of the equilibration
+          simulation mentioned in step 2).
+        - `selection_file`: (***JDD: description needed here***). This file will
+          be automatically generated in a subsequent step.
+        - `reference_fop`: (***JDD: description needed here***). This file will
+          be automatically generated in a subsequent step.
+5. Run the `westpa_scripts/get_reference_fop.py` script. It uses the west.cfg as
+   the configuration file. Here is where the `selection_file` and
+   `reference_fop` files are generated. 
 6. Visually inspect the pocket field of points and/or the selection string (it uses
-   MDAnalysis syntax). You can re-run the westpa_scripts/get_reference_fop.py
+   MDAnalysis syntax). You can re-run the `westpa_scripts/get_reference_fop.py`
    script to recalculate them to fine-tune your pocket.
-7. Change the adaptive_binning/adaptive.py file to reflect the bins' minimum and
-   maximum values the progress coordinate must take and the number of bins and
-   dimensions. __NOTE__: We do not need target states, so we can ignore those parameters.
+7. Change the `adaptive_binning/adaptive.py` file to reflect the bins' minimum
+   and maximum values the progress coordinate must take and the number of bins
+   and dimensions. __NOTE__: We do not need target states, so we can ignore
+   those parameters.
 8. Revise env.sh. You need to export the MD engine, and this file can get
    complicated if using a supercomputing center. Some extra files in the env-crc
    directory will help with the setup at a supercomputing center. We used the
    CRC (University of Pittsburgh's supercomputing center) and bridges2 of XSEDE,
    and these files needed minimal changes.
-9. Change westpa_scripts/get_pcoord.sh.
+9. Change `westpa_scripts/get_pcoord.sh`.
     - Make sure to link the files needed to start the simulations. (check lines 23-25)
       The file has example commands for a NAMD run.
     - make sure you are copying all the auxdata files to their respective WESTPA
@@ -110,17 +136,17 @@ conda activate westpa
 13. Modify the MD configuration file in reference (check names and other
     parameters)
     - Make sure the number of frames corresponds to pcoordlength minus one
-      (pcoordlength is in the adaptive_binning/adaptive.py file)
+      (pcoordlength is in the `adaptive_binning/adaptive.py` file)
 14. Run the run.sh file (unless you are running it in a supercomputing center).
-    We have provided a template file (subpex.sh) that works for our supercomputing center, 
-    it may not work for your center. Please check with your IT person to troubleshoot any
-    problem.
+    We have provided a template file (subpex.sh) that works for our
+    supercomputing center, it may not work for your center. Please check with
+    your IT person to troubleshoot any problem.
 
 __Notes__: A lot of parts need to be perfect for it to run since WESTPA sims are
-not that easy to set up. To debug, check the west.log file and the output in the
-job_logs directory.
+not that easy to set up. To debug, check the `west.log` file and the output in
+the `job_logs` directory.
 
-## Important scripts and files and what they do 
+## Important scripts and files and what they do
 
 - __env.sh__ sets up some environmental variables.
 - __init.sh__ initializes the run. Creates the basis and initial states and
