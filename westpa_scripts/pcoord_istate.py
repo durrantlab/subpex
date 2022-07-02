@@ -1,4 +1,4 @@
-from jdistance import *
+from pcoord import *
 
 #todo refactor this script
 if __name__ == "__main__":

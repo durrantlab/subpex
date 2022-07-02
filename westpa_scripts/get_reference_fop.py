@@ -1,4 +1,4 @@
-from jdistance import *
+from pcoord import *
 
 
 def get_pocket_selection(universe, center, radius, selection_file, distance_constraint=6.7):
