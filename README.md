@@ -1,4 +1,4 @@
-# SubPEx 
+# SubPEx
 
 ## What is it?
 
@@ -10,10 +10,10 @@ As with any WE implementation, SubPEx uses a progress coordinate to focus
 computational power on sampling phase space. The available progress coordinates
 are:
 
-- Jaccard distance of pocket volumes (jd)
-- backbone RMSD
-- pocket heavy atoms RMSD
 - composite RMSD (a linear combination of backbone and pocket heavy-atom RMSD)
+- pocket heavy atoms RMSD
+- backbone RMSD
+- Jaccard distance of pocket volumes (jd)
 
 We recommend using the composite RMSD progress coordinate.
 
@@ -44,7 +44,7 @@ WESTPA environment. If so, install the following packages so SubPEx can
 calculate the progress coordinate:
 
 - Westpa
-- MDAnalysis 
+- MDAnalysis
 - NumPy
 - SciPy
 - scikit-learn
@@ -54,7 +54,7 @@ Manual input is needed to set up the simulation of the protein of interest.
 Hopefully, this will be changed soon and an autobuilder will be available.
 
 1. Soft link or copy the equilibrated trajectories and necessary restart files
-   (***JDD: Possible to be more descritive?***) to the reference directory.
+   (***JDD: Possible to be more descriptive?***) to the reference directory.
     - If using NAMD, the `.dcd` file is fine.
     - If using Amber, the filetype that works with the SubPEx algorithm is the
       `.nc`.
@@ -63,7 +63,7 @@ Hopefully, this will be changed soon and an autobuilder will be available.
       ln -s \file\path\to\trajectory\files \WEST\ROOT\reference\
       ```
 
-      (***JDD: Repository already has reference/***)
+      (***JDD: Repository already has reference/ JDD note to self: Existing files there are important (NAMD AND AMBER script)***)
 
 2. Extract the last frame of the equilibrated trajectory as a `pdb` file with
    your preferred package.
@@ -76,7 +76,7 @@ Hopefully, this will be changed soon and an autobuilder will be available.
       last frame of the previous step.
 4. Open the `west.cfg` file and modify it. 
     - add the `center`, `radius`, and `resolution` parameters. (***JDD: Need to
-      explain what resolution is?***)
+      explain what resolution is? JDD NOTE TO SELF: Resolution only for JD method.***)
     - select which progress coordinate (`pcoord`) to use.
        - `jd`: Jaccard distance
        - `prmsd`: pocket heavy atoms RMSD
@@ -106,10 +106,10 @@ Hopefully, this will be changed soon and an autobuilder will be available.
    as the configuration file. Here is where the `selection_file` and
    `reference_fop` files are generated.
 6. Visually inspect the pocket field of points and/or the selection string (it
-   uses MDAnalysis syntax). ***JDD: What should users be looking for here?***
+   uses MDAnalysis syntax). ***JDD: What should users be looking for here? NOTE TO SELF: Make sure fully fills pocket. Note also JD alone uses this. But regardless of progress coordinate, this is good for debugging pocket at this point. Also selection file good for debugging. ***
    - Note that the popular molecular visualization program VMD can load `xyz`
      files. ***JDD: isn't it true the field of points is only needed for jd? If
-     so, good to mention somewhere.***
+     so, good to mention somewhere. NOTE TO SELF: Yes, but good for debugging pocket. Together with selection. Mention that too.***
    - Adjust the `west.cfg` file (`center`, `radius`, and `resolution`
      parameters) and re-run the `westpa_scripts/get_reference_fop.py` script to
      recalculate the files if you need to fine-tune your pocket.
@@ -119,11 +119,12 @@ Hopefully, this will be changed soon and an autobuilder will be available.
    those parameters.  ***JDD: Good to briefly mention what these variables are
    here, with improved descriptions in adaptive.py itself.***
 8. Revise `env.sh`. You need to export the MD engine, and this file can get
-   complicated if using a supercomputing center. Some extra files in the env-crc
-   directory will help with the setup at a supercomputing center. We used the
-   CRC (University of Pittsburgh's supercomputing center) and bridges2 of XSEDE,
-   and these files needed minimal changes. ***JDD: Not clear what to change in
-   this file.***
+   complicated if using a supercomputing center. Some extra files in the
+   `./env-crc/` directory will help with the setup at a supercomputing center.
+   We used the CRC (University of Pittsburgh's supercomputing center) and
+   bridges2 of XSEDE, and these files needed minimal changes. ***JDD: Not clear
+   what to change in this file. LOOK AT `./env-crc` directory and give thought
+   to how to make more usable.***
 9. Change `westpa_scripts/get_pcoord.sh`.
     - Make sure to link the files needed to start the simulations. (check lines 23-25)
       The file has example commands for a NAMD run.

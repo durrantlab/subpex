@@ -13,18 +13,20 @@ from numpy import *
 pcoord_dtype = numpy.float32
 
 # THESE ARE THE PARAMETERS YOU CAN CHANGE
+bintargetcount = 3           # number of walkers per bin
+numberofdim = 1              # number of dimensions
+pcoordlength = 3             # length of the pcoord (TODO: JDD NOTE: Number of measurements taken per walker plus one, last frame of parent)
+binsperdim = [15]            # You will have prod(binsperdim) + numberofdim *
+                             #     (2 + 2 * splitIsolated) + activetarget bins
+                             #     total
 mincap = [-inf]              # for each dimension enter the minimum number at 
                              #     which binning can occur, if you do not wish
                              #     to have a cap use -inf
 maxcap = [5]                 # for each dimension enter the maximum number at
                              #     which binning can occur, if you do not wish
-                             #     to have a cap use inf
-bintargetcount = 3           # number of walkers per bin
-numberofdim = 1              # number of dimensions
-binsperdim = [15]            # You will have prod(binsperdim) + numberofdim *
-                             #     (2 + 2 * splitIsolated) + activetarget bins
-                             #     total
-pcoordlength = 3             # length of the pcoord
+                             #     to have a cap use inf (TODO: JDD NOTE: Should 1 one if jd. rmsd bigger. Comment on pcoord specific.)
+
+# IT'S VERY UNLIKELY YOU'LL NEED TO MODIFY THE PARAMETERS BELOW
 targetstate = [2.6]          # enter boundaries for target state or None if
                              #     there is no target state in that dimension
 targetstatedirection = [-1]  # if your target state is meant to be greater that
