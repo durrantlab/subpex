@@ -10,11 +10,12 @@ import logging
 
 def check_input_settings_file(filename):
     """    
-    check_input_settings_file is a function that loads the json file containing the settings for SubPEx and checks that 
-    all the parameters are available or sets defaults if it can be done.
+    check_input_settings_file is a function that loads the json file containing
+    the settings for SubPEx and checks that all the parameters are available or
+    sets defaults if it can be done.
 
     Args:
-        filename (str): filename of the settings json file. 
+        filename (str): filename of the settings yaml file (e.g., west.cfg). 
 
     Raises:
         IOError: raises error if files do not exist or can't be read.
@@ -31,10 +32,10 @@ def check_input_settings_file(filename):
         with open(filename, "r") as f:
             settings = yaml.safe_load(f.read())
         settings = settings["subpex"]
-    except IOError:
+    except IOError as e:
         print("Could not load the configuration file with the settings")
         print("make sure the file exists and is correctly formatted")
-        raise IOError("Could not load the json file with the settings")
+        raise IOError("Could not load the json file with the settings") from e
 
     # Checking that the coordinates of the center of the pocket are in settings.
     if "center" in settings:
@@ -180,8 +181,8 @@ def points_to_pdb(filename, coordinates):
 
 def parse_pdb_fop(filename):
     """
-    parse_pdb_fop will open the fop that is stored in a pdb file with name 'filename', parse it and return the fop as a list 
-    of lists.
+    parse_pdb_fop will open the fop that is stored in a pdb file with name
+    'filename', parse it and return the fop as a list of lists.
 
     Args:
         filename (string): name of the pdb file with the field of points.
@@ -189,6 +190,7 @@ def parse_pdb_fop(filename):
     Returns:
         fop (list of lists): XYZ coordinates of the field of points
     """
+
     with open(filename, "r") as f:
         text = f.readlines()
     fop = []
@@ -206,7 +208,8 @@ def parse_pdb_fop(filename):
 
 def parse_xyz_fop(filename):
     """
-    parse_xyz_fop will read the filename and parse the field of points to convert it into a list of lists
+    parse_xyz_fop will read the filename and parse the field of points to
+    convert it into a list of lists
 
     Args:
         filename (str): filename of the field of points to open and parse
@@ -214,6 +217,7 @@ def parse_xyz_fop(filename):
     Returns:
         fop (list of lists): x, y, z coordinates of the field of points
     """
+
     # open reference fop xyz file
     with open(filename, "r") as f:
         text = f.readlines()
@@ -233,9 +237,9 @@ def parse_xyz_fop(filename):
 
 def points_to_xyz_file(filename, coordinates, resolution, radius):
     """
-    points_to_xyz_file takes the coordinates and the resolution and coordinates to write an xyz file that can be read by
-    a visualization software.
-
+    points_to_xyz_file takes the coordinates and the resolution and coordinates
+    to write an xyz file that can be read by a visualization software.
+    
     Args:
         filename (str): name for the xyz file to be created.
         coordinates (list of lists): contains XYZ coordinates for each atom.
@@ -258,7 +262,8 @@ def points_to_xyz_file(filename, coordinates, resolution, radius):
 
 def calculate_distance_two_points(point1, point2):
     """
-    This function calculates the distance between two points in a 3D coordinate system.
+    This function calculates the distance between two points in a 3D coordinate
+    system.
 
     Args:
         point1 (list): coordinates of first point. [x, y, z]
@@ -276,13 +281,15 @@ def calculate_distance_two_points(point1, point2):
 
 def field_of_points(center, resolution, radius):
     """
-    Function that snaps the provided center to the a center congruent to the resolution and radius given by the
-    user. Then it generates a spherical field of points (FOP) with radius = radius/2 with points at with a distance
+    Function that snaps the provided center to the a center congruent to the
+    resolution and radius given by the user. Then it generates a spherical field
+    of points (FOP) with radius = radius/2 with points at with a distance
     between them equal to the resolution.
 
     Args:
         center (list): provided center coordinates. [X, Y, Z]
-        resolution (float): Distance between points which give resolution of the pocket volume calculator method.
+        resolution (float): Distance between points which give resolution of the
+            pocket volume calculator method.
         radius (float): Defines the radius of the sphere of the FOP.
 
     Returns:
@@ -312,12 +319,14 @@ def get_trimmed_fop(field_of_points, atoms_points):
     Removes points that clash with atoms within the FOP.
 
     Args:
-        field_of_points (list of lists): a field of points to be trimmed of collisions with atoms
+        field_of_points (list of lists): a field of points to be trimmed of
+            collisions with atoms
         atoms_points (list of lists): coordinates of atoms within the FOP.
 
     Returns:
         trimmed_fop (list of lists): a FOP without clashes
     """
+
     # Generating cKDTrees to obtain distances
     atoms_tree = sp.spatial.cKDTree(atoms_points)
     fop_tree = sp.spatial.cKDTree(field_of_points)
@@ -330,7 +339,8 @@ def get_trimmed_fop(field_of_points, atoms_points):
         for item in index:
             field_of_points[item] = None
 
-    # Creating the FOP that does not contain points that clash with the atoms provided to the function.
+    # Creating the FOP that does not contain points that clash with the atoms
+    # provided to the function.
     trimmed_fop = []
     for i in field_of_points:
         if type(i) == np.ndarray:
@@ -343,8 +353,8 @@ def get_trimmed_fop(field_of_points, atoms_points):
 
 def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
     """
-    This function will take the coordinates of the protein and the coordinates of alpha carbons calculate the field of
-    points (FOP).
+    This function will take the coordinates of the protein and the coordinates
+    of alpha carbons calculate the field of points (FOP).
 
     Args:
         protein (list of lists): coordinates of protein atoms.
@@ -356,6 +366,7 @@ def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
     Returns:
         pocket (list of lists): pocket shape as a FOP.
     """
+
     # get starting FOP and snapped center
     fop, center = field_of_points(center, resolution, radius)
     # trim protein atoms to those within the FOP sphere.
@@ -371,8 +382,9 @@ def get_field_of_points_dbscan(protein, alphas, center, resolution, radius):
 
 def cluster_dbscan(fop):
     """
-    This function will take the coordinates of the field of points and perform a clustering algorithm to trim the fop
-    to the points in the same cluster that the center of the pocket.
+    This function will take the coordinates of the field of points and perform a
+    clustering algorithm to trim the fop to the points in the same cluster that
+    the center of the pocket.
 
     Args:
         fop (list of list): coordinates of field of points.
@@ -380,6 +392,7 @@ def cluster_dbscan(fop):
     Returns:
         fop (list of list): FOP after clustering
     """
+
     db = DBSCAN(eps=0.5, min_samples=2).fit(fop)
     labels = db.labels_
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -402,8 +415,9 @@ def cluster_dbscan(fop):
 
 def get_jaccard_distance(reference_fop, segment_fop, resolution):
     """
-    Function that calculates the Jaccard distance between the points in reference_fop and the segment_fop. Uses the
-    distance between points to calculate the intersection.
+    Function that calculates the Jaccard distance between the points in
+    reference_fop and the segment_fop. Uses the distance between points to
+    calculate the intersection.
 
     Args:
         reference_fop (list of lists): reference FOP.
@@ -413,11 +427,13 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     Returns:
         jaccard (float): Jaccard distance.
     """
+
     # Obtaining the trees for both field of points
     reference_tree = sp.spatial.cKDTree(reference_fop)
     segment_tree = sp.spatial.cKDTree(segment_fop)
 
-    # Obtain the points that are at less than resolution/2.5 (aka have the same coordinates)
+    # Obtain the points that are at less than resolution/2.5 (aka have the same
+    # coordinates)
     clash_indices = reference_tree.query_ball_tree(segment_tree, resolution / 2.5, p=2, eps=0)
 
     # Count the points that intersect and convert to float
@@ -434,19 +450,23 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
 
 def point_in_hull(point, hull, tolerance=1e-12):
     """
-    A point is in the hull if and only if for every equation (describing the facets) the dot product between the point
-    and the normal vector (eq[:-1]) plus the offset (eq[-1]) is less than or equal to zero. You may want to compare to a
-    small, positive constant tolerance = 1e-12 rather than to zero because of issues of numerical precision (otherwise,
-    you may find that a vertex of the convex hull is not in the convex hull).
+    A point is in the hull if and only if for every equation (describing the
+    facets) the dot product between the point and the normal vector (eq[:-1])
+    plus the offset (eq[-1]) is less than or equal to zero. You may want to
+    compare to a small, positive constant tolerance = 1e-12 rather than to zero
+    because of issues of numerical precision (otherwise, you may find that a
+    vertex of the convex hull is not in the convex hull).
 
     Args:
         point (list): coordinates of the point to be considered.
         hull (scipy.spatial.ConvexHull): Convex hulls in N dimensions.
-        tolerance (flaot, optional): tolerance for the calcualtion. Defaults to 1e-12.
+        tolerance (flaot, optional): tolerance for the calcualtion. Defaults
+            to 1e-12.
 
     Returns:
         (bool): returns True if point in hull, False otherwise 
     """
+
     return all(
         (np.dot(eq[:-1], point) + eq[-1] <= tolerance)
         for eq in hull.equations)
@@ -454,15 +474,19 @@ def point_in_hull(point, hull, tolerance=1e-12):
 
 def remove_convex_fop(trimmed_fop, trimmed_alpha):
     """
-    Function that uses a convex hull to trim points of the field of points that are outside of the protein. 
+    Function that uses a convex hull to trim points of the field of points that
+    are outside of the protein. 
 
     Args:
-        trimmed_fop (list of lists): field of points trimmed of clashes with atoms.
+        trimmed_fop (list of lists): field of points trimmed of clashes with
+            atoms.
         trimmed_alpha ([type]): alpha atoms to define the convex hull.
 
     Returns:
-        points_in_hull (list of lists): FOP trimmed of points outside the convex hull defined by the protein. 
+        points_in_hull (list of lists): FOP trimmed of points outside the convex
+            hull defined by the protein. 
     """
+
     points_in_hull = []
     trimmed_alpha_convex = sp.spatial.ConvexHull(trimmed_alpha)
     for point in trimmed_fop:
@@ -473,8 +497,9 @@ def remove_convex_fop(trimmed_fop, trimmed_alpha):
 
 def calculate_pocket_gyration(pocket):
     """
-    calculate_pocket_gyration is a function that takes the xyz coordinates of a field of points and calculates the
-    radius of gyration. It assumes a mass of one for all the points.
+    calculate_pocket_gyration is a function that takes the xyz coordinates of a
+    field of points and calculates the radius of gyration. It assumes a mass of
+    one for all the points.
 
     Args:
         pocket (list of lists): the field of points defining the pocket shape.
@@ -482,6 +507,7 @@ def calculate_pocket_gyration(pocket):
     Returns:
         radius_of_gyration (float): radisu of gyration of the pocket.
     """
+
     centroid = get_centroid(pocket)
     mass = len(pocket)
     gyration_radius = 0
@@ -493,7 +519,8 @@ def calculate_pocket_gyration(pocket):
 
 def get_centroid(pocket):
     """
-    Calculates the centroid or the center of mass for equal masses of a field of points.
+    Calculates the centroid or the center of mass for equal masses of a field of
+    points.
 
     Args:
         pocket (list of lists):  the field of points defining the pocket shape.
@@ -501,6 +528,7 @@ def get_centroid(pocket):
     Returns:
         centroid (list): coordinates of the centroid of the pocket.
     """
+
     x = np.mean([x[0] for x in pocket])
     y = np.mean([y[1] for y in pocket])
     z = np.mean([z[2] for z in pocket])
@@ -533,7 +561,8 @@ if __name__ == "__main__":
     except:
         print("Could not check log file. There could be a problem with the simulation")
 
-    # Load reference pdb file and trajectory to then align the trajectory using the reference.
+    # Load reference pdb file and trajectory to then align the trajectory using
+    # the reference.
     ref_universe = MDAnalysis.Universe(settings["reference"])
     reference = ref_universe.select_atoms("protein")
     ensemble = MDAnalysis.Universe(settings["topology"], args.crd_file)
@@ -561,7 +590,8 @@ if __name__ == "__main__":
     # Obtain coordinates for reference atoms and coordinates for alpha carbons.
     reference_coordinates = reference.positions
 
-    # Define the number of times that the progress coordinates and auxiliary info will be calculated.
+    # Define the number of times that the progress coordinates and auxiliary
+    # info will be calculated.
     if settings["calculated_points"] == -1:
         num_points = len(ensemble.trajectory)
     else:
@@ -580,7 +610,8 @@ if __name__ == "__main__":
         if "bb" not in results:
             results["bb"] = []
 
-    # this section is for the WESTPA analysis tools to work. The first point must be initial point.
+    # this section is for the WESTPA analysis tools to work. The first point
+    # must be initial point.
     if args.we:
         with open("parent_pcoord.txt", "r") as f:
             initial_pcoords = f.readlines()[-1].split()
@@ -636,7 +667,9 @@ if __name__ == "__main__":
         if "prmsd" in results.keys():
             results["prmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
                                                         ensemble.select_atoms(selection_pocket).positions))
-        # The next lines calculate the Jaccard distance of the pocket comparing it to the reference
+        
+        # The next lines calculate the Jaccard distance of the pocket comparing
+        # it to the reference
         if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog_pocket" in results.keys():
             frame_coordinates = ensemble.select_atoms("protein").positions
             pocket_calpha = ensemble.select_atoms(selection_pocket + " and name CA*").positions
@@ -661,7 +694,8 @@ if __name__ == "__main__":
         if "composite" in results.keys():
             results["composite"].append(results["prmsd"][-1] + (sigma * results["bb"][-1]))
 
-    # writing in text files the progress coordinates and the required auxiliary data if needed. 
+    # writing in text files the progress coordinates and the required auxiliary
+    # data if needed. 
     with open("pcoord.txt", "w") as f:
         for i in range(len(results[settings["pcoord"][0]])):
             line = ""

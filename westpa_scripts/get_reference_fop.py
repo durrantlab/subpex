@@ -3,24 +3,28 @@ from pcoord import *
 
 def get_pocket_selection(universe, center, radius, selection_file, distance_constraint=6.7):
     """
-    get_pocket_selection is a function that will take the protein and center of the pocket and will obtain the initial 
-    selection of the pockets. It uses the radius and if water molecules are present it will use them as a first approximation
-    of the surface residues. 
+    get_pocket_selection is a function that will take the protein and center of
+    the pocket and will obtain the initial selection of the pockets. It uses the
+    radius and if water molecules are present it will use them as a first
+    approximation of the surface residues.
 
     Args:
         universe (MDAnalysis Universe): MDA universe with protein 
         center (list): x, y, z coordiantes of the center
         radius (float): radius of the pocket to be considered
         selection_file (str): filename for the selection pocket
-        distance_constraint (float, optional): Constraint to use for proximity to calculate surface residues. Defaults to 6.7.
+        distance_constraint (float, optional): Constraint to use for proximity
+            to calculate surface residues. Defaults to 6.7.
 
     Returns:
-        selection_pocket (str): selection string of the pocket as used in MDAnalysis
+        selection_pocket (str): selection string of the pocket as used in
+            MDAnalysis
     """
-    water_pocket = universe.select_atoms("point {} {} {} {} and resname WAT".format(center[0], center[1], center[2], radius))
-    residues_pocket = universe.select_atoms("protein and point {} {} {} {}".format(center[0], center[1], center[2], radius))
+
+    water_pocket = universe.select_atoms(f"point {center[0]} {center[1]} {center[2]} {radius} and resname WAT")
+    residues_pocket = universe.select_atoms(f"protein and point {center[0]} {center[1]} {center[2]} {radius}")
+
     list_close_water = []
-    distances = []
     if len(water_pocket.residues) == 0:
         print("There are no water molecules to obtain distances, some burried residues may end up in the pocket selection")
         # obtain all residues in the pocket and create a selection pocket string.
@@ -28,36 +32,31 @@ def get_pocket_selection(universe, center, radius, selection_file, distance_cons
         for residue in residues_pocket.residues:
             if residue.resid not in pocket_residues:
                 pocket_residues.append(residue.resid)
-            else:
-                pass
-
-        selection_pocket = "resid {} ".format(pocket_residues[0])
+        selection_pocket = f"resid {pocket_residues[0]} "
         for i in pocket_residues[1:]:
-            selection_pocket += " or resid {} ".format(str(i))
+            selection_pocket += f" or resid {str(i)} "
 
-        selection_pocket += "and (not name H*)"
-
-    else:    
+    else:
+        distances = []
         # we want to make sure that the residues we are selecting are close to the surface, we will approximate the surface accesible residues 
         # using water molecules and a distance cutoff for that purpose.
         for i in water_pocket.residues:
-            water = universe.select_atoms("resid {}".format(i.resid))
+            water = universe.select_atoms(f"resid {i.resid}")
             for j in residues_pocket.residues:
-                residue = universe.select_atoms("resid {}".format(j.resid))
+                residue = universe.select_atoms(f"resid {j.resid}")
                 distance = calculate_distance_two_points(water.center_of_geometry(), residue.center_of_geometry())
                 distances.append(distance)
-                if distance < distance_constraint:
-                    if j.resid not in list_close_water:
-                        list_close_water.append(j.resid)
+                if distance < distance_constraint and j.resid not in list_close_water:
+                    list_close_water.append(j.resid)
 
-        # creating selection pocket string comaptible with 
-        selection_pocket = "resid {} ".format(list_close_water[0])
+        # creating selection pocket string comaptible with
+        selection_pocket = f"resid {list_close_water[0]} "
         for i in list_close_water[1:]:
-            selection_pocket += " or resid {} ".format(str(i))
+            selection_pocket += f" or resid {str(i)} "
 
-        selection_pocket += "and (not name H*)"
+            # save the pocket selection string so it can be used in other places
+    selection_pocket += "and (not name H*)"
 
-        # save the pocket selection string so it can be used in other places
     with open(selection_file, "w") as f:
         f.write(selection_pocket)
 
@@ -66,20 +65,21 @@ def get_pocket_selection(universe, center, radius, selection_file, distance_cons
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Obtain FOP for the reference structure")
-    parser.add_argument("settings", type=str, help="Define the json file with the settings. It is required")
+    parser.add_argument("settings", type=str, help="Define the yaml file with the settings. Most likely should be west.cfg. It is required")
     parser.add_argument("-mda", "--selection_mda", type=str, 
         help="Define selection for the pocket atoms. It has to a selection string compatible with MDAnalysis")
     parser.add_argument("-resid", "--selection_resid", type=str, 
         help="Define selection for the pocket atoms. It has to a selection list of residue numebers (e.g. 1 2 3 4 5 6)")
     parser.add_argument("-dist", "--distance_constraint", type=float, 
-        help="Define the distance cosntrain between water and residues center of geometry for pocket selection. Default 6.7")
+        help="Define the distance cosntraint between water and residues center of geometry for pocket selection. Default 6.7")
     args = parser.parse_args()
+
     try:
         settings = check_input_settings_file(args.settings)
-    except IOError:
+    except IOError as e:
         print("Could not load the json file with the settings")
         print("make sure the file exists and is correctly formatted")
-        raise IOError("Could not load the json file with the settings")
+        raise IOError("Could not load the json file with the settings") from e
 
     # Load the reference file defined in the json file
     ref_universe = MDAnalysis.Universe(settings["reference"])
