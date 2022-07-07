@@ -3,8 +3,9 @@
 ## What is it?
 
 Subpocket explorer (SubPEx) is a tool that uses weighted ensemble (WE), as
-implemented in WESTPA, to maximize pocket conformational search with the goal of
-obtaining an ensemble of protein conformations for use in ensemble docking.
+implemented in WESTPA, to maximize pocket conformational search. SubPEx's goal
+is to produce a diverse ensemble of protein conformations for use in ensemble
+docking.
 
 As with any WE implementation, SubPEx uses a progress coordinate to focus
 computational power on sampling phase space. The available progress coordinates
@@ -17,10 +18,11 @@ are:
 
 We recommend using the composite RMSD progress coordinate.
 
-## How to use run SubPEx?
+## SubPEx use
 
-The first step to start running SubPEx simulations is to download, clone, or
-copy the repository.
+### Downloading and installing SubPEx
+
+The first stepis to download, clone, or copy the repository.
 
 ```bash
 git clone https://git.durrantlab.pitt.edu/erh91/SubPEx-Erich.git
@@ -50,12 +52,21 @@ calculate the progress coordinate:
 - scikit-learn
 - yaml
 
-Manual input is needed to set up the simulation of the protein of interest.
-Hopefully, this will be changed soon and an autobuilder will be available.
+### Configuring a SubPEx run
 
-1. Soft link or copy the equilibrated trajectories and necessary restart files
-   (***JDD: Possible to be more descriptive?***) to the reference directory.
-    - If using NAMD, the `.dcd` file is fine.
+Currently, users must manually set up their SubPEx simulations by editing key
+SubPEx/WESTPA files. We hope to soon develop an autobuilder ("wizard") to
+simplify this process.
+
+___Link your preliminary, equilibrated simulation___
+
+1. SubPEx assumes you have already run preliminary simulations to equilibrate
+   your system. Soft link or copy your preliminary, equilibrated trajectories
+   and necessary restart files (***JDD: Possible to be more descriptive?***) to
+   the `./reference/` directory. (Note that this directory already contains the
+   `md.conf` and `prod_npt.in` template files, which SubPEX uses to interface
+   with the NAMD and AMBER MD engines, respectively.)
+    - If using NAMD, copying the `.dcd` file is fine.
     - If using Amber, the filetype that works with the SubPEx algorithm is the
       `.nc`.
 
@@ -63,26 +74,33 @@ Hopefully, this will be changed soon and an autobuilder will be available.
       ln -s \file\path\to\trajectory\files \WEST\ROOT\reference\
       ```
 
-      (***JDD: Repository already has reference/ JDD note to self: Existing files there are important (NAMD AND AMBER script)***)
+2. Extract the last frame of the preliminary, equilibrated trajectory as a `pdb`
+   file with your preferred molecular analysis program (e.g., VMD).
 
-2. Extract the last frame of the equilibrated trajectory as a `pdb` file with
-   your preferred package.
-3. Find the coordinates for the center of the pocket and the radius you want to
-   use, using the extracted last frame.
-    - you will be able to change this later once you visually inspect it.
-    - visual inspection can be done by creating a PDB file with one CA atom at
-      the coordinates of your pocket and load it into your preferred
-      visualization software (ChimeraX, PyMol, VMD, etc.) with the extracted
-      last frame of the previous step.
-4. Open the `west.cfg` file and modify it. 
-    - add the `center`, `radius`, and `resolution` parameters. (***JDD: Need to
-      explain what resolution is? JDD NOTE TO SELF: Resolution only for JD method.***)
-    - select which progress coordinate (`pcoord`) to use.
-       - `jd`: Jaccard distance
+___Edit the `west.cfg` file___
+
+1. Edit the following parameters in the `west.cfg` file:
+    - the path variables:
+       - `reference`: the PDB file that will be used in EVERY SINGLE
+         progress-coordinate calculation (the last frame of the preliminary,
+         equilibrated simulation mentioned above).
+       - `selection_file`: path to a text file containing the pocket selection
+         string (MDAnalysis selection notation). This file will be automatically
+         generated in a subsequent step.
+       - `reference_fop`: path to an `xyz` file containing the field of points
+         needed to calculate the `jd` progress coordinate. This file is also
+         useful for visualizing the selected pocket. It will be automatically
+         generated in a subsequent step.
+       - `west_home`: home directory of the SubPEx run. You'll most likely want
+         to use the same directory that contains the `west.cfg` file itself.
+       - `topology`: topology file needed for the MD simulations (likely the
+         same topology file used in the preliminary, equilibrated simulations).
+    - the progress coordinate (`pcoord`) to use.
+       - `composite`: composite RMSD (recommended)
        - `prmsd`: pocket heavy atoms RMSD
        - `bb`: backbone RMSD
-       - `composite`: composite RMSD
-    - select the auxiliary data (`auxdata`) to calculate and save.
+       - `jd`: Jaccard distance
+    - the auxiliary data (`auxdata`) to calculate and save.
        - `composite`: composite RMSD
        - `prmsd`: pocket heavy atoms RMSD*
        - `pvol`: pocket volume
@@ -91,28 +109,42 @@ Hopefully, this will be changed soon and an autobuilder will be available.
        - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
       ones (these sections are both found in the `west.cfg` file).
-    - make sure to specify the path variables:
-        - `topology`: topology file needed for the MD simulations
-        - `west_home`: home directory of the run
-        - `reference`: the PDB file that will be used in EVERY SINGLE
-          progress-coordinate calculation (the last frame of the equilibration
-          simulation mentioned in step 2).
-        - `selection_file`: Selection string using MDAnalysis convention. This
-          file will be automatically generated in a subsequent step.
-        - `reference_fop`: Coordinates for the field of points needed to
-          calculate `jd`. This file will be automatically generated in a
-          subsequent step.
-5. Run `python westpa_scripts/get_reference_fop.py west.cfg`. It uses `west.cfg`
-   as the configuration file. Here is where the `selection_file` and
-   `reference_fop` files are generated.
-6. Visually inspect the pocket field of points and/or the selection string (it
-   uses MDAnalysis syntax). ***JDD: What should users be looking for here? NOTE TO SELF: Make sure fully fills pocket. Note also JD alone uses this. But regardless of progress coordinate, this is good for debugging pocket at this point. Also selection file good for debugging. ***
+      - ***JDD: Where exactly? data -> datasets and also executable -> datasets?***
+
+___Define the pocket to sample___
+
+1. You must define the location of the binding pocket you wish to sample. Find
+   the coordinates of the pocket center and radius using the extracted last
+   frame.
+    - Visual inspection is often useful at this step. You might create a PDB
+      file with a CA dummy atom. Load that together with the extracted last
+      frame of the previous step into your preferred visualization software
+      (ChimeraX, PyMol, VMD, etc.).
+    - Manually move the dummy atom to the pocket center and measure its
+      location. Similarly, use the dummy atom to determine the radius from that
+      center required to encompass the pocket of interest.
+4. Return to the `west.cfg` file and edit the following parameters:
+   - `center`: the pocket center
+   - `radius`: the pocket radius
+   - `resolution`: the distance between adjacent pocket-filling grid points
+     (especially important if using the `jd` progress coordinate)
+5. Run `python westpa_scripts/get_reference_fop.py west.cfg`. This script will
+   generate the files specified by the `selection_file` and `reference_fop`
+   parameters in the `west.cfg` file.
+6. Visually inspect the pocket field of points (fop) and/or the selection string
+   (MDAnalysis selection syntax).
+   - Ensure that the fop (`reference_fop`) entirely fills the pocket of
+     interest.
+   - Ensure that the residues (`selection_file`) truly line the pocket of
+     interest.
    - Note that the popular molecular visualization program VMD can load `xyz`
-     files. ***JDD: isn't it true the field of points is only needed for jd? If
-     so, good to mention somewhere. NOTE TO SELF: Yes, but good for debugging pocket. Together with selection. Mention that too.***
-   - Adjust the `west.cfg` file (`center`, `radius`, and `resolution`
-     parameters) and re-run the `westpa_scripts/get_reference_fop.py` script to
-     recalculate the files if you need to fine-tune your pocket.
+     files and select residues.
+7. After visual inspection, adjust the `west.cfg` file (`center`, `radius`, and
+     `resolution` parameters) and re-run the
+     `westpa_scripts/get_reference_fop.py` script. Continue to recalculate the
+     pocket as needed to fine-tune your pocket.
+
+
 7. Change the `adaptive_binning/adaptive.py` file to reflect the bins' minimum
    and maximum values the progress coordinate must take and the number of bins
    and dimensions. __NOTE__: We do not need target states, so we can ignore
@@ -136,8 +168,8 @@ Hopefully, this will be changed soon and an autobuilder will be available.
 conda activate westpa
 ```
 
-11. If errors occur, check the `job_logs` directory. If there is no `job_logs`
-    directory, that alone causes it to fail.
+11. If errors occur, check the `./job_logs` directory. If there is no
+    `./job_logs` directory, that alone causes it to fail.
 12. Modify the `runseg.sh`
     - link necessary files to restart the simulation. (check lines 79-88)
     - link all parent auxdata files as parent_AUXDATA.txt (check lines 59-64)
