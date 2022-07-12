@@ -144,12 +144,39 @@ ___Define the pocket to sample___
      `westpa_scripts/get_reference_fop.py` script. Continue to recalculate the
      pocket as needed to fine-tune your pocket.
 
+___Setup the progress coordinate calculations___
 
-7. Change the `adaptive_binning/adaptive.py` file to reflect the bins' minimum
-   and maximum values the progress coordinate must take and the number of bins
-   and dimensions. __NOTE__: We do not need target states, so we can ignore
-   those parameters.  ***JDD: Good to briefly mention what these variables are
-   here, with improved descriptions in adaptive.py itself.***
+1. Update the variables in the `adaptive_binning/adaptive.py` file to indicate
+   the number of walkers per bin, the bins' minimum and maximum values, etc.
+    - This file controls the adaptive binning scheme that SubPEx uses.
+    - A detailed description of each variable is given in the file itself.
+2. Change `westpa_scripts/get_pcoord.sh`.
+    - This script runs when calculating initial progress coordinates for new
+      initial states (istates).
+    - Make sure to link the files needed to start the SubPEx simulations (the
+      ones you put in the `./reference/` directory above).
+      - Check lines 24-26. Replace {REFERENCE}, {RESTART_FILE}, and
+        {TOPOLOGY_FILE} with the appropriate file names.
+      - The script includes examples for NAMD and AMBER runs.
+    <!-- - make sure you are copying all the auxdata files to their respective WESTPA -->
+      <!-- variable. (check lines 38-42) TODO: Hoping this isn't necessary. See relevant file. -->
+12. Modify the `runseg.sh`
+    - This file runs each WESTPA/SubPEx walker (segment). It creates the needed
+      directory, runs the walker simulation, and calculates the progress
+      coordinate.
+    <!-- - link all parent auxdata files as parent_AUXDATA.txt (check lines 59-64) TODO: Hoping this isn't needed anymore. -->
+    - Make sure the random seed number gets added to the MD-engine configuration
+      file (check lines 66-72). Be sure to comment out the NAMD code and
+      uncomment the AMBER code if using AMBER as the MD engine.
+    - Link the necessary files to restart the walker simulation (check lines
+      79-88). Be sure to comment out/in the appropriate block for NAMD vs.
+      AMBER.
+    - Be sure to call the correct MD engine (check lines 92-100).
+    - Be sure to call the correct trajectory file for the pcoord.py script.
+      (check lines 110-114)
+    <!-- - Make sure you copy all the auxdata files to the WESTPA variables. (check
+      lines 114-119) TODO: Hopefully not needed now. -->
+
 8. Revise `env.sh`. You need to export the MD engine, and this file can get
    complicated if using a supercomputing center. Some extra files in the
    `./env-crc/` directory will help with the setup at a supercomputing center.
@@ -157,11 +184,6 @@ ___Define the pocket to sample___
    bridges2 of XSEDE, and these files needed minimal changes. ***JDD: Not clear
    what to change in this file. LOOK AT `./env-crc` directory and give thought
    to how to make more usable.***
-9. Change `westpa_scripts/get_pcoord.sh`.
-    - Make sure to link the files needed to start the simulations. (check lines 23-25)
-      The file has example commands for a NAMD run.
-    - make sure you are copying all the auxdata files to their respective WESTPA
-      variable. (check lines 32-36)
 10. Activate the WESTPA conda environment and run the init.sh file.
 
 ```bash
@@ -170,16 +192,6 @@ conda activate westpa
 
 11. If errors occur, check the `./job_logs` directory. If there is no
     `./job_logs` directory, that alone causes it to fail.
-12. Modify the `runseg.sh`
-    - link necessary files to restart the simulation. (check lines 79-88)
-    - link all parent auxdata files as parent_AUXDATA.txt (check lines 59-64)
-    - make sure the random seed number gets added to the configuration file
-      (comment out the one you are not using). (check lines 66-72)
-    - make sure the way to call the MD engine is correct. (check lines 92-100)
-    - make sure to call the correct trajectory file for the pcoord.py script.
-      (check lines 110-112)
-    - make sure you copy all the auxdata files to the WESTPA variables. (check
-      lines 114-119)
 13. Modify the MD configuration file in reference (check names and other
     parameters)
     - Make sure the number of frames corresponds to pcoordlength minus one

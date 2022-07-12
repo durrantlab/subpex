@@ -13,28 +13,43 @@ from numpy import *
 pcoord_dtype = numpy.float32
 
 # THESE ARE THE PARAMETERS YOU CAN CHANGE
-bintargetcount = 3           # number of walkers per bin
-numberofdim = 1              # number of dimensions
-pcoordlength = 3             # length of the pcoord (TODO: JDD NOTE: Number of measurements taken per walker plus one, last frame of parent)
+bintargetcount = 3           # Number of walkers per bin
 binsperdim = [15]            # You will have prod(binsperdim) + numberofdim *
                              #     (2 + 2 * splitIsolated) + activetarget bins
                              #     total
-mincap = [-inf]              # for each dimension enter the minimum number at 
+mincap = [-inf]              # For each dimension enter the minimum number at 
                              #     which binning can occur, if you do not wish
                              #     to have a cap use -inf
-maxcap = [5]                 # for each dimension enter the maximum number at
+maxcap = [5]                 # For each dimension enter the maximum number at
                              #     which binning can occur, if you do not wish
-                             #     to have a cap use inf (TODO: JDD NOTE: Should 1 one if jd. rmsd bigger. Comment on pcoord specific.)
+                             #     to have a cap use inf. If using the 
+                             #     Jaccard-distance progress coordinate, this
+                             #     max should be [1.0]. If using one of the
+                             #     RMSD metrics, it is the maximum allowed RMSD
+                             #     deviation from the initial pocket.
+
+# IT'S FAIRLY UNLINKLY YOU'LL NEED TO MODIFY THE PARAMETERS BELOW
+numberofdim = 1              # Number of dimensions. (Most SubPEx progress
+                             #     coordinates are one dimensional.)
+pcoordlength = 3             # Length of the pcoord. (This is the number of
+                             #     measurements taken per walker plus one,
+                             #     where the "plus one" corresponds to the last
+                             #     frame of the previous, parent walker.)
 
 # IT'S VERY UNLIKELY YOU'LL NEED TO MODIFY THE PARAMETERS BELOW
-targetstate = [2.6]          # enter boundaries for target state or None if
-                             #     there is no target state in that dimension
-targetstatedirection = [-1]  # if your target state is meant to be greater that
+targetstate = [2.6]          # Enter boundaries for target state or None if
+                             #     there is no target state in that dimension.
+                             #     (SubPEx does not require target states, so
+                             #     ignore this parameter.)
+targetstatedirection = [-1]  # If your target state is meant to be greater that
                              #     the starting pcoor use 1 or else use -1. This
                              #     will be done for each dimension in your
-                             #     simulation
-activetarget = 0             # if there is no target state make this zero
-splitIsolated = 1            # choose 0 to disable the use of bottleneck
+                             #     simulation. (SubPEx does not require target
+                             #     states, so ignore this parameter.)
+activetarget = 0             # If there is no target state make this zero.
+                             #     (SubPEx does not require target states, so
+                             #     ignore this parameter.)
+splitIsolated = 1            # Choose 0 to disable the use of bottleneck
                              #     walkers (not recomended)
 #########
 
@@ -47,14 +62,19 @@ def function_map(coords, mask, output):
     flipdifflist=[] #Preparing array to contain "bottleneck" values in negative direction for each dimension
 
     for n in range(numberofdim): #going through each dimension
-        try: # because binning should be handled different for recycled trajectories we load in a binbounds.txt created after an iteration completes
+        try: 
+            # because binning should be handled different for recycled
+            # trajectories we load in a binbounds.txt created after an iteration
+            # completes
             extremabounds=loadtxt('binbounds.txt') 
             currentmax=amax(extremabounds[:,n])
             currentmin=amin(extremabounds[:,n])
-        except: # during initialization this may not exitst so use current coords for extrema
+        except: 
+            # during initialization this may not exitst so use current coords
+            # for extrema
             currentmax=amax(coords[:,n])
             currentmin=amin(coords[:,n])
-        
+
         if maxcap[n]<currentmax: #Checking the maxcap in each dimension
                     currentmax=maxcap[n]
         
@@ -98,8 +118,8 @@ def function_map(coords, mask, output):
         except:
             splittingrelevant=False  #if an error is thrown tagging of bottleneck walkers is not needed
 
-    for i in range(len(output)): #this section deals with proper assignment of walkers to bins
-        binnumber=2*numberofdim #essentially the bin number 
+    for i in range(len(output)): # this section deals with proper assignment of walkers to bins
+        binnumber=2*numberofdim # essentially the bin number 
         for n in range(numberofdim):
             if (activetarget==1) and targetstate[n] is not None:
                 if (originalcoords[i,n]*targetstatedirection[n]) >= (targetstate[n]*targetstatedirection[n]): #if the target state has been reached assign to following bin

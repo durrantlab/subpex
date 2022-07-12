@@ -55,29 +55,26 @@ cd $WEST_CURRENT_SEG_DATA_REF
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
+# TODO: Same changes to get_pcoord.sh ok here?
+[[ -e $WEST_PARENT_DATA_REF/pcoord.txt ]] && ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
+[[ -e $WEST_PARENT_DATA_REF/rog.txt ]] && ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
+[[ -e $WEST_PARENT_DATA_REF/bb.txt ]] && ln -sv $WEST_PARENT_DATA_REF/bb.txt  ./parent_bb.txt
+[[ -e $WEST_PARENT_DATA_REF/pvol.txt ]] && ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
+[[ -e $WEST_PARENT_DATA_REF/jd.txt ]] && ln -sv $WEST_PARENT_DATA_REF/jd.txt ./parent_jd.txt
+[[ -e $WEST_PARENT_DATA_REF/prmsd.txt ]] && ln -sv $WEST_PARENT_DATA_REF/prmsd.txt ./parent_prmsd.txt
 
-ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
-ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
-ln -sv $WEST_PARENT_DATA_REF/bb.txt  ./parent_bb.txt
-ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
-ln -sv $WEST_PARENT_DATA_REF/jd.txt ./parent_jd.txt
-ln -sv $WEST_PARENT_DATA_REF/prmsd.txt ./parent_prmsd.txt
-
-# Files needed to run amber's md engine
-sed "s/RAND/$WEST_RAND16/g" \
-$WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
-
-# Files needed to run NAMD md engine
+# IF USING THE NAMD MD ENGINE:
 sed "s/RAND/$WEST_RAND16/g" \
 $WEST_SIM_ROOT/reference/md.conf > md.conf
+
+# # IF USING THE AMBER MD ENGINE:
+# sed "s/RAND/$WEST_RAND16/g" \
+# $WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
-
-# amber files
-ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
 
 # NAMD files
 ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
@@ -87,10 +84,10 @@ ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
 ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
 ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 
-############################## Run the dynamics ################################
+# # AMBER files
+# ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
 
-# Amber MD engine
-$AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
+############################## Run the dynamics ################################
 
 # NAMD MD engine
 $NAMD md.conf > seg.log
@@ -98,6 +95,9 @@ $NAMD md.conf > seg.log
 if grep -q RATTLE seg.log; then
     $NAMD md.conf > seg.log
 fi
+
+# # Amber MD engine
+# $AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
 
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
@@ -107,16 +107,19 @@ fi
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
 
-python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.nc  $WEST_SIM_ROOT/west.cfg --we
-
+# FOR NAMD
 python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.dcd  $WEST_SIM_ROOT/west.cfg --we
 
-cp pcoord.txt $WEST_PCOORD_RETURN
-cp pvol.txt $WEST_PVOL_RETURN
-cp rog.txt $WEST_ROG_RETURN
-cp bb.txt $WEST_BB_RETURN
-cp jd.txt $WEST_FOP_RETURN
-cp prmsd $WEST_PRMSD_RETURN
+# # FOR AMBER:
+# python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.nc  $WEST_SIM_ROOT/west.cfg --we
+
+# TODO: Same as with get_pcoord.sh. Check with Erich to make sure list complete.
+[[ -e pcoord.txt ]] && cp pcoord.txt $WEST_PCOORD_RETURN
+[[ -e pvol.txt ]] && cp pvol.txt $WEST_PVOL_RETURN
+[[ -e rog.txt ]] && cp rog.txt $WEST_ROG_RETURN
+[[ -e bb.txt ]] && cp bb.txt $WEST_BB_RETURN
+[[ -e jd.txt ]] && cp jd.txt $WEST_FOP_RETURN
+[[ -e prmsd.txt ]] && cp prmsd.txt $WEST_PRMSD_RETURN
 
 # Clean up
 if [ -n "$SEG_DEBUG" ] ; then
