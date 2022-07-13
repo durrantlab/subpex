@@ -62,13 +62,15 @@ ___Link your preliminary, equilibrated simulation___
 
 1. SubPEx assumes you have already run preliminary simulations to equilibrate
    your system. Soft link or copy your preliminary, equilibrated trajectories
-   and necessary restart files (***JDD: Possible to be more descriptive?***) to
-   the `./reference/` directory. (Note that this directory already contains the
-   `md.conf` and `prod_npt.in` template files, which SubPEX uses to interface
-   with the NAMD and AMBER MD engines, respectively.)
-    - If using NAMD, copying the `.dcd` file is fine.
+   and necessary restart files to the `./reference/` directory. (Note that this
+   directory already contains the `md.conf` and `prod_npt.in` template files,
+   which SubPEX uses to interface with the NAMD and AMBER MD engines,
+   respectively.)
+    - If using NAMD, soft linking the `.dcd` file of the final equilibration run
+      is fine. (***TODO: Erich: Will add complete list of files, e.g., parameter files
+      too.***)
     - If using Amber, the filetype that works with the SubPEx algorithm is the
-      `.nc`.
+      `.nc`. (***TODO: Erich: Will add complete list of files***)
 
       ```bash
       ln -s \file\path\to\trajectory\files \WEST\ROOT\reference\
@@ -109,7 +111,7 @@ ___Edit the `west.cfg` file___
        - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
       ones (these sections are both found in the `west.cfg` file).
-      - ***JDD: Where exactly? data -> datasets and also executable -> datasets?***
+      - ***JDD: ADD THIS INFO: subpex -> auxdata and also executable -> datasets?***
 
 ___Define the pocket to sample___
 
@@ -159,12 +161,12 @@ ___Setup the progress coordinate calculations___
         {TOPOLOGY_FILE} with the appropriate file names.
       - The script includes examples for NAMD and AMBER runs.
     <!-- - make sure you are copying all the auxdata files to their respective WESTPA -->
-      <!-- variable. (check lines 38-42) TODO: Hoping this isn't necessary. See relevant file. -->
+      <!-- variable. (check lines 38-42) TODO: Hoping this isn't necessary. See relevant file. NOTE: Erich thinks this might work, but good to check when you run. -->
 12. Modify the `runseg.sh`
     - This file runs each WESTPA/SubPEx walker (segment). It creates the needed
       directory, runs the walker simulation, and calculates the progress
       coordinate.
-    <!-- - link all parent auxdata files as parent_AUXDATA.txt (check lines 59-64) TODO: Hoping this isn't needed anymore. -->
+    <!-- - link all parent auxdata files as parent_AUXDATA.txt (check lines 59-64) TODO: Hoping this isn't needed anymore. NOTE: Erich thinks this might work, but good to check when you run. -->
     - Make sure the random seed number gets added to the MD-engine configuration
       file (check lines 66-72). Be sure to comment out the NAMD code and
       uncomment the AMBER code if using AMBER as the MD engine.
@@ -175,7 +177,7 @@ ___Setup the progress coordinate calculations___
     - Be sure to call the correct trajectory file for the pcoord.py script.
       (check lines 110-114)
     <!-- - Make sure you copy all the auxdata files to the WESTPA variables. (check
-      lines 114-119) TODO: Hopefully not needed now. -->
+      lines 114-119) TODO: Hopefully not needed now. NOTE: Erich thinks this might work, but good to check when you run. -->
 
 8. Revise `env.sh`. You need to export the MD engine, and this file can get
    complicated if using a supercomputing center. Some extra files in the
@@ -183,23 +185,23 @@ ___Setup the progress coordinate calculations___
    We used the CRC (University of Pittsburgh's supercomputing center) and
    bridges2 of XSEDE, and these files needed minimal changes. ***JDD: Not clear
    what to change in this file. LOOK AT `./env-crc` directory and give thought
-   to how to make more usable.***
+   to how to make more usable.*** ***JDD: Edit this file with Erich***
 10. Activate the WESTPA conda environment and run the init.sh file.
 
 ```bash
 conda activate westpa
 ```
 
-11. If errors occur, check the `./job_logs` directory. If there is no
-    `./job_logs` directory, that alone causes it to fail.
+11. If errors occur, check the `./job_logs` directory. (If there is no
+    `./job_logs` directory, that alone will cause WESTPA/SubPEx to fail.)
 13. Modify the MD configuration file in reference (check names and other
-    parameters)
+    parameters) ***JDD: Where is this file? NOTE TO JDD: This is the file that's already in the git repo.***
     - Make sure the number of frames corresponds to pcoordlength minus one
       (pcoordlength is in the `adaptive_binning/adaptive.py` file)
 14. Run the run.sh file (unless you are running it in a supercomputing center).
-    We have provided a template file (subpex.sh) that works for our
-    supercomputing center, it may not work for your center. Please check with
-    your IT person to troubleshoot any problem.
+    ***JDD: This file does what? JDD NOTE: This is how you run the simulation. It was w_run in it. *** We provide a template file (`subpex.sh`)
+    that works on our supercomputing center, though it may not work on yours.
+    Please check with your IT person to troubleshoot any problems.
 
 __Notes__: A lot of parts need to be perfect for it to run since WESTPA sims are
 not that easy to set up. To debug, check the `west.log` file and the output in

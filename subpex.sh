@@ -11,10 +11,9 @@
 #SBATCH --mail-user=user@email.domain
 #SBATCH --mail-type=END,FAIL  #BEGIN
 #
-# run.sh
-#
 # Run the weighted ensemble simulation. Make sure you ran init.sh first!
 #
+# TODO: Jacob. This is run.sh for the CRC. 
 
 source env.sh
 SERVER_INFO=$WEST_SIM_ROOT/west_zmq_info-$SLURM_JOBID.json
@@ -45,6 +44,5 @@ scontrol show hostname $SLURM_NODELIST > slurm_nodelist.txt
 for node in $(scontrol show hostname $SLURM_NODELIST); do
     ssh -o StrictHostKeyChecking=no $node $PWD/node.sh $SLURM_SUBMIT_DIR $SLURM_JOBID $node $CUDA_VISIBLE_DEVICES --work-manager=zmq --n-workers=1 --zmq-mode=client --zmq-read-host-info=$SERVER_INFO --zmq-comm-mode=tcp &
 done
-
 
 wait

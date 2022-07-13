@@ -55,13 +55,14 @@ cd $WEST_CURRENT_SEG_DATA_REF
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
-# TODO: Same changes to get_pcoord.sh ok here?
-[[ -e $WEST_PARENT_DATA_REF/pcoord.txt ]] && ln -sv $WEST_PARENT_DATA_REF/pcoord.txt  ./parent_pcoord.txt
-[[ -e $WEST_PARENT_DATA_REF/rog.txt ]] && ln -sv $WEST_PARENT_DATA_REF/rog.txt  ./parent_rog.txt
-[[ -e $WEST_PARENT_DATA_REF/bb.txt ]] && ln -sv $WEST_PARENT_DATA_REF/bb.txt  ./parent_bb.txt
+ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parent_pcoord.txt
+[[ -e $WEST_PARENT_DATA_REF/rog.txt ]] && ln -sv $WEST_PARENT_DATA_REF/rog.txt ./parent_rog.txt
+[[ -e $WEST_PARENT_DATA_REF/bb.txt ]] && ln -sv $WEST_PARENT_DATA_REF/bb.txt ./parent_bb.txt
 [[ -e $WEST_PARENT_DATA_REF/pvol.txt ]] && ln -sv $WEST_PARENT_DATA_REF/pvol.txt ./parent_pvol.txt
 [[ -e $WEST_PARENT_DATA_REF/jd.txt ]] && ln -sv $WEST_PARENT_DATA_REF/jd.txt ./parent_jd.txt
 [[ -e $WEST_PARENT_DATA_REF/prmsd.txt ]] && ln -sv $WEST_PARENT_DATA_REF/prmsd.txt ./parent_prmsd.txt
+[[ -e $WEST_PARENT_DATA_REF/fop.txt ]] && ln -sv $WEST_PARENT_DATA_REF/fop.txt ./parent_fop.txt
+[[ -e $WEST_PARENT_DATA_REF/composite.txt ]] && ln -sv $WEST_PARENT_DATA_REF/composite.txt ./parent_composite.txt
 
 # IF USING THE NAMD MD ENGINE:
 sed "s/RAND/$WEST_RAND16/g" \
@@ -113,13 +114,14 @@ python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.dcd  $WEST_SIM_ROOT/west.cfg
 # # FOR AMBER:
 # python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.nc  $WEST_SIM_ROOT/west.cfg --we
 
-# TODO: Same as with get_pcoord.sh. Check with Erich to make sure list complete.
-[[ -e pcoord.txt ]] && cp pcoord.txt $WEST_PCOORD_RETURN
+cp pcoord.txt $WEST_PCOORD_RETURN
 [[ -e pvol.txt ]] && cp pvol.txt $WEST_PVOL_RETURN
 [[ -e rog.txt ]] && cp rog.txt $WEST_ROG_RETURN
 [[ -e bb.txt ]] && cp bb.txt $WEST_BB_RETURN
-[[ -e jd.txt ]] && cp jd.txt $WEST_FOP_RETURN
+[[ -e jd.txt ]] && cp jd.txt $WEST_JD_RETURN
 [[ -e prmsd.txt ]] && cp prmsd.txt $WEST_PRMSD_RETURN
+[[ -e fop.txt ]] && cp fop.txt $WEST_FOP_RETURN  # TODO: Erich, check this.
+[[ -e composite.txt ]] && cp composite.txt $WEST_COMPOSITE_RETURN
 
 # Clean up
 if [ -n "$SEG_DEBUG" ] ; then
