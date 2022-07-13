@@ -6,7 +6,8 @@
 # scripts, both when setting up the simulation and when running the simulation.
 #
 
-
+# source ./env-crc/k40.sh  # TODO: Jacob to think about: Erich usually adds this to make it work.
+# TODO: JACOB: Add in factors from env-crc/*.sh here, so users know what to add.
 
 # Check to make sure that the environment variable WEST_ROOT is set. 
 # Here, the code '[ -z "$WEST_ROOT"]' will return TRUE if WEST_ROOT is not set,

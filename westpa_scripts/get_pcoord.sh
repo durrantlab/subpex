@@ -22,10 +22,10 @@ cd $WEST_STRUCT_DATA_REF
 
 # If using NAMD...
 ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
-ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd  # TODO: Should this be an rst file?
+ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
 ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
 
-# If using AMBER... TODO: Can Erich fill in below?
+# If using AMBER... TODO: Erich: Can Erich fill in below?
 # ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
 # ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
 # ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
@@ -35,16 +35,14 @@ ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
 
 python3 $WEST_SIM_ROOT/westpa_scripts/pcoord_istate.py mol.pdb $WEST_SIM_ROOT/west.cfg
 
-# TODO: Erich, can we just always copy over all possible aux data, regardless of
-# what specified? That way we don't have to ask users to edit this portion. Let
-# me know if that seems reasonable.
-[[ -e pcoord.txt ]] && cp pcoord.txt $WEST_PCOORD_RETURN
+cp pcoord.txt $WEST_PCOORD_RETURN  # Always exists
 [[ -e pvol.txt ]] && cp pvol.txt $WEST_PVOL_RETURN
 [[ -e rog.txt ]] && cp rog.txt $WEST_ROG_RETURN
 [[ -e bb.txt ]] && cp bb.txt $WEST_BB_RETURN
-[[ -e fop.txt ]] && cp fop.txt $WEST_FOP_RETURN
-# TODO: prmsd? rog_pocket instead of rog? jd? Any other possible auxdata
-# possible here?
+[[ -e fop.txt ]] && cp fop.txt $WEST_FOP_RETURN  # TODO: Erich, check this.
+[[ -e composite.txt ]] && cp composite.txt $WEST_COMPOSITE_RETURN
+[[ -e prmsd.txt ]] && cp prmsd.txt $WEST_PRMSD_RETURN
+[[ -e jd.txt ]] && cp jd.txt $WEST_JD_RETURN
 
 # If we are running in debug mode, then output a lot of extra information.
 if [ -n "$SEG_DEBUG" ] ; then
