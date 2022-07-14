@@ -40,7 +40,6 @@ BSTATE_ARGS="--bstate-file bstates/bstates.txt"
 # Initialize the simulation, creating the main WESTPA data file (west.h5)
 # The "$@" lets us take any arguments that were passed to init.sh at the
 # command line and pass them along to w_init.
-WORKMANAGER="processes"
 $WEST_ROOT/bin/w_init \
   $BSTATE_ARGS \
   $TSTATE_ARGS \

@@ -22,7 +22,7 @@ We recommend using the composite RMSD progress coordinate.
 
 ### Downloading and installing SubPEx
 
-The first stepis to download, clone, or copy the repository.
+The first step is to download, clone, or copy the repository.
 
 ```bash
 git clone https://git.durrantlab.pitt.edu/erh91/SubPEx-Erich.git
@@ -63,14 +63,14 @@ ___Link your preliminary, equilibrated simulation___
 1. SubPEx assumes you have already run preliminary simulations to equilibrate
    your system. Soft link or copy your preliminary, equilibrated trajectories
    and necessary restart files to the `./reference/` directory. (Note that this
-   directory already contains the `md.conf` and `prod_npt.in` template files,
-   which SubPEX uses to interface with the NAMD and AMBER MD engines,
-   respectively.)
+   directory already contains the `namd.md.conf` and `amber.prod_npt.in`
+   template files, which SubPEX uses to interface with the NAMD and AMBER MD
+   engines, respectively.)
     - If using NAMD, soft linking the `.dcd` file of the final equilibration run
-      is fine. (***TODO: Erich: Will add complete list of files, e.g., parameter files
-      too.***)
+      is fine. (___TODO: Erich: Will add complete list of files, e.g., parameter
+      files too.___)
     - If using Amber, the filetype that works with the SubPEx algorithm is the
-      `.nc`. (***TODO: Erich: Will add complete list of files***)
+      `.nc`. (___TODO: Erich: Will add complete list of files___)
 
       ```bash
       ln -s \file\path\to\trajectory\files \WEST\ROOT\reference\
@@ -111,7 +111,10 @@ ___Edit the `west.cfg` file___
        - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
       ones (these sections are both found in the `west.cfg` file).
-      - ***JDD: ADD THIS INFO: subpex -> auxdata and also executable -> datasets?***
+       - The WESTPA progress coordinate is specified at ___TODO: Erich to add___
+       - The WESTPA auxiliary data is at `west -> executable -> datasets`
+       - The SubPEx progress coordinate is at `subpex -> pcoord`
+       - The SubPEx auxiliary data is at `subpex -> auxdata`
 
 ___Define the pocket to sample___
 
@@ -160,13 +163,10 @@ ___Setup the progress coordinate calculations___
       - Check lines 24-26. Replace {REFERENCE}, {RESTART_FILE}, and
         {TOPOLOGY_FILE} with the appropriate file names.
       - The script includes examples for NAMD and AMBER runs.
-    <!-- - make sure you are copying all the auxdata files to their respective WESTPA -->
-      <!-- variable. (check lines 38-42) TODO: Hoping this isn't necessary. See relevant file. NOTE: Erich thinks this might work, but good to check when you run. -->
-12. Modify the `runseg.sh`
+3. Modify the `runseg.sh`
     - This file runs each WESTPA/SubPEx walker (segment). It creates the needed
       directory, runs the walker simulation, and calculates the progress
       coordinate.
-    <!-- - link all parent auxdata files as parent_AUXDATA.txt (check lines 59-64) TODO: Hoping this isn't needed anymore. NOTE: Erich thinks this might work, but good to check when you run. -->
     - Make sure the random seed number gets added to the MD-engine configuration
       file (check lines 66-72). Be sure to comment out the NAMD code and
       uncomment the AMBER code if using AMBER as the MD engine.
@@ -176,36 +176,44 @@ ___Setup the progress coordinate calculations___
     - Be sure to call the correct MD engine (check lines 92-100).
     - Be sure to call the correct trajectory file for the pcoord.py script.
       (check lines 110-114)
-    <!-- - Make sure you copy all the auxdata files to the WESTPA variables. (check
-      lines 114-119) TODO: Hopefully not needed now. NOTE: Erich thinks this might work, but good to check when you run. -->
 
-8. Revise `env.sh`. You need to export the MD engine, and this file can get
-   complicated if using a supercomputing center. Some extra files in the
-   `./env-crc/` directory will help with the setup at a supercomputing center.
-   We used the CRC (University of Pittsburgh's supercomputing center) and
-   bridges2 of XSEDE, and these files needed minimal changes. ***JDD: Not clear
-   what to change in this file. LOOK AT `./env-crc` directory and give thought
-   to how to make more usable.*** ***JDD: Edit this file with Erich***
-10. Activate the WESTPA conda environment and run the init.sh file.
+
+___Setup the environment___
+
+0. ___TODO: Erich questions: Need to mention init.sh anywhere?___
+1. Revise the `env.sh` file.
+   - The file itself contains further instructions as comments.
+   - Among other things, be sure to set the environmental variables required to
+     run the NAMD or AMBER executables, as well as the appropriate WORKMANAGER.
+   - Setting the appropriate variables can get complicated if using a
+     supercomputing center. You may need to consult with an IT administrator.
+2. Modify the appropriate MD configuration file in `./reference/` directory
+   (`amber.prod_npt.in` if using AMBER, `namd.md.conf` if using NAMD).
+   - Make sure the number of frames corresponds to `pcoordlength` minus one
+     (`pcoordlength` is defined in the `adaptive_binning/adaptive.py` file)
+     ___TODO: Erich: Which parameter specifically, for each file? pcoordlength
+     is 3, number of frames in sample config files on order of tens of
+     thousands.___
+3. Activate the WESTPA conda environment and run the init.sh file.
 
 ```bash
 conda activate westpa
 ```
 
-11. If errors occur, check the `./job_logs` directory. (If there is no
-    `./job_logs` directory, that alone will cause WESTPA/SubPEx to fail.)
-13. Modify the MD configuration file in reference (check names and other
-    parameters) ***JDD: Where is this file? NOTE TO JDD: This is the file that's already in the git repo.***
-    - Make sure the number of frames corresponds to pcoordlength minus one
-      (pcoordlength is in the `adaptive_binning/adaptive.py` file)
-14. Run the run.sh file (unless you are running it in a supercomputing center).
-    ***JDD: This file does what? JDD NOTE: This is how you run the simulation. It was w_run in it. *** We provide a template file (`subpex.sh`)
-    that works on our supercomputing center, though it may not work on yours.
-    Please check with your IT person to troubleshoot any problems.
+___Running SubPEx___
 
-__Notes__: A lot of parts need to be perfect for it to run since WESTPA sims are
-not that easy to set up. To debug, check the `west.log` file and the output in
-the `job_logs` directory.
+1. To run SubPEx, execute the `run.sh` file from the command line. 
+   - You can also run SubPEx on a supercomputing cluster. See the `run.slurm.sh`
+     for an example submission script for the slurm job scheduler. Note that you
+     will likely need to modify the submission script for your specific cluster.
+     Please check with your IT administrator to troubleshoot any
+     cluster-specific problems.
+2. If errors occur during execution, check the `./job_logs` directory. (If there
+   is no `./job_logs` directory, that alone will cause WESTPA/SubPEx to fail.)
+
+__Notes__: WESTPA simulations are not easy to set up. You are likely to
+encounter errors on your first attempt. To debug, check the `west.log` file and
+the output in the `job_logs` directory.
 
 ## Important scripts and files and what they do
 
@@ -214,16 +222,18 @@ the `job_logs` directory.
   calculates progress coordinates for those, using the bstate.py script.
 - __gen_istate.sh__ makes istates directory.
 - __get_pcoord.sh__ copies and links necessary files. Then calls on bstate.py
-  script. This script gets called by _init.sh_.
+  script. This script gets called by `init.sh`.
 - __run.sh__ starts the run.
 - __runseg.sh__ WESTPA runs this script for each trajectory segment. The script
   has three jobs:
-    1) Link the necessary files for md simulations
+    1) Link the necessary files for MD simulations
     2) Run the MD simulation
-    3) Calculate the progress coordinate using the jdistance.py script.
+    3) Calculate the progress coordinate using the `jdistance.py` script.
+       ___TODO: Erich, still jdistance.py?___
 - __west.cfg__ the file containing the run's configuration.
 - __west.h5__ contains all the results of the WE run.
-- __get_reference_fop.py__ calcualtes the initial field of points for JD progress 
-  coordinate and creates selection string for MDAnalysis.
-- __pcoord_istate.py__ calcualtes progres coordinate for the initial states.
-- __pcoord.py__ calculates the progress coordiante for the production run.
+- __get_reference_fop.py__ calculates the initial field of points for JD
+  progress coordinate and creates a selection string for MDAnalysis.
+- __pcoord_istate.py__ calculates the progress coordinate for the initial
+  states.
+- __pcoord.py__ calculates the progress coordinate for the production run.

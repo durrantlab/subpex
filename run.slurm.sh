@@ -10,15 +10,17 @@
 ##SBATCH --partition=opa-high-mem
 #SBATCH --mail-user=user@email.domain
 #SBATCH --mail-type=END,FAIL  #BEGIN
-#
-# Run the weighted ensemble simulation. Make sure you ran init.sh first!
-#
-# TODO: Jacob. This is run.sh for the CRC. 
 
-source env.sh
+#
+# Example script for submitting a weighted ensemble simulation to the slurm job
+# scheduler. Be sure to modify the directives above and to run init.sh first! If
+# you want to run SubPEx directly from the command line, use run.sh.
+#
+
 SERVER_INFO=$WEST_SIM_ROOT/west_zmq_info-$SLURM_JOBID.json
 echo $WEST_PYTHON 
 
+source env.sh
 w_run --work-manager=zmq --n-workers=0 --zmq-mode=master --zmq-write-host-info=$SERVER_INFO --zmq-comm-mode=tcp &> west-$SLURM_JOBID.log &
 
 # wait on host info file up to one minute
