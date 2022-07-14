@@ -66,7 +66,7 @@ if __name__ == "__main__":
         results["prmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
                                                     istate.select_atoms(selection_pocket).positions))
 
-    if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog_pocket" in results.keys():
+    if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog" in results.keys():
         frame_coordinates = istate.select_atoms("protein").positions
         pocket_calpha = istate.select_atoms(selection_pocket + " and name CA*").positions
         frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     if "pvol" in results.keys():
         results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
 
-    if "rog_pocket" in results.keys():
-        results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
+    if "rog" in results.keys():
+        results["rog"].append(calculate_pocket_gyration(frame_fop))
 
     if "bb" in results.keys():
         align.alignto(istate, reference, select="backbone")
@@ -114,9 +114,9 @@ if __name__ == "__main__":
             for i in results["pvol"]:
                 f.write(str(i)+"\n")
 
-    if "rog_pocket" in settings["auxdata"]:
+    if "rog" in settings["auxdata"]:
         with open("rog.txt", "w") as f:
-            for i in results["rog_pocket"]:
+            for i in results["rog"]:
                 f.write(str(i)+"\n")
 
     if "bb" in settings["auxdata"]:

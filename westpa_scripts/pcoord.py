@@ -54,7 +54,7 @@ def check_input_settings_file(filename):
 
     # Checking that we specify which progress coordinates we will print in the pcoord file
     if "pcoord" in settings:
-        available_pcoords = ["jd", "prmsd", "bb", "composite", "pvol", "rog_pocket"]
+        available_pcoords = ["jd", "prmsd", "bb", "composite", "pvol", "rog"]
         if len(settings["pcoord"]) < 1:
             logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb and/or prsmd")
             sys.exit("Error with setting pcoord")
@@ -627,9 +627,9 @@ if __name__ == "__main__":
             with open("parent_pvol.txt", "r") as f:
                 results["pvol"].append(float(f.readlines()[-1]))
 
-        if "rog_pocket" in settings["auxdata"]:
+        if "rog" in settings["auxdata"]:
             with open("parent_rog.txt", "r") as f:
-                results["rog_pocket"].append(float(f.readlines()[-1]))
+                results["rog"].append(float(f.readlines()[-1]))
 
         if "bb" in settings["auxdata"]:
             with open("parent_bb.txt", "r") as f:
@@ -670,7 +670,7 @@ if __name__ == "__main__":
         
         # The next lines calculate the Jaccard distance of the pocket comparing
         # it to the reference
-        if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog_pocket" in results.keys():
+        if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog" in results.keys():
             frame_coordinates = ensemble.select_atoms("protein").positions
             pocket_calpha = ensemble.select_atoms(selection_pocket + " and name CA*").positions
             frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
@@ -683,8 +683,8 @@ if __name__ == "__main__":
         if "pvol" in results.keys():
             results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
 
-        if "rog_pocket" in results.keys():
-            results["rog_pocket"].append(calculate_pocket_gyration(frame_fop))
+        if "rog" in results.keys():
+            results["rog"].append(calculate_pocket_gyration(frame_fop))
 
         if "bb" in results.keys():
             align.alignto(protein, reference, select="backbone")
@@ -719,9 +719,9 @@ if __name__ == "__main__":
             for i in results["pvol"]:
                 f.write(str(i)+"\n")
 
-    if "rog_pocket" in settings["auxdata"]:
+    if "rog" in settings["auxdata"]:
         with open("rog.txt", "w") as f:
-            for i in results["rog_pocket"]:
+            for i in results["rog"]:
                 f.write(str(i)+"\n")
 
     if "bb" in settings["auxdata"]:
