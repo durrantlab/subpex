@@ -66,11 +66,11 @@ ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parent_pcoord.txt
 
 # IF USING THE NAMD MD ENGINE:
 sed "s/RAND/$WEST_RAND16/g" \
-$WEST_SIM_ROOT/reference/md.conf > md.conf
+$WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
 
 # # IF USING THE AMBER MD ENGINE:
 # sed "s/RAND/$WEST_RAND16/g" \
-# $WEST_SIM_ROOT/reference/prod_npt.in > prod_npt.in
+# $WEST_SIM_ROOT/reference/amber.prod_npt.in > amber.prod_npt.in
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
@@ -91,14 +91,14 @@ ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 ############################## Run the dynamics ################################
 
 # NAMD MD engine
-$NAMD md.conf > seg.log
+$NAMD namd.md.conf > seg.log
 
 if grep -q RATTLE seg.log; then
-    $NAMD md.conf > seg.log
+    $NAMD namd.md.conf > seg.log
 fi
 
 # # Amber MD engine
-# $AMBER -O -i prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
+# $AMBER -O -i amber.prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
 
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
