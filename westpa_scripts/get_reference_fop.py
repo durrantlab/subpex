@@ -144,4 +144,9 @@ if __name__ == "__main__":
     else:
         print("Could not save FOP file")
 
+    print("")
+    print("Files create successfully:")
+    print("   " + settings["selection_file"])
+    print("   " + settings["reference_fop"])
+
 

@@ -64,6 +64,8 @@ ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parent_pcoord.txt
 [[ -e $WEST_PARENT_DATA_REF/fop.txt ]] && ln -sv $WEST_PARENT_DATA_REF/fop.txt ./parent_fop.txt
 [[ -e $WEST_PARENT_DATA_REF/composite.txt ]] && ln -sv $WEST_PARENT_DATA_REF/composite.txt ./parent_composite.txt
 
+# CODE TO SET RANDOM SEED
+
 # IF USING THE NAMD MD ENGINE:
 sed "s/RAND/$WEST_RAND16/g" \
 $WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
@@ -77,18 +79,22 @@ $WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
 
-# NAMD files
-ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
-ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
-ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
-ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
-ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
-ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
+# LINK FILES TO RESTART WALKER
 
-# # AMBER files
-# ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+# NAMD files
+# ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+# ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
+# ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
+# ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
+# ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
+# ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
+
+# AMBER files
+ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
 
 ############################## Run the dynamics ################################
+
+# CALL MD ENGINE
 
 # NAMD MD engine
 $NAMD namd.md.conf > seg.log
@@ -107,6 +113,8 @@ fi
 # bstate and this segment. 
 # The script outputs the distance saving the values of the parent pcoord and the 
 # child pcoord to a file called pcoord.txt.
+
+# RUN PCOORD.PY
 
 # FOR NAMD
 python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.dcd  $WEST_SIM_ROOT/west.cfg --we
