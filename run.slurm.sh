@@ -6,10 +6,11 @@
 #SBATCH --error=job_logs/slurm.err
 #SBATCH --time=2:00:00
 #SBATCH --cluster=mpi
-#SBATCH --partition=ib
-##SBATCH --partition=opa-high-mem
+#SBATCH --partition=opa-high-mem
 #SBATCH --mail-user=user@email.domain
 #SBATCH --mail-type=END,FAIL  #BEGIN
+
+# TODO: Erich, can we get example slurm scripts for AMBER on GPU too?
 
 #
 # Example script for submitting a weighted ensemble simulation to the slurm job
@@ -17,11 +18,12 @@
 # you want to run SubPEx directly from the command line, use run.sh.
 #
 
+source env.sh
+
 SERVER_INFO=$WEST_SIM_ROOT/west_zmq_info-$SLURM_JOBID.json
 echo $WEST_PYTHON 
 
-source env.sh
-w_run --work-manager=zmq --n-workers=0 --zmq-mode=master --zmq-write-host-info=$SERVER_INFO --zmq-comm-mode=tcp &> west-$SLURM_JOBID.log &
+w_run --work-manager=zmq --n-workers=0 --zmq-mode=master --zmq-write-host-info=$SERVER_INFO --zmq-comm-mode=tcp &> ./job_logs/west-$SLURM_JOBID.log &
 
 # wait on host info file up to one minute
 for ((n=0; n<60; n++)); do

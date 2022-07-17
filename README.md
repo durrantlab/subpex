@@ -2,10 +2,10 @@
 
 ## What is it?
 
-Subpocket explorer (SubPEx) is a tool that uses weighted ensemble (WE), as
-implemented in WESTPA, to maximize pocket conformational search. SubPEx's goal
-is to produce a diverse ensemble of protein conformations for use in ensemble
-docking.
+Subpocket explorer (SubPEx) is a tool that uses weighted ensemble (WE) path
+sampling, as implemented in WESTPA, to maximize pocket conformational search.
+SubPEx's goal is to produce a diverse ensemble of protein conformations for use
+in ensemble docking.
 
 As with any WE implementation, SubPEx uses a progress coordinate to focus
 computational power on sampling phase space. The available progress coordinates
@@ -73,30 +73,41 @@ ___Link your preliminary, equilibrated simulation___
       `.nc`. (___TODO: Erich: Will add complete list of files___)
 
       ```bash
-      ln -s \file\path\to\trajectory\files \WEST\ROOT\reference\
+      ln -s /file/path/to/trajectory/file1.ext /WEST/ROOT/reference/
+      ln -s /file/path/to/trajectory/file2.ext /WEST/ROOT/reference/
+      ...
       ```
 
 2. Extract the last frame of the preliminary, equilibrated trajectory as a `pdb`
-   file with your preferred molecular analysis program (e.g., VMD).
+   file with your preferred molecular analysis program (e.g., VMD). Soft link
+   that to the `./reference/` directory as well.
+
+      ```bash
+      ln -s /file/path/to/last/frame/last_frame.pdb /WEST/ROOT/reference/
+      ```
 
 ___Edit the `west.cfg` file___
 
 1. Edit the following parameters in the `west.cfg` file:
-    - the path variables:
+    - the path variables (relative to the WESTPA root directory):
        - `reference`: the PDB file that will be used in EVERY SINGLE
          progress-coordinate calculation (the last frame of the preliminary,
-         equilibrated simulation mentioned above).
+         equilibrated simulation mentioned above, e.g.,
+         `./reference/last_frame.pdb`).
        - `selection_file`: path to a text file containing the pocket selection
          string (MDAnalysis selection notation). This file will be automatically
-         generated in a subsequent step.
+         generated in a subsequent step, but specify its future path here (e.g.,
+         `./selection_string.txt`).
        - `reference_fop`: path to an `xyz` file containing the field of points
-         needed to calculate the `jd` progress coordinate. This file is also
-         useful for visualizing the selected pocket. It will be automatically
-         generated in a subsequent step.
+         needed to calculate the `jd` progress coordinate (e.g.,
+         `./fop_ref.xyz`). This file is also useful for visualizing the selected
+         pocket. It will be automatically generated in a subsequent step.
        - `west_home`: home directory of the SubPEx run. You'll most likely want
-         to use the same directory that contains the `west.cfg` file itself.
+         to use the same directory that contains the `west.cfg` file itself
+         (e.g., `./`).
        - `topology`: topology file needed for the MD simulations (likely the
-         same topology file used in the preliminary, equilibrated simulations).
+         same topology file used in the preliminary, equilibrated simulations,
+         e.g., `./reference/my_topology_file.ext`).
     - the progress coordinate (`pcoord`) to use.
        - `composite`: composite RMSD (recommended)
        - `prmsd`: pocket heavy atoms RMSD
@@ -107,7 +118,7 @@ ___Edit the `west.cfg` file___
        - `prmsd`: pocket heavy atoms RMSD*
        - `pvol`: pocket volume
        - `bb`: backbone RMSD
-       - `rog_pocket`: radius of gyration of the pocket
+       - `rog`: radius of gyration of the pocket
        - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
       ones (these sections are both found in the `west.cfg` file).
@@ -138,8 +149,8 @@ ___Define the pocket to sample___
    parameters in the `west.cfg` file.
 6. Visually inspect the pocket field of points (fop) and/or the selection string
    (MDAnalysis selection syntax).
-   - Ensure that the fop (`reference_fop`) entirely fills the pocket of
-     interest.
+   - Ensure that the points in the fop (`reference_fop`) file entirely fill the
+     pocket of interest.
    - Ensure that the residues (`selection_file`) truly line the pocket of
      interest.
    - Note that the popular molecular visualization program VMD can load `xyz`
@@ -160,23 +171,30 @@ ___Setup the progress coordinate calculations___
       initial states (istates).
     - Make sure to link the files needed to start the SubPEx simulations (the
       ones you put in the `./reference/` directory above).
-      - Check lines 24-26. Replace {REFERENCE}, {RESTART_FILE}, and
-        {TOPOLOGY_FILE} with the appropriate file names.
-      - The script includes examples for NAMD and AMBER runs.
-3. Modify the `runseg.sh`
+      - Search for `{REFERENCE}`, `{RESTART_FILE}`, and `{TOPOLOGY_FILE}`, and
+        then replace those strings with the appropriate file names (e.g.,
+        `reference/last_frame.pdb`, `reference/equil_npt.nc`, and
+        `reference/mol.prmtop`).
+      - The script includes examples for NAMD and AMBER runs. Comment in/out the
+        appropriate section for your MD engine.
+3. Modify the `westpa_scripts/runseg.sh` file.
     - This file runs each WESTPA/SubPEx walker (segment). It creates the needed
       directory, runs the walker simulation, and calculates the progress
       coordinate.
-    - Make sure the random seed number gets added to the MD-engine configuration
-      file (check lines 66-72). Be sure to comment out the NAMD code and
-      uncomment the AMBER code if using AMBER as the MD engine.
-    - Link the necessary files to restart the walker simulation (check lines
-      79-88). Be sure to comment out/in the appropriate block for NAMD vs.
-      AMBER.
-    - Be sure to call the correct MD engine (check lines 92-100).
-    - Be sure to call the correct trajectory file for the pcoord.py script.
-      (check lines 110-114)
-
+    - Make sure SubPEx knows how to add the random seed number to the MD-engine
+      configuration file (search for "`# CODE TO SET RANDOM SEED`"). Be sure to
+      comment out the NAMD code and uncomment the AMBER code if using AMBER as
+      the MD engine.
+    - Link the necessary files to restart the walker simulation (search for "`#
+      LINK FILES TO RESTART WALKER`"). You shouldn't need to change these
+      filenames; be sure only to comment out/in the appropriate block for NAMD
+      vs. AMBER.
+    - Be sure to call the correct MD engine (search for "`# CALL MD ENGINE`").
+      Again, no need to change these filenames; just comment out/in the
+      appropriate block for NAMD vs. AMBER.
+    - Be sure to call the correct trajectory file for the pcoord.py script
+      (search for "`# RUN PCOORD.PY`"). No need to change these filenames; just
+      comment out/in the appropriate block for NAMD vs. AMBER.
 
 ___Setup the environment___
 
@@ -185,10 +203,11 @@ ___Setup the environment___
    - The file itself contains further instructions as comments.
    - Among other things, be sure to set the environmental variables required to
      run the NAMD or AMBER executables, as well as the appropriate WORKMANAGER.
-   - Setting the appropriate variables can get complicated if using a
+   - Setting the appropriate variables may be complicated if using a
      supercomputing center. You may need to consult with an IT administrator.
 2. Modify the appropriate MD configuration file in `./reference/` directory
-   (`amber.prod_npt.in` if using AMBER, `namd.md.conf` if using NAMD).
+   (`./reference/amber.prod_npt.in` if using AMBER, `./reference/namd.md.conf`
+   if using NAMD).
    - Make sure the number of frames corresponds to `pcoordlength` minus one
      (`pcoordlength` is defined in the `adaptive_binning/adaptive.py` file)
      ___TODO: Erich: Which parameter specifically, for each file? pcoordlength
@@ -202,7 +221,7 @@ conda activate westpa
 
 ___Running SubPEx___
 
-1. To run SubPEx, execute the `run.sh` file from the command line. 
+1. To run SubPEx, execute the `./run.sh` file from the command line. 
    - You can also run SubPEx on a supercomputing cluster. See the `run.slurm.sh`
      for an example submission script for the slurm job scheduler. Note that you
      will likely need to modify the submission script for your specific cluster.
