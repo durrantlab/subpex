@@ -18,6 +18,10 @@
 # module load gcc/8.2.0 openmpi/4.0.3
 # module load amber/22
 
+# Note: Certain supercomputing centers may require you to specify the full path
+# to your westpa environment.
+conda activate westpa
+
 ###############################################################################
 
 # STEP 2: Set the environment variables for running the AMBER or NAMD
@@ -37,6 +41,10 @@ export NAMD="$NAMDBIN +p$NPROC +idlepoll +setcpuaffinity"
 # STEP 3: Check to make sure that the environment variable WEST_ROOT is set.
 # Here, the code '[ -z "$WEST_ROOT"]' will return TRUE if WEST_ROOT is not set,
 # causing us to enter the if-statement, print an error message, and exit.
+
+# TODO: Where is westpa.sh?
+# TODO: It was renamed run.slurm.sh. Why would you source it here? Good to ask Erich.
+# TODO: This is ancient code. Could probably reword to avoid source westpa.sh.
 
 if [ -z "$WEST_ROOT" ]; then
   echo "The environment variable WEST_ROOT is not set."
