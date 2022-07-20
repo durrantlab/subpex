@@ -15,7 +15,7 @@
 # module purge
 # module load namd/2.12b1-multicore-CUDA
 
-# module load gcc/10.2.0 openmpi/4.1.1
+# module load gcc/8.2.0 openmpi/4.0.3
 # module load amber/22
 
 ###############################################################################

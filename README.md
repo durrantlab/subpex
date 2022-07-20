@@ -90,6 +90,7 @@ ___Edit the `west.cfg` file___
 
 1. Edit the following parameters in the `west.cfg` file:
     - the path variables (relative to the WESTPA root directory):
+       - ___NOTE: Be sure to use full (not relative) paths.___
        - `reference`: the PDB file that will be used in EVERY SINGLE
          progress-coordinate calculation (the last frame of the preliminary,
          equilibrated simulation mentioned above, e.g.,
@@ -118,7 +119,7 @@ ___Edit the `west.cfg` file___
        - `prmsd`: pocket heavy atoms RMSD*
        - `pvol`: pocket volume
        - `bb`: backbone RMSD
-       - `rog`: radius of gyration of the pocket
+       - `rog`: radius of gyration of the pocket (requires `jd` too)
        - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
       ones (these sections are both found in the `west.cfg` file).
@@ -198,7 +199,6 @@ ___Setup the progress coordinate calculations___
 
 ___Setup the environment___
 
-0. ___TODO: Erich questions: Need to mention init.sh anywhere?___
 1. Revise the `env.sh` file.
    - The file itself contains further instructions as comments.
    - Among other things, be sure to set the environmental variables required to
@@ -214,6 +214,8 @@ ___Setup the environment___
      is 3, number of frames in sample config files on order of tens of
      thousands.___
 3. Activate the WESTPA conda environment and run the init.sh file.
+4. Execute the `./init.sh` file. Note that this will delete any data from
+   previous SubPEx runs.
 
 ```bash
 conda activate westpa
