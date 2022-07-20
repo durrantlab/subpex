@@ -11,6 +11,7 @@
 #SBATCH --mail-type=END,FAIL  #BEGIN
 
 # TODO: Erich, can we get example slurm scripts for AMBER on GPU too?
+# TODO: Look to GPU scripts in env.sh for inspiration. Not AMBER/NAMD specific.
 
 #
 # Example script for submitting a weighted ensemble simulation to the slurm job

@@ -117,7 +117,7 @@ ___Edit the `west.cfg` file___
     - the auxiliary data (`auxdata`) to calculate and save.
        - `composite`: composite RMSD
        - `prmsd`: pocket heavy atoms RMSD*
-       - `pvol`: pocket volume
+       - `pvol`: pocket volume (requires `jd` too)  # TODO: Erich will check if also requires jd.
        - `bb`: backbone RMSD
        - `rog`: radius of gyration of the pocket (requires `jd` too)
        - `jd`: Jaccard distance
@@ -213,8 +213,8 @@ ___Setup the environment___
      ___TODO: Erich: Which parameter specifically, for each file? pcoordlength
      is 3, number of frames in sample config files on order of tens of
      thousands.___
-3. Activate the WESTPA conda environment and run the init.sh file.
-4. Execute the `./init.sh` file. Note that this will delete any data from
+3. Activate the WESTPA conda environment and source the init.sh file.
+4. Execute the `. init.sh` file. Note that this will delete any data from
    previous SubPEx runs.
 
 ```bash
@@ -249,8 +249,7 @@ the output in the `job_logs` directory.
   has three jobs:
     1) Link the necessary files for MD simulations
     2) Run the MD simulation
-    3) Calculate the progress coordinate using the `jdistance.py` script.
-       ___TODO: Erich, still jdistance.py?___
+    3) Calculate the progress coordinate using the `pcoord.py` script.
 - __west.cfg__ the file containing the run's configuration.
 - __west.h5__ contains all the results of the WE run.
 - __get_reference_fop.py__ calculates the initial field of points for JD
