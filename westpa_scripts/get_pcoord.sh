@@ -25,9 +25,9 @@ ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
 ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
 ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
 
-# If using AMBER... TODO: Erich: Can Erich fill in below?
+# If using AMBER
 # ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
-# ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
+# ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.rst
 # ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
 
 # Use a custom script to calculate the jaccard distance between the starting
@@ -39,7 +39,6 @@ cp pcoord.txt $WEST_PCOORD_RETURN  # Always exists
 [[ -e pvol.txt ]] && cp pvol.txt $WEST_PVOL_RETURN
 [[ -e rog.txt ]] && cp rog.txt $WEST_ROG_RETURN
 [[ -e bb.txt ]] && cp bb.txt $WEST_BB_RETURN
-[[ -e fop.txt ]] && cp fop.txt $WEST_FOP_RETURN  # TODO: Erich, check this.
 [[ -e composite.txt ]] && cp composite.txt $WEST_COMPOSITE_RETURN
 [[ -e prmsd.txt ]] && cp prmsd.txt $WEST_PRMSD_RETURN
 [[ -e jd.txt ]] && cp jd.txt $WEST_JD_RETURN
