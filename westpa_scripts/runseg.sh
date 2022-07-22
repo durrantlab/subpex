@@ -82,15 +82,15 @@ $WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
 # LINK FILES TO RESTART WALKER
 
 # NAMD files
-# ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
-# ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
-# ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
-# ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
-# ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
-# ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
+ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
+ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
+ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
+ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
+ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 
 # AMBER files
-ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+#ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
 
 ############################## Run the dynamics ################################
 
@@ -128,7 +128,6 @@ cp pcoord.txt $WEST_PCOORD_RETURN
 [[ -e bb.txt ]] && cp bb.txt $WEST_BB_RETURN
 [[ -e jd.txt ]] && cp jd.txt $WEST_JD_RETURN
 [[ -e prmsd.txt ]] && cp prmsd.txt $WEST_PRMSD_RETURN
-[[ -e fop.txt ]] && cp fop.txt $WEST_FOP_RETURN  # TODO: Erich, check this.
 [[ -e composite.txt ]] && cp composite.txt $WEST_COMPOSITE_RETURN
 
 # Clean up
