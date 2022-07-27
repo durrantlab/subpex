@@ -65,12 +65,14 @@ ___Link your preliminary, equilibrated simulation___
    and necessary restart files to the `./reference/` directory. (Note that this
    directory already contains the `namd.md.conf` and `amber.prod_npt.in`
    template files, which SubPEX uses to interface with the NAMD and AMBER MD
-   engines, respectively.)
+   engines, respectively.) It is important to remember to soft link the parameter 
+   files (prmtop). 
     - If using NAMD, soft linking the `.dcd` file of the final equilibration run
-      is fine. (___TODO: Erich: Will add complete list of files, e.g., parameter
-      files too.___)
+      is fine. For NAMD there are other files needed to restar simulations, be 
+      sure to soft link the xsc, coor, and inpcrd files. 
     - If using Amber, the filetype that works with the SubPEx algorithm is the
-      `.nc`. (___TODO: Erich: Will add complete list of files___)
+      `.nc`. You need to soft link the rst file of the final equilibration run
+      is fine.
 
       ```bash
       ln -s /file/path/to/trajectory/file1.ext /WEST/ROOT/reference/
@@ -117,13 +119,13 @@ ___Edit the `west.cfg` file___
     - the auxiliary data (`auxdata`) to calculate and save.
        - `composite`: composite RMSD
        - `prmsd`: pocket heavy atoms RMSD*
-       - `pvol`: pocket volume (requires `jd` too)  # TODO: Erich will check if also requires jd.
+       - `pvol`: pocket volume (requires `jd` too)  # TODO: Erich will check if also requires jd. __IT DOES__
        - `bb`: backbone RMSD
        - `rog`: radius of gyration of the pocket (requires `jd` too)
        - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
       ones (these sections are both found in the `west.cfg` file).
-       - The WESTPA progress coordinate is specified at ___TODO: Erich to add___
+       - The WESTPA progress coordinate is specified at `west -> data -> datasets`, `subpex -> pcoord`, and in adaptive_binning/adaptive.py
        - The WESTPA auxiliary data is at `west -> executable -> datasets`
        - The SubPEx progress coordinate is at `subpex -> pcoord`
        - The SubPEx auxiliary data is at `subpex -> auxdata`
