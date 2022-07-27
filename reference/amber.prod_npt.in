@@ -1,7 +1,7 @@
 250 ns unrestrained NPT equilibration using Langevin thermostat and MC barostat
 &cntrl
-  irest     = 0,                                 ! flag to restart sim
-  ntx       = 1,                                 ! option to read initial coords and vel
+  irest     = 1,                                 ! flag to restart sim
+  ntx       = 5,                                 ! option to read initial coords and vel
   ig        = RAND,                              ! Random number generator
   dt        = 0.002,                             ! timestep
   nstlim    = 10000,                             ! Number of MD-steps to be performed
