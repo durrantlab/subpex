@@ -21,7 +21,8 @@ source env.sh
 cd $WEST_STRUCT_DATA_REF
 
 # If using NAMD...
-ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
+# If mol.pdb doesn't exist...
+[[ ! -e mol.pdb ]] ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
 ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
 ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
 
