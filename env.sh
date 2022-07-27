@@ -20,6 +20,7 @@
 
 # Note: Certain supercomputing centers may require you to specify the full path
 # to your westpa environment.
+source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
 conda activate westpa
 
 ###############################################################################
