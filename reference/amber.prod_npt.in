@@ -22,8 +22,8 @@
   cut       = 10.0,                              ! non-bonded cutoff
   ntpr      = 500,                               ! out file write frequency
   ntxo      = 2,                                 ! format of coordinate file
-  ntwr      = 500,                              ! restart file write frequency
+  ntwr      = 5000,                              ! restart file write frequency
   ioutfm    = 1,                                 ! The format of coordinate and velocity trajectory files 
-  ntwx      = 500,                              ! coordinate file write frequency 
+  ntwx      = 5000,                              ! coordinate file write frequency 
   iwrap     = 1,                                 ! trajectory files will be "wrapped" into a primary 
 &end
