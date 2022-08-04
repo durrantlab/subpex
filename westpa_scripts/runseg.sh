@@ -81,7 +81,7 @@ $WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
 
 # LINK FILES TO RESTART WALKER
 
-# NAMD files
+# NAMD files  # TODO: Notice that mol.prmtop and mol.inpcrd hardcoded.
 ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
 ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
 ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
@@ -90,7 +90,8 @@ ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
 ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
 
 # AMBER files
-#ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+# ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+# ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop  # TODO: Note hardcoded here
 
 ############################## Run the dynamics ################################
 

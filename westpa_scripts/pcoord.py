@@ -160,7 +160,7 @@ def points_to_pdb(filename, coordinates):
         filename (str): name of the pdb file to create.
         coordinates (list of lists): XYZ coordinates of the field of points to write into pdb file.
     """
-    with open(filename, "w") as f: # TODO: Erich - modify to be able to do multiframe pdb
+    with open(filename, "w") as f:  # TODO: Erich - modify to be able to do multiframe pdb
         # f.write(header)
         atom_number = 1
         for i in coordinates:

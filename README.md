@@ -119,7 +119,7 @@ ___Edit the `west.cfg` file___
     - the auxiliary data (`auxdata`) to calculate and save.
        - `composite`: composite RMSD
        - `prmsd`: pocket heavy atoms RMSD*
-       - `pvol`: pocket volume (requires `jd` too)  # TODO: Erich will check if also requires jd. __IT DOES__
+       - `pvol`: pocket volume (requires `jd` too)  # TODO: Erich will check if also requires jd. __Erich comment: IT DOES__
        - `bb`: backbone RMSD
        - `rog`: radius of gyration of the pocket (requires `jd` too)
        - `jd`: Jaccard distance
@@ -169,7 +169,8 @@ ___Setup the progress coordinate calculations___
    the number of walkers per bin, the bins' minimum and maximum values, etc.
     - This file controls the adaptive binning scheme that SubPEx uses.
     - A detailed description of each variable is given in the file itself.
-2. Change `westpa_scripts/get_pcoord.sh`.
+2. Change `westpa_scripts/get_pcoord.sh`. ___JDD TODO: Why not just standardize these
+   names at the ln -s to ./reference/ step above?___
     - This script runs when calculating initial progress coordinates for new
       initial states (istates).
     - Make sure to link the files needed to start the SubPEx simulations (the
@@ -210,11 +211,13 @@ ___Setup the environment___
 2. Modify the appropriate MD configuration file in `./reference/` directory
    (`./reference/amber.prod_npt.in` if using AMBER, `./reference/namd.md.conf`
    if using NAMD).
-   - Make sure the number of frames corresponds to `pcoordlength` minus one
-     (`pcoordlength` is defined in the `adaptive_binning/adaptive.py` file)
-     ___TODO: Erich: Which parameter specifically, for each file? pcoordlength
-     is 3, number of frames in sample config files on order of tens of
-     thousands.___
+   - Make sure the number of frames saved per simulation equals `pcoordlength`
+     minus one (`pcoordlength` is defined in the `adaptive_binning/adaptive.py`
+     file). For example:
+   - If using AMBER, modify `./reference/amber.prod_npt.in` to make sure
+     `nstlim` / `ntwx` = `pcoordlength` - 1.
+   - If using NAMD, modify `./reference/namd.md.conf` to make sure `run` /
+     `dcdfreq` = `pcoordlength` - 1.
 3. Activate the WESTPA conda environment and source the init.sh file.
 4. Execute the `. init.sh` file. Note that this will delete any data from
    previous SubPEx runs.

@@ -21,14 +21,14 @@ source env.sh
 cd $WEST_STRUCT_DATA_REF
 
 # If using NAMD...
-[[ ! -e mol.pdb ]] && ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
-[[ ! -e seg.dcd ]] && ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
-[[ ! -e mol.prmtop ]] && ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
+# [[ ! -e mol.pdb ]] && ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
+# [[ ! -e seg.dcd ]] && ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
+# [[ ! -e mol.prmtop ]] && ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
 
 # If using AMBER
-# [[ ! -e mol.pdb ]] && ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
-# [[ ! -e seg.rst ]] && ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.rst
-# [[ ! -e mol.prmtop ]] && ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
+[[ ! -e mol.pdb ]] && ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
+[[ ! -e seg.rst ]] && ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.rst
+[[ ! -e mol.prmtop ]] && ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
 
 # Use a custom script to calculate the jaccard distance between the starting
 # structure and the initial state (should be 0 since we are copying the files).

@@ -1,17 +1,17 @@
 #!/bin/bash
 #SBATCH --job-name=subpex_1
 #SBATCH --nodes=2
-#SBATCH --ntasks-per-node=20
+#SBATCH --ntasks-per-node=28
 #SBATCH --output=job_logs/slurm.out
 #SBATCH --error=job_logs/slurm.err
-#SBATCH --time=2:00:00
+#SBATCH --time=24:00:00
 #SBATCH --cluster=mpi
 #SBATCH --partition=opa-high-mem
 #SBATCH --mail-user=user@email.domain
 #SBATCH --mail-type=END,FAIL  #BEGIN
 
 # TODO: Erich, can we get example slurm scripts for AMBER on GPU too?
-# TODO: Look to GPU scripts in env.sh for inspiration. Not AMBER/NAMD specific.
+# TODO: Look to GPU scripts in env.sh (./env-crc/) for inspiration. Not AMBER/NAMD specific.
 
 #
 # Example script for submitting a weighted ensemble simulation to the slurm job
