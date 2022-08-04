@@ -6,3 +6,5 @@ utils/settings.yaml
 */__init__.py
 /.idea/
 *sublime-workspace
+reference/mol.*
+wizard.saved

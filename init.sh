@@ -45,3 +45,5 @@ $WEST_ROOT/bin/w_init \
   $TSTATE_ARGS \
   --segs-per-state 4 \
   --work-manager=$WORKMANAGER "$@"
+
+rm -f binbounds.txt
