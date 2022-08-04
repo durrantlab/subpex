@@ -33,7 +33,7 @@ mv binbounds.txt binbounds_old.txt
 LASTITER="$(ls -Art traj_segs | tail -n 1)"
 LASTITERNUM=$((10#$LASTITER))
 
-# Move all the gnerations that where trucated
+# Move all the generations that were trucated
 for i in $(seq -f "%06g" $GEN $LASTITERNUM)
 do 
     mv traj_segs/$i reference/
