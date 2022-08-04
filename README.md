@@ -62,30 +62,40 @@ ___Link your preliminary, equilibrated simulation___
 
 1. SubPEx assumes you have already run preliminary simulations to equilibrate
    your system. Soft link or copy your preliminary, equilibrated trajectories
-   and necessary restart files to the `./reference/` directory. (Note that this
-   directory already contains the `namd.md.conf` and `amber.prod_npt.in`
-   template files, which SubPEX uses to interface with the NAMD and AMBER MD
-   engines, respectively.) It is important to remember to soft link the parameter 
-   files (prmtop). 
-    - If using NAMD, soft linking the `.dcd` file of the final equilibration run
-      is fine. For NAMD there are other files needed to restar simulations, be 
-      sure to soft link the xsc, coor, and inpcrd files. 
-    - If using Amber, the filetype that works with the SubPEx algorithm is the
-      `.nc`. You need to soft link the rst file of the final equilibration run
-      is fine.
+   and necessary restart files to the `./reference/` directory. Rename the files
+   `mol` with the appropriate extension. (Note that `./reference/` already
+   contains the `namd.md.conf` and `amber.prod_npt.in` template files, which
+   SubPEX uses to interface with the NAMD and AMBER MD engines, respectively.)
+    - If using NAMD, soft link the `.dcd` file of the final equilibration run.
+      NAMD requires other files to restart simulations as well. Be sure to soft
+      link the `.xsc`, `.coor`, and `.inpcrd` files as well. Remember the
+      `.prmtop` file as well.
 
       ```bash
-      ln -s /file/path/to/trajectory/file1.ext /WEST/ROOT/reference/
-      ln -s /file/path/to/trajectory/file2.ext /WEST/ROOT/reference/
-      ...
+      ln -s /file/path/to/simulation/my_namd_file.dcd /WEST/ROOT/reference/mol.dcd
+      ln -s /file/path/to/simulation/my_namd_file.xsc /WEST/ROOT/reference/mol.xsc
+      ln -s /file/path/to/simulation/my_namd_file.coor /WEST/ROOT/reference/mol.coor
+      ln -s /file/path/to/simulation/my_namd_file.inpcrd /WEST/ROOT/reference/mol.inpcrd
+      ln -s /file/path/to/simulation/my_namd_file.prmtop /WEST/ROOT/reference/mol.prmtop
+      ```
+
+    - If using Amber, the filetype that works with the SubPEx algorithm is
+      `.nc`. You need to soft link the `.rst` file of the final equilibration
+      run as well. Remember the `.prmtop` file as well.
+
+      ```bash
+      ln -s /file/path/to/trajectory/my_amber_file.nc /WEST/ROOT/reference/mol.nc
+      ln -s /file/path/to/trajectory/my_amber_file.rst /WEST/ROOT/reference/mol.rst
+      ln -s /file/path/to/trajectory/my_amber_file.prmtop /WEST/ROOT/reference/mol.prmtop
       ```
 
 2. Extract the last frame of the preliminary, equilibrated trajectory as a `pdb`
    file with your preferred molecular analysis program (e.g., VMD). Soft link
-   that to the `./reference/` directory as well.
+   that to the `./reference/` directory as well, and name the link
+   `last_frame.pdb`.
 
       ```bash
-      ln -s /file/path/to/last/frame/last_frame.pdb /WEST/ROOT/reference/
+      ln -s /file/path/to/last/frame/my_last_frame.pdb /WEST/ROOT/reference/last_frame.pdb
       ```
 
 ___Edit the `west.cfg` file___
