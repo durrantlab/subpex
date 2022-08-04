@@ -12,14 +12,19 @@
 # required to run AMBER or NAMD. Here are some examples, though these are not
 # likely to work on your specific system.
 
-# module purge
+module purge
+
+# NAMD, GPU
 # module load namd/2.12b1-multicore-CUDA
 
+# AMBER
 # module load gcc/8.2.0 openmpi/4.0.3
 # module load amber/22
 
 # Note: Certain supercomputing centers may require you to specify the full path
 # to your westpa environment.
+echo "Using conda: $(which conda)"
+source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
 conda activate westpa
 
 ###############################################################################
@@ -28,13 +33,19 @@ conda activate westpa
 # executable, per your system setup. Here are some examples, with the NAMD
 # example uncommented:
 
+# NAMD
 export NPROC=12
 export NAMDBIN=$(which namd2)
 export NAMD="$NAMDBIN +p$NPROC +idlepoll +setcpuaffinity"
 
+# AMBER, MPI
 # export NPROC=$(nproc)
 # SANDER=pmemd.MPI
 # export AMBER="mpirun -n $NPROC $SANDER"
+
+# AMBER, GPU
+# SANDER=pmemd.cuda
+# export AMBER="$SANDER"
 
 ###############################################################################
 
@@ -78,4 +89,5 @@ export SIM_NAME=$(basename $WEST_SIM_ROOT)
 # https://github.com/westpa/westpa/wiki/Running-WESTPA-in-a-multi-node-environment
 
 #export WORKMANAGER="processes"
-export WORKMANAGER="serial"
+#export WORKMANAGER="zmq"  # Good for slurm, multiple nodes
+export WORKMANAGER="serial"  # Good for running on single machine (single GPU).
