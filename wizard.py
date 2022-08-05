@@ -12,7 +12,12 @@ except:
     exit(1)
 
 if os.name == 'nt':
-    print("Wizard script supported only on Linux. Sorry!")
+    print("\nWizard script supported only on Linux. Sorry!\n")
+    exit(1)
+
+# Make sure west.cfg in present directory
+if not os.path.exists("west.cfg"):
+    print("\nPlease run this script from the same directory containing the west.cfg file.\n")
     exit(1)
 
 CUR_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -84,6 +89,12 @@ def run_cmd(cmd):
 def link_to_reference_mol(flnm):
     ext = flnm.split(".")[-1]
     run_cmd("ln -s " + flnm + " " + CUR_PATH + "/reference/mol." + ext)
+
+def openfile(filename):
+    if not os.path.exists(filename + ".orig"):
+        os.system("cp " + filename + " " + filename + ".orig")
+
+    return open(filename + ".orig", "r")
 
 clear()
 
@@ -198,8 +209,45 @@ def get_sim_last_frame():
     link_to_reference_mol(last_frame_file)
     clear()
 
-confirm_environment()
-confirm_dependencies()
+def update_westcfg_path_vars():
+    # Open west.cfg yaml file
+    f = openfile("west.cfg")
+    westcfg = yaml.load(f, Loader=yaml.SafeLoader)
+    westcfg["subpex"]["selection_file"] = CUR_PATH + "/reference/selection_string.txt"
+    westcfg["subpex"]["topology"] = CUR_PATH + "/reference/mol.prmtop"
+    westcfg["subpex"]["west_home"] = CUR_PATH
+    westcfg["subpex"]["reference"] = CUR_PATH + "/reference/last_frame.pdb"
+    westcfg["subpex"]["reference_fop"] = CUR_PATH + "/reference/fop_ref.xyz"
+
+    return westcfg
+
+def pick_pcoord(westcfg):
+    log("STEP 7: Progress coordinate", "-")
+    log("Which progress coordinate would you like to use?")
+    log("composite: combination of pocket and back-bone RMSD (recommended)\nprmsd: RMSD of pocket-lining atoms\nbb: RMSD of all back-bone atoms\njd: Jaccard distance between pocket shapes")
+
+    pcoord = get_choice(
+        "pcoord", 
+        lambda : choice(
+            "Which progress coordinate?", 
+            choices=["composite", "prmsd", "bb", "jd"]
+        )
+    )
+    westcfg["subpex"]["pcoord"] = pcoord
+    clear()
+
+def pick_auxdata(westcfg):
+    print("STILL NEED TO IMPLEMENT!!!")  # TODO:
+
+# confirm_environment()
+# confirm_dependencies()
 engine = amber_or_namd()
 get_prelim_sim_files(engine)
 get_sim_last_frame()
+westcfg = update_westcfg_path_vars()
+pick_pcoord(westcfg)
+pick_auxdata(westcfg)
+
+# Save west.cfg
+with open("west.cfg", "w") as f:
+    yaml.dump(westcfg, f)
