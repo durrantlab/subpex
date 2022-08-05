@@ -101,32 +101,30 @@ ___Link your preliminary, equilibrated simulation___
 ___Edit the `west.cfg` file___
 
 1. Edit the following parameters in the `west.cfg` file:
-    - the path variables (relative to the WESTPA root directory):
-       - ___NOTE: Be sure to use full (not relative) paths.___
+    - the directory portion of the path variables, though the basename itself
+      should not change. ___NOTE: Be sure to use full (not relative) paths.___
        - `reference`: the PDB file that will be used in EVERY SINGLE
          progress-coordinate calculation (the last frame of the preliminary,
-         equilibrated simulation mentioned above, e.g.,
-         `./reference/last_frame.pdb`).
+         equilibrated simulation mentioned above).
        - `selection_file`: path to a text file containing the pocket selection
          string (MDAnalysis selection notation). This file will be automatically
-         generated in a subsequent step, but specify its future path here (e.g.,
-         `./selection_string.txt`).
+         generated in a subsequent step, but specify its future path here.
        - `reference_fop`: path to an `xyz` file containing the field of points
-         needed to calculate the `jd` progress coordinate (e.g.,
-         `./fop_ref.xyz`). This file is also useful for visualizing the selected
-         pocket. It will be automatically generated in a subsequent step.
+         needed to calculate the `jd` progress coordinate. This file is also
+         useful for visualizing the selected pocket. It will be automatically
+         generated in a subsequent step.
        - `west_home`: home directory of the SubPEx run. You'll most likely want
-         to use the same directory that contains the `west.cfg` file itself
-         (e.g., `./`).
+         to use the same directory that contains the `west.cfg` file itself.
        - `topology`: topology file needed for the MD simulations (likely the
-         same topology file used in the preliminary, equilibrated simulations,
-         e.g., `./reference/my_topology_file.ext`).
+         same topology file used in the preliminary, equilibrated simulations.
     - the progress coordinate (`pcoord`) to use.
        - `composite`: composite RMSD (recommended)
        - `prmsd`: pocket heavy atoms RMSD
        - `bb`: backbone RMSD
        - `jd`: Jaccard distance
     - the auxiliary data (`auxdata`) to calculate and save.
+       - JDD TODO: How expensive are all these aux datas? Can we just do it
+         automatically? (need to ask Erich, then update wizard)
        - `composite`: composite RMSD
        - `prmsd`: pocket heavy atoms RMSD*
        - `pvol`: pocket volume (requires `jd` too)  # TODO: Erich will check if also requires jd. __Erich comment: IT DOES__
@@ -135,6 +133,8 @@ ___Edit the `west.cfg` file___
        - `jd`: Jaccard distance
     - make sure that the WESTPA progress coordinate and auxdata match the SubPEx
       ones (these sections are both found in the `west.cfg` file).
+       - JDD TODO: How expensive are all these aux datas? Can we just do it
+         automatically? (need to ask Erich, then update wizard)
        - The WESTPA progress coordinate is specified at `west -> data -> datasets`, `subpex -> pcoord`, and in adaptive_binning/adaptive.py
        - The WESTPA auxiliary data is at `west -> executable -> datasets`
        - The SubPEx progress coordinate is at `subpex -> pcoord`
