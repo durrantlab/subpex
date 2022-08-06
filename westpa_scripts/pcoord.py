@@ -53,18 +53,18 @@ def check_input_settings_file(filename):
             sys.exit("Error with settings center")
 
     # Checking that we specify which progress coordinates we will print in the pcoord file
+    available_pcoords = ["jd", "prmsd", "bb", "composite", "pvol", "rog"]
     if "pcoord" in settings:
-        available_pcoords = ["jd", "prmsd", "bb", "composite", "pvol", "rog"]
         if len(settings["pcoord"]) < 1:
-            logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb and/or prsmd")
+            logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have one of " + (", ".join(available_pcoords)))
             sys.exit("Error with setting pcoord")
         else:
             for i in settings["pcoord"]:
                 if i not in available_pcoords:
-                    logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb and/or prsmd")
-                    sys.exit("Error with setting pcoord")
+                    logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have one of " + (", ".join(available_pcoords)))
+                    sys.exit("Error with setting pcoord: " + i + " is not a valid pcoord")
     else:
-        logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have jd, bb and/or prsmd")
+        logging.critical("There is an error with the progress coordinate (pcoord) setting. Need to have one of " + (", ".join(available_pcoords)))
         sys.exit("Error with setting pcoord")
 
     # Checking radius is in settings
