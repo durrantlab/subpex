@@ -3,6 +3,9 @@
 import textwrap
 import os
 import json
+import sys
+import subprocess
+import time
 
 try:
     import yaml
@@ -21,6 +24,9 @@ if not os.path.exists("west.cfg"):
     exit(1)
 
 CUR_PATH = os.path.abspath(os.path.dirname(__file__))
+PYTHON_EXE = os.path.abspath(sys.executable)
+# YAML_LOADER = yaml.SafeLoader
+YAML_LOADER = yaml.Loader
 
 def log(txt, underlined=None):
     txt = txt.split("\n")
@@ -58,6 +64,19 @@ def file_path(prompt, ext):
             continue
         return pth
 
+def get_number(prompt):
+    while True:
+        answer = input(prompt + ": ").strip()
+
+        # Check if it's a number
+        try:
+            answer = float(answer)
+        except:
+            log("\nPlease enter a number. Try again.")
+            continue
+        
+        return answer
+
 def save_choice(key, val):
     if os.path.exists("wizard.saved"):
         with open("wizard.saved", "r") as f:
@@ -79,7 +98,7 @@ def get_choice(key, func_if_absent):
         val = func_if_absent()
         save_choice(key, val)
         return val
-    log("Using previous choice: " + config[key])
+    log("Using previous choice: " + str(config[key]))
     return config[key]
 
 def run_cmd(cmd):
@@ -119,7 +138,7 @@ def confirm_dependencies():
 
     # Load environment.yaml into a dictionary
     with open("environment.yaml", "r") as f:
-        env = yaml.load(f, Loader=yaml.SafeLoader)
+        env = yaml.load(f, Loader=YAML_LOADER)
     env = [v for v in env["dependencies"] if v[:1] != "_"]
     env = [v.split("=")[0] for v in env]
     to_ignore=["biopython", "bzip2", "curl", "freetype", "griddataformats", "hdf4", "hdf5", "ipython", "jpeg", "krb5", "lcms2", "libblas", "libcblas", "libcurl", "libedit", "libev", "libffi", "libgfortran5", "libgomp", "liblapack", "libnetcdf", "libnghttp2", "libopenblas", "libpng", "libsodium", "libssh2", "libtiff", "mdanalysis", "ncurses", "netcdf4", "openssl", "pillow", "python", "python_abi", "pyyaml", "pyzmq", "sqlite", "tk", "westpa", "xz", "zeromq", "zstd"]
@@ -212,7 +231,7 @@ def get_sim_last_frame():
 def update_westcfg_path_vars():
     # Open west.cfg yaml file
     f = openfile("west.cfg")
-    westcfg = yaml.load(f, Loader=yaml.SafeLoader)
+    westcfg = yaml.load(f, Loader=YAML_LOADER)
     westcfg["subpex"]["selection_file"] = CUR_PATH + "/reference/selection_string.txt"
     westcfg["subpex"]["topology"] = CUR_PATH + "/reference/mol.prmtop"
     westcfg["subpex"]["west_home"] = CUR_PATH
@@ -237,7 +256,63 @@ def pick_pcoord(westcfg):
     clear()
 
 def pick_auxdata(westcfg):
+    log("STEP 8: Select auxiliary data", "-")
     print("STILL NEED TO IMPLEMENT!!!")  # TODO:
+    clear()
+
+def define_pocket(westcfg):
+    log("STEP 9: Define the binding pocket", "-")
+    log("You must define the location of the binding pocket you wish to sample. Visual inspection (e.g., using VMD) is often useful for this step. See README.md for more suggestions.")
+    log("Be sure to specify the location of the pocket relative to the reference PDB file: " + CUR_PATH + "/reference/mol.pdb")
+    
+    pocket_radius = get_choice(
+        "pocket_radius", 
+        lambda : get_number("Pocket radius")
+    )
+
+    x_coor = get_choice(
+        "x_coor", 
+        lambda : get_number("X coordinate of pocket center")
+    )
+
+    y_coor = get_choice(
+        "y_coor", 
+        lambda : get_number("Y coordinate of pocket center")
+    )
+
+    z_coor = get_choice(
+        "z_coor", 
+        lambda : get_number("Z coordinate of pocket center")
+    )
+
+    westcfg["subpex"]["center"] = [x_coor, y_coor, z_coor]
+    westcfg["subpex"]["radius"] = pocket_radius
+
+    # Save west.cfg
+    with open("west.cfg", "w") as f:
+        yaml.dump(westcfg, f)
+
+    # Generate xyz file
+    prts = [PYTHON_EXE, "./westpa_scripts/get_reference_fop.py", "west.cfg"]
+    # prts = ["ls"]
+    cmd = subprocess.Popen(
+        prts, 
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE, text=True
+    )
+    while cmd.poll() is None:
+        time.sleep(0.1)
+        output, errors = cmd.communicate()
+        print(output)
+    cmd.wait()
+    print(output, errors)
+
+    # os.system(PYTHON_EXE + " ./westpa_scripts/get_reference_fop.py west.cfg")
+
+    # Note that intentionally not allowing user to specify FOP resolution here.
+    # Keep it simple.
+    # clear()
+    
 
 # confirm_environment()
 # confirm_dependencies()
@@ -247,6 +322,7 @@ get_sim_last_frame()
 westcfg = update_westcfg_path_vars()
 pick_pcoord(westcfg)
 pick_auxdata(westcfg)
+define_pocket(westcfg)
 
 # Save west.cfg
 with open("west.cfg", "w") as f:

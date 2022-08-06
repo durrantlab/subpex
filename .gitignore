@@ -9,3 +9,4 @@ utils/settings.yaml
 reference/mol.*
 wizard.saved
 .vscode
+__pycache__
