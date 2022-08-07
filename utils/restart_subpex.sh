@@ -13,7 +13,7 @@ do
             conda activate $OPTARG
             ;;
         h)
-            echo "Usage: restart_subpex.sh [options] -s [GENERATION]"
+            echo "Usage: restart_subpex.sh [options] -n [GENERATION]"
             echo " "
             echo "This is a scrpit to automate the truncation in the west.h5 it has to be run from WEST_HOME"
             echo "It does the following:"
