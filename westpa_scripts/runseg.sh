@@ -20,7 +20,7 @@
 #  2. Run the dynamics
 #  3. Calculate the progress coordinates and return data to WESTPA
 
-export ENGINE="NAMD"
+export ENGINE="NAMD"  # NAMD or AMBER
 
 # If we are running in debug mode, then output a lot of extra information.
 if [ -n "$SEG_DEBUG" ] ; then

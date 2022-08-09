@@ -4,7 +4,7 @@
 # initial states (istates).  This script is NOT run for calculating the progress
 # coordinates of most trajectory segments; that is instead the job of runseg.sh.
 
-export ENGINE="NAMD"
+export ENGINE="NAMD"  # NAMD or AMBER
 
 # If we are debugging, output a lot of extra information. Option --debug
 if [ -n "$SEG_DEBUG" ] ; then
@@ -28,7 +28,7 @@ cd $WEST_STRUCT_DATA_REF
 if [ "$ENGINE" == "NAMD" ] ; then
   [[ ! -e seg.dcd ]] && ln -s $WEST_SIM_ROOT/reference/mol.dcd seg.dcd
 elif [ "$ENGINE" == "AMBER" ] ; then
-  [[ ! -e seg.rst ]] && ln -s $WEST_SIM_ROOT/reference/mol.nc seg.rst
+  [[ ! -e seg.rst ]] && ln -s $WEST_SIM_ROOT/reference/mol.rst seg.rst
 fi
 
 # Use a custom script to calculate the jaccard distance between the starting

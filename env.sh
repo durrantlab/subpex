@@ -4,54 +4,75 @@
 #
 # This script defines environment variables that are used by other shell
 # scripts, both when setting up the simulation and when running the simulation.
-#
+# It will almost certainly need to be modified for your environment, but we
+# provide examples below to get you started.
 
-###############################################################################
-
-# STEP 1: If running SubPEx on a system that uses modules, load the modules
-# required to run AMBER or NAMD. Here are some examples, though these are not
-# likely to work on your specific system.
+export ENGINE="NAMD"  # NAMD or AMBER
+export MODE="MPI"  # MPI, GPU, or MULTITHREAD
 
 module purge
 
-# NAMD, GPU
-# module load namd/2.12b1-multicore-CUDA
+if [ "$ENGINE" == "NAMD" ] ; then
 
-# AMBER
-# module load gcc/8.2.0 openmpi/4.0.3
-# module load amber/22
+  #############################################################################
 
-# Note: Certain supercomputing centers may require you to specify the full path
-# to your westpa environment.
-echo "Using conda: $(which conda)"
-source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
-conda activate westpa
+  # STEP 1: If running SubPEx on a system that uses modules, load the modules
+  # required to run AMBER or NAMD. Here are some examples, though these are not
+  # likely to work on your specific system.
 
-###############################################################################
+  module load namd/2.12b1-multicore-CUDA
 
-# STEP 2: Set the environment variables for running the AMBER or NAMD
-# executable, per your system setup. Here are some examples, with the NAMD
-# example uncommented:
+  #############################################################################
 
-# NAMD
-export NPROC=12
-export NAMDBIN=$(which namd2)
-export NAMD="$NAMDBIN +p$NPROC +idlepoll +setcpuaffinity"
+  # STEP 2: Set the environment variables for running the AMBER or NAMD
+  # executable, per your system setup. Here are some examples, with the NAMD
+  # example uncommented:
 
-# AMBER, MPI
-# export NPROC=$(nproc)
-# SANDER=pmemd.MPI
-# export AMBER="mpirun -n $NPROC $SANDER"
+  export NPROC=12
+  export NAMDBIN=$(which namd2)
+  export NAMD="$NAMDBIN +p$NPROC +idlepoll +setcpuaffinity"
 
-# AMBER, GPU
-# SANDER=pmemd.cuda
-# export AMBER="$SANDER"
+elif [ "$ENGINE" == "AMBER" ] ; then
+
+  ###############################################################################
+
+  # STEP 1: If running SubPEx on a system that uses modules, load the modules
+  # required to run AMBER or NAMD. Here are some examples, though these are not
+  # likely to work on your specific system.
+
+  # AMBER
+  module load gcc/8.2.0 openmpi/4.0.3
+  module load amber/22
+
+  #############################################################################
+
+  # STEP 2: Set the environment variables for running the AMBER or NAMD
+  # executable, per your system setup. Here are some examples, with the NAMD
+  # example uncommented:
+
+  if [ "$MODE" == "MPI" ] ; then
+    # AMBER, MPI
+    export NPROC=$(nproc)
+    SANDER=pmemd.MPI
+    export AMBER="mpirun -n $NPROC $SANDER"
+  elif [ "$MODE" == "GPU" ] ; then
+    # AMBER, GPU
+    SANDER=pmemd.cuda
+    export AMBER="$SANDER"
+  fi
+fi
 
 ###############################################################################
 
 # STEP 3: Check to make sure that the environment variable WEST_ROOT is set.
 # Here, the code '[ -z "$WEST_ROOT"]' will return TRUE if WEST_ROOT is not set,
 # causing us to enter the if-statement, print an error message, and exit.
+
+# Note: Certain supercomputing centers may require you to specify the full path
+# to your westpa environment.
+echo "Using conda: $(which conda)"
+source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
+conda activate westpa
 
 # TODO: Where is westpa.sh?
 # TODO: It was renamed run.slurm.sh. Why would you source it here? Good to ask Erich.
@@ -86,8 +107,12 @@ export SIM_NAME=$(basename $WEST_SIM_ROOT)
 ###############################################################################
 
 # STEP 6: Set the work manager to processes. See
-# https://github.com/westpa/westpa/wiki/Running-WESTPA-in-a-multi-node-environment
+# https://westpa.github.io/westpa/users_guide/wwmgr.html
 
-#export WORKMANAGER="processes"
-#export WORKMANAGER="zmq"  # Good for slurm, multiple nodes
-export WORKMANAGER="serial"  # Good for running on single machine (single GPU).
+if [ "$MODE" == "MPI" ] ; then
+  export WORKMANAGER="zmq"  # Good for slurm, multiple nodes
+elif [ "$MODE" == "GPU" ] ; then
+  export WORKMANAGER="serial"  # Good for running on single machine (single GPU).
+elif [ "$MODE" == "MULTITHREAD" ] ; then
+  export WORKMANAGER="processes"  # Single node with multiple processors. TODO: Not tested.
+fi
