@@ -16,7 +16,10 @@ pcoord_dtype = numpy.float32
 bintargetcount = 3           # Number of walkers per bin
 binsperdim = [15]            # You will have prod(binsperdim) + numberofdim *
                              #     (2 + 2 * splitIsolated) + activetarget bins
-                             #     total
+                             #     total. Note that if you use the default
+                             #     values of numberofdim (1), splitIsolated (1),
+                             #     and activetarget (0), then the total number
+                             #     of bins equals the value of binsperdim[0].
 mincap = [-inf]              # For each dimension enter the minimum number at 
                              #     which binning can occur, if you do not wish
                              #     to have a cap use -inf

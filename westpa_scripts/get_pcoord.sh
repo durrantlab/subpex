@@ -4,6 +4,8 @@
 # initial states (istates).  This script is NOT run for calculating the progress
 # coordinates of most trajectory segments; that is instead the job of runseg.sh.
 
+export ENGINE="NAMD"
+
 # If we are debugging, output a lot of extra information. Option --debug
 if [ -n "$SEG_DEBUG" ] ; then
   set -x
@@ -20,15 +22,14 @@ cd $WEST_SIM_ROOT
 source env.sh
 cd $WEST_STRUCT_DATA_REF
 
-# If using NAMD...
-# [[ ! -e mol.pdb ]] && ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
-# [[ ! -e seg.dcd ]] && ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.dcd
-# [[ ! -e mol.prmtop ]] && ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
-
-# If using AMBER
-[[ ! -e mol.pdb ]] && ln -s $WEST_SIM_ROOT/reference/{REFERENCE}.pdb mol.pdb
-[[ ! -e seg.rst ]] && ln -s $WEST_SIM_ROOT/reference/{RESTART_FILE} seg.rst
-[[ ! -e mol.prmtop ]] && ln -s $WEST_SIM_ROOT/reference/{TOPOLOGY_FILE} mol.prmtop
+# Link simulation files
+[[ ! -e mol.pdb ]] && ln -s $WEST_SIM_ROOT/reference/mol.pdb mol.pdb
+[[ ! -e mol.prmtop ]] && ln -s $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+if [ "$ENGINE" == "NAMD" ] ; then
+  [[ ! -e seg.dcd ]] && ln -s $WEST_SIM_ROOT/reference/mol.dcd seg.dcd
+elif [ "$ENGINE" == "AMBER" ] ; then
+  [[ ! -e seg.rst ]] && ln -s $WEST_SIM_ROOT/reference/mol.nc seg.rst
+fi
 
 # Use a custom script to calculate the jaccard distance between the starting
 # structure and the initial state (should be 0 since we are copying the files).
