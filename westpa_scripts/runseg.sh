@@ -20,6 +20,7 @@
 #  2. Run the dynamics
 #  3. Calculate the progress coordinates and return data to WESTPA
 
+export ENGINE="NAMD"
 
 # If we are running in debug mode, then output a lot of extra information.
 if [ -n "$SEG_DEBUG" ] ; then
@@ -65,14 +66,15 @@ ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parent_pcoord.txt
 [[ -e $WEST_PARENT_DATA_REF/composite.txt ]] && ln -sv $WEST_PARENT_DATA_REF/composite.txt ./parent_composite.txt
 
 # CODE TO SET RANDOM SEED
-
-# IF USING THE NAMD MD ENGINE:
-sed "s/RAND/$WEST_RAND16/g" \
-$WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
-
-# # IF USING THE AMBER MD ENGINE:
-# sed "s/RAND/$WEST_RAND16/g" \
-# $WEST_SIM_ROOT/reference/amber.prod_npt.in > amber.prod_npt.in
+if [ "$ENGINE" == "NAMD" ] ; then
+  # NAMD
+  sed "s/RAND/$WEST_RAND16/g" \
+  $WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
+elif [ "$ENGINE" == "AMBER" ] ; then
+  # AMBER
+  sed "s/RAND/$WEST_RAND16/g" \
+  $WEST_SIM_ROOT/reference/amber.prod_npt.in > amber.prod_npt.in
+fi
 
 # This trajectory segment will start off where its parent segment left off.
 # The "ln" command makes symbolic links to the parent segment's edr, gro, and 
@@ -80,32 +82,33 @@ $WEST_SIM_ROOT/reference/namd.md.conf > namd.md.conf
 # require writing all the data again.
 
 # LINK FILES TO RESTART WALKER
-
-# NAMD files  # TODO: Notice that mol.prmtop and mol.inpcrd hardcoded.
-ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
-ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
-ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
-ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
-ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
-ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
-
-# AMBER files
-# ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
-# ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop  # TODO: Note hardcoded here
+if [ "$ENGINE" == "NAMD" ] ; then
+  # NAMD files
+  ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+  ln -sv $WEST_SIM_ROOT/reference/mol.inpcrd mol.inpcrd
+  ln -sv $WEST_PARENT_DATA_REF/seg.coor ./parent.coor
+  ln -sv $WEST_PARENT_DATA_REF/seg.dcd  ./parent.dcd
+  ln -sv $WEST_PARENT_DATA_REF/seg.vel  ./parent.vel
+  ln -sv $WEST_PARENT_DATA_REF/seg.xsc  ./parent.xsc
+elif [ "$ENGINE" == "AMBER" ] ; then
+  # AMBER files
+  ln -sv $WEST_PARENT_DATA_REF/seg.rst ./parent.rst
+  ln -sv $WEST_SIM_ROOT/reference/mol.prmtop mol.prmtop
+fi
 
 ############################## Run the dynamics ################################
 
 # CALL MD ENGINE
-
-# NAMD MD engine
-$NAMD namd.md.conf > seg.log
-
-if grep -q RATTLE seg.log; then
-    $NAMD namd.md.conf > seg.log
+if [ "$ENGINE" == "NAMD" ] ; then
+  # NAMD MD engine
+  $NAMD namd.md.conf > seg.log
+  if grep -q RATTLE seg.log; then
+      $NAMD namd.md.conf > seg.log
+  fi
+elif [ "$ENGINE" == "AMBER" ] ; then
+  # Amber MD engine
+  $AMBER -O -i amber.prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
 fi
-
-# # Amber MD engine
-# $AMBER -O -i amber.prod_npt.in -p mol.prmtop -c parent.rst -r seg.rst -x seg.nc -o seg.log -inf seg.nfo
 
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
@@ -116,12 +119,13 @@ fi
 # child pcoord to a file called pcoord.txt.
 
 # RUN PCOORD.PY
-
-# FOR NAMD
-python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.dcd  $WEST_SIM_ROOT/west.cfg --we
-
-# # FOR AMBER:
-# python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.nc  $WEST_SIM_ROOT/west.cfg --we
+if [ "$ENGINE" == "NAMD" ] ; then
+  # FOR NAMD
+  python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.dcd  $WEST_SIM_ROOT/west.cfg --we
+elif [ "$ENGINE" == "AMBER" ] ; then
+  # FOR AMBER:
+  python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.nc  $WEST_SIM_ROOT/west.cfg --we
+fi
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 [[ -e pvol.txt ]] && cp pvol.txt $WEST_PVOL_RETURN

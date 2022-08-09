@@ -179,36 +179,17 @@ ___Setup the progress coordinate calculations___
    the number of walkers per bin, the bins' minimum and maximum values, etc.
     - This file controls the adaptive binning scheme that SubPEx uses.
     - A detailed description of each variable is given in the file itself.
-2. Change `westpa_scripts/get_pcoord.sh`. ___JDD TODO: Why not just standardize these
-   names at the ln -s to ./reference/ step above?___
+2. Change `westpa_scripts/get_pcoord.sh`.
     - This script runs when calculating initial progress coordinates for new
       initial states (istates).
-    - Make sure to link the files needed to start the SubPEx simulations (the
-      ones you put in the `./reference/` directory above).
-      - Search for `{REFERENCE}`, `{RESTART_FILE}`, and `{TOPOLOGY_FILE}`, and
-        then replace those strings with the appropriate file names (e.g.,
-        `reference/last_frame.pdb`, `reference/equil_npt.nc`, and
-        `reference/mol.prmtop`).
-      - The script includes examples for NAMD and AMBER runs. Comment in/out the
-        appropriate section for your MD engine.
+    - A the beginning of the file, modify the line `export ENGINE="NAMD"` to
+      match your MD engine (`NAMD` or `AMBER`, in capital letters).
 3. Modify the `westpa_scripts/runseg.sh` file.
     - This file runs each WESTPA/SubPEx walker (segment). It creates the needed
       directory, runs the walker simulation, and calculates the progress
       coordinate.
-    - Make sure SubPEx knows how to add the random seed number to the MD-engine
-      configuration file (search for "`# CODE TO SET RANDOM SEED`"). Be sure to
-      comment out the NAMD code and uncomment the AMBER code if using AMBER as
-      the MD engine.
-    - Link the necessary files to restart the walker simulation (search for "`#
-      LINK FILES TO RESTART WALKER`"). You shouldn't need to change these
-      filenames; be sure only to comment out/in the appropriate block for NAMD
-      vs. AMBER.
-    - Be sure to call the correct MD engine (search for "`# CALL MD ENGINE`").
-      Again, no need to change these filenames; just comment out/in the
-      appropriate block for NAMD vs. AMBER.
-    - Be sure to call the correct trajectory file for the pcoord.py script
-      (search for "`# RUN PCOORD.PY`"). No need to change these filenames; just
-      comment out/in the appropriate block for NAMD vs. AMBER.
+    - A the beginning of the file, modify the line `export ENGINE="NAMD"` to
+      match your MD engine (`NAMD` or `AMBER`, in capital letters).
 
 ___Setup the environment___
 
@@ -224,10 +205,10 @@ ___Setup the environment___
    - Make sure the number of frames saved per simulation equals `pcoordlength`
      minus one (`pcoordlength` is defined in the `adaptive_binning/adaptive.py`
      file). For example:
-   - If using AMBER, modify `./reference/amber.prod_npt.in` to make sure
-     `nstlim` / `ntwx` = `pcoordlength` - 1.
-   - If using NAMD, modify `./reference/namd.md.conf` to make sure `run` /
-     `dcdfreq` = `pcoordlength` - 1.
+     - If using AMBER, modify `./reference/amber.prod_npt.in` to make sure
+       `nstlim` / `ntwx` = `pcoordlength` - 1.
+     - If using NAMD, modify `./reference/namd.md.conf` to make sure `run` /
+       `dcdfreq` = `pcoordlength` - 1.
 3. Activate the WESTPA conda environment and source the init.sh file.
 4. Execute the `. init.sh` file. Note that this will delete any data from
    previous SubPEx runs.
