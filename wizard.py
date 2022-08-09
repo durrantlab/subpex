@@ -266,16 +266,16 @@ def amber_or_namd(get_pcoord, runseg):
 
     clear()
     get_pcoord = re.sub(
-        '^export ENGINE=".*?"',
+        r'^export ENGINE=".*?"',
         (('export ENGINE="' + engine.upper()) + '"'),
         get_pcoord,
         flags=re.MULTILINE,
     )
 
     runseg = re.sub(
-        '^export ENGINE=".*?"',
-        (('export ENGINE="' + engine.upper()) + '"'),
-        get_pcoord,
+        r'^export ENGINE=".*"',
+        'export ENGINE="' + engine.upper() + '"',
+        runseg,
         flags=re.MULTILINE,
     )
 
@@ -335,32 +335,32 @@ def get_sim_last_frame():
 
 def update_westcfg_path_vars(westcfg):
     westcfg = re.sub(
-        "\bselection_file: .*?$",
+        r"\bselection_file: .*?$",
         f"selection_file: {CUR_PATH}/reference/selection_string.txt",
         westcfg,
         flags=re.MULTILINE,
     )
 
     westcfg = re.sub(
-        "\btopology: .*$",
+        r"\btopology: .*$",
         f"topology: {CUR_PATH}/reference/mol.prmtop",
         westcfg,
         flags=re.MULTILINE,
     )
 
     westcfg = re.sub(
-        "\bwest_home: .*$", f"west_home: {CUR_PATH}", westcfg, flags=re.MULTILINE
+        r"\bwest_home: .*$", f"west_home: {CUR_PATH}", westcfg, flags=re.MULTILINE
     )
 
     westcfg = re.sub(
-        "\breference: .*$",
+        r"\breference: .*$",
         f"reference: {CUR_PATH}/reference/mol.pdb",
         westcfg,
         flags=re.MULTILINE,
     )
 
     westcfg = re.sub(
-        "\breference_fop: .*$",
+        r"\breference_fop: .*$",
         f"reference_fop: {CUR_PATH}/reference/fop_ref.xyz",
         westcfg,
         flags=re.MULTILINE,
@@ -384,7 +384,7 @@ def pick_pcoord(westcfg):
     )
 
     westcfg = re.sub(
-        "(\bpcoord:\s*\n\s*- ).*$", "\1" + pcoord, westcfg, flags=re.MULTILINE
+        r"(\bpcoord:\s*\n\s*- ).*$", r"\1" + pcoord, westcfg, flags=re.MULTILINE
     )
 
     clear()
@@ -417,14 +417,14 @@ def define_pocket(westcfg):
     z_coor = get_choice("z_coor", lambda: get_number("Z coordinate of pocket center"))
 
     westcfg = re.sub(
-        "\bcenter: \[.*\]",
+        r"\bcenter: \[.*\]",
         f"center: [{str(x_coor)}, {str(y_coor)}, {str(z_coor)}]",
         westcfg,
         flags=re.MULTILINE,
     )
 
     westcfg = re.sub(
-        "\bradius: .*$", f"radius: {str(pocket_radius)}", westcfg, flags=re.MULTILINE
+        r"\bradius: .*$", f"radius: {str(pocket_radius)}", westcfg, flags=re.MULTILINE
     )
 
     with open("west.cfg", "w") as f:
@@ -513,21 +513,21 @@ def define_adaptive_bins(adaptivepy, pcoord):
     )
 
     adaptivepy = re.sub(
-        "^maxcap\s*=\s*\[.*\]",
+        r"^maxcap\s*=\s*\[.*\]",
         "maxcap = [" + str(maxcap) + "]",
         adaptivepy,
         flags=re.MULTILINE,
     )
 
     adaptivepy = re.sub(
-        "^binsperdim\s*=\s*\[.*\]",
+        r"^binsperdim\s*=\s*\[.*\]",
         "binsperdim = [" + str(binsperdim) + "]",
         adaptivepy,
         flags=re.MULTILINE,
     )
 
     adaptivepy = re.sub(
-        "^bintargetcount\s*=\s*\d*",
+        r"^bintargetcount\s*=\s*\d*",
         "bintargetcount = " + str(bintargetcount),
         adaptivepy,
         flags=re.MULTILINE,
@@ -546,6 +546,7 @@ def run_init():
 
         if choice("Delete previous run and start over") == "y":
             print("")
+            run_cmd(["rm", "-f", "./job_logs/*"])
             run_cmd(["rm", "-f", "west.h5"])
             run_cmd(["./init.sh"])
             if not os.path.exists("west.h5"):
@@ -554,6 +555,7 @@ def run_init():
             else:
                 clear()
     else:
+        run_cmd(["rm", "-f", "./job_logs/*"])
         run_cmd(["./init.sh"])
         if not os.path.exists("west.h5"):
             log("ERROR: Could not initialize the SubPEx run.")
@@ -596,6 +598,16 @@ run_init()
 
 # appropriate WORKMANAGER (env.sh)
 # Summary of next steps, and customizations not made.
+
+# At begining, detect if .saved file and ask user if they want to use that one.
+
+# Include restart in this?
+
+# Let user know finished.
+
+# Explicitly set all aux data, even if unset?
+
+# Ability to name the run?
 
 # Save west.cfg
 with open("./west.cfg", "w") as f:
