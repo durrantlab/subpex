@@ -2,7 +2,6 @@
 This script will generate files for clustering or cluster itself the output of a SubPEx run
 """
 import MDAnalysis as mda
-#from .jdistance import check_input_settings_file
 import glob
 import argparse
 import h5py
@@ -13,7 +12,7 @@ import numpy as np
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
-from westpa_scripts.jdistance import check_input_settings_file
+from westpa_scripts.pcoord import check_input_settings_file
 
 def check_clustering_parameters(settings):
     """[summary]
