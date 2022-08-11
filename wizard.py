@@ -609,6 +609,9 @@ run_init()
 
 # Ability to name the run?
 
+# Remember to modify env.sh some, but still need to tell user more modifications needed.
+
+
 # Save west.cfg
 with open("./west.cfg", "w") as f:
     f.write(westcfg)
