@@ -101,6 +101,8 @@ def check_input_settings_file(filename):
             "Could not locate the traj_segs directory. Please be sure it exists and the trajectories are there before running the clustering script. Note: This should not exist if you have not run SubPEx")
     else:
         pass
+    if settings["west_home"][-1] != "/":
+        settings["west_home"] = settings["west_home"] + "/"
 
     # checking reference and topology files
     check_file_exists(settings, "reference")
