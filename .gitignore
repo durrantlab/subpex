@@ -17,3 +17,6 @@ west.h5
 reference/fop_ref.xyz
 reference/selection_string.txt
 *.pyc
+traj_segs
+seg_logs
+binbounds.txt
