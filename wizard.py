@@ -164,6 +164,13 @@ def openfile(filename):
         os.system(f"cp {filename} {filename}.orig")
     return open(f"{filename}.orig", "r")
 
+def check_existing_params():
+    if os.path.exists("wizard.saved"):
+        log(f"STEP {get_step_num()}: Use previous wizard choices?", "-")
+        log("You previously used this wizard, and your choices were saved. Would you like to use the same choices this time?")
+        if choice("Use previous choices?") == "n":
+            os.system("rm wizard.saved")
+        clear()
 
 def confirm_environment():
     log(f"STEP {get_step_num()}: Environment", "-")
@@ -484,6 +491,31 @@ def check_pocket(westcfg):
     clear()
     return westcfg
 
+def update_envsh(envsh, engine):
+    log(f"STEP {get_step_num()}: Update env.sh", "-")
+    envsh = re.sub(
+        r'^export ENGINE=".*?"',
+        (('export ENGINE="' + engine.upper()) + '"'),
+        envsh,
+        flags=re.MULTILINE,
+    )
+
+    mode = get_choice(
+        "mode",
+        lambda: choice(
+            "How will you run SubPEx?", choices=["MPI", "GPU", "MULTITHREAD"]
+        ),
+    )
+
+    envsh = re.sub(
+        r'^export MODE=".*?"',
+        (('export MODE="' + mode.upper()) + '"'),
+        envsh,
+        flags=re.MULTILINE,
+    )
+
+    clear()
+    return envsh
 
 def define_adaptive_bins(adaptivepy, pcoord):
     # If pcoord is "jd", max is 1.0.
@@ -578,12 +610,16 @@ with openfile("./westpa_scripts/get_pcoord.sh") as f:
 with openfile("./westpa_scripts/runseg.sh") as f:
     runseg = f.read()
 
+with openfile("./env.sh") as f:
+    envsh = f.read()
+
 clear()
 log(
     "This wizard is designed to help users setup and run SubPEx. See the README.md for more details."
 )
 log("You may exit this wizard at any time by pressing Ctrl+C.")
 
+check_existing_params()
 # confirm_environment()
 # confirm_dependencies()
 engine, get_pcoord, runseg = amber_or_namd(get_pcoord, runseg)
@@ -593,23 +629,25 @@ westcfg = update_westcfg_path_vars(westcfg)
 westcfg, pcoord = pick_pcoord(westcfg)
 westcfg = pick_auxdata(westcfg)
 westcfg = define_pocket(westcfg)
+envsh = update_envsh(envsh, engine)
 adaptivepy = define_adaptive_bins(adaptivepy, pcoord)
 run_init()
 
 # appropriate WORKMANAGER (env.sh)
-# Summary of next steps, and customizations not made.
-
-# At begining, detect if .saved file and ask user if they want to use that one.
-
-# Include restart in this?
 
 # Let user know finished.
+# Summary of next steps, and customizations not made.
+
+# Include restart subpex run in this?
+
 
 # Explicitly set all aux data, even if unset?
 
 # Ability to name the run?
 
 # Remember to modify env.sh some, but still need to tell user more modifications needed.
+
+# Modify name of slurm job too?
 
 
 # Save west.cfg
@@ -624,3 +662,6 @@ with open("./westpa_scripts/get_pcoord.sh", "w") as f:
 
 with open("./westpa_scripts/runseg.sh", "w") as f:
     f.write(runseg)
+
+with open("./env.sh", "w") as f:
+    f.write(envsh)
