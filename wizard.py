@@ -7,6 +7,7 @@ import sys
 import subprocess
 import time
 import re
+import glob
 
 try:
     import yaml
@@ -93,6 +94,16 @@ def get_number(prompt):
             continue
         return answer
 
+def get_time(prompt):
+    while True:
+        answer = input(f"{prompt}: ").strip()
+
+        # Make sure answer matches format HH:MM:SS
+        if not re.match(r"^\d{1,2}:\d{1,2}:\d{1,2}$", answer):
+            log("\nPlease enter time in the format HH:MM:SS. Try again.")
+            continue
+        
+        return answer
 
 def save_choice(key, val):
     if os.path.exists("wizard.saved"):
@@ -133,17 +144,18 @@ def forget_choice(key):
     with open("wizard.saved", "w") as f:
         json.dump(config, f, indent=4)
 
-
-def run_cmd(prts):
+def run_cmd_old(prts):
     log("Running command: " + " ".join(prts))
     cmd = subprocess.Popen(
         prts,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True,
+        text=True
     )
+
     cmd.wait()
+
     output, errors = cmd.communicate()
     output = output.strip()
     errors = errors.strip()
@@ -153,10 +165,28 @@ def run_cmd(prts):
     if errors:
         log(errors)
 
+def run_cmd(prts):
+    log("Running command: " + " ".join(prts))
+
+    def run_iter(prts):
+        cmd = subprocess.Popen(prts, stdout=subprocess.PIPE, universal_newlines=True, bufsize=1)
+        for stdout_line in iter(cmd.stdout.readline, ""):
+            yield stdout_line 
+        cmd.stdout.close()
+        return_code = cmd.wait()
+        if return_code:
+            error = cmd.stderr.read()
+            print(error)
+            raise subprocess.CalledProcessError(return_code, cmd)
+    for line in run_iter(prts):
+        print(line, end="")
 
 def link_to_reference_mol(flnm):
     ext = flnm.split(".")[-1]
-    run_cmd(["ln", "-s", flnm, f"{CUR_PATH}/reference/mol.{ext}"])
+    dest_file = f"{CUR_PATH}/reference/mol.{ext}"
+    if os.path.exists(dest_file):
+        os.remove(dest_file)
+    run_cmd(["ln", "-s", flnm, dest_file])
 
 
 def openfile(filename):
@@ -398,12 +428,6 @@ def pick_pcoord(westcfg):
     return westcfg, pcoord
 
 
-def pick_auxdata(westcfg):
-    log(f"STEP {get_step_num()}: Select auxiliary data", "-")
-    print("STILL NEED TO IMPLEMENT!!!")  # TODO:
-    clear()
-    return westcfg
-
 
 def define_pocket(westcfg):
     log(f"STEP {get_step_num()}: Define the binding pocket", "-")
@@ -569,6 +593,45 @@ def define_adaptive_bins(adaptivepy, pcoord):
     return adaptivepy
 
 
+
+def update_run_time_and_job_name(westcfg):
+    log(f"STEP {get_step_num()}: Update job run time and name", "-")
+    log(
+        "How long should your SubPEx job run? (Format your response like HH:MM:SS, e.g., 72:00:00 for 72 hours)"
+    )
+    run_time = get_choice("run_time", lambda: get_time("Run time"))
+
+    log('\nWhat is the name of your SubPEx job? (e.g., "my_job")')
+    job_name = get_choice("job_name", lambda: input("Job name: ").replace('"', ""))
+
+    westcfg = re.sub(
+        r"\bmax_run_wallclock:\s*\d{1,2}:\d{1,2}:\d{1,2}\b",
+        "max_run_wallclock:    " + run_time,
+        westcfg,
+        flags=re.MULTILINE,
+    )
+
+    for submit_file in glob.glob("run.slurm*.sh"):
+        with openfile(submit_file) as f:
+            runsh = f.read()
+        runsh = re.sub(
+            r"^#SBATCH --time=.*$",
+            "#SBATCH --time=" + run_time,
+            runsh,
+            flags=re.MULTILINE,
+        )
+        runsh = re.sub(
+            r"^#SBATCH --job-name=.*$",
+            "#SBATCH --job-name=" + job_name,
+            runsh,
+            flags=re.MULTILINE,
+        )
+        with open(submit_file, "w") as f:
+            f.write(runsh)
+
+    clear()
+    return westcfg
+
 def run_init():
     log(f"STEP {get_step_num()}: Initialize the SubPEx run", "-")
     if os.path.exists("west.h5"):
@@ -587,6 +650,7 @@ def run_init():
             else:
                 clear()
     else:
+        import pdb; pdb.set_trace()
         run_cmd(["rm", "-f", "./job_logs/*"])
         run_cmd(["./init.sh"])
         if not os.path.exists("west.h5"):
@@ -596,6 +660,17 @@ def run_init():
             clear()
     return westcfg
 
+def finished():
+    log("It appears the wizard was successful.")
+    log("Optional steps NOT performed", "-")
+    log("The wizard has NOT performed any of the following optional steps. (The defaults should be fine in most cases.)")
+    log('1. No changes to the list of auxiliary data to calculate ("west.cfg"). Unless you have modified "west.cfg", all such data will be calculated.')
+    log('2. No changes to the "subpex -> resolution" field ("west.cfg"). If you plan to use the "jd" progress coordinate, you may wish to modify this field.')
+    log('3. No changes to some of the minor parameters that control adaptive binning (e.g., "pcoordlength"; see "./adaptive_binning/adaptive.py").')
+    log("Critical steps NOT performed", "-")
+    log("The wizard has also NOT performed any of the following CRITICAL steps, which you must perform separately.")
+    log('1. Some needed changes still required to the "env.sh" file. Edit "env.sh" per your specific computing environment.')
+    log('2. Some needed changes still required to the "run.slurm.*.sh" files. If using SLURM, edit these files per your environment.')
 
 # Load files
 with openfile("./west.cfg") as f:
@@ -627,28 +702,12 @@ get_prelim_sim_files(engine)
 get_sim_last_frame()
 westcfg = update_westcfg_path_vars(westcfg)
 westcfg, pcoord = pick_pcoord(westcfg)
-westcfg = pick_auxdata(westcfg)
 westcfg = define_pocket(westcfg)
 envsh = update_envsh(envsh, engine)
 adaptivepy = define_adaptive_bins(adaptivepy, pcoord)
-run_init()
+westcfg = update_run_time_and_job_name(westcfg)
 
-# appropriate WORKMANAGER (env.sh)
-
-# Let user know finished.
-# Summary of next steps, and customizations not made.
-
-# Include restart subpex run in this?
-
-
-# Explicitly set all aux data, even if unset?
-
-# Ability to name the run?
-
-# Remember to modify env.sh some, but still need to tell user more modifications needed.
-
-# Modify name of slurm job too?
-
+# TODO: Include restart subpex run in this?
 
 # Save west.cfg
 with open("./west.cfg", "w") as f:
@@ -665,3 +724,6 @@ with open("./westpa_scripts/runseg.sh", "w") as f:
 
 with open("./env.sh", "w") as f:
     f.write(envsh)
+
+run_init()
+finished()
