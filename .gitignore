@@ -20,3 +20,10 @@ reference/selection_string.txt
 traj_segs
 seg_logs
 binbounds.txt
+reference/0*
+binbounds_old.txt
+job_logs/slurm.*
+slurm_nodelist.txt
+wizard.saved.old
+west_old.h5
+tmp_orig_to_reg.sh

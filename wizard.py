@@ -94,6 +94,7 @@ def get_number(prompt):
             continue
         return answer
 
+
 def get_time(prompt):
     while True:
         answer = input(f"{prompt}: ").strip()
@@ -102,8 +103,9 @@ def get_time(prompt):
         if not re.match(r"^\d{1,2}:\d{1,2}:\d{1,2}$", answer):
             log("\nPlease enter time in the format HH:MM:SS. Try again.")
             continue
-        
+
         return answer
+
 
 def save_choice(key, val):
     if os.path.exists("wizard.saved"):
@@ -144,6 +146,7 @@ def forget_choice(key):
     with open("wizard.saved", "w") as f:
         json.dump(config, f, indent=4)
 
+
 def run_cmd_old(prts):
     log("Running command: " + " ".join(prts))
     cmd = subprocess.Popen(
@@ -151,7 +154,7 @@ def run_cmd_old(prts):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
     )
 
     cmd.wait()
@@ -164,22 +167,40 @@ def run_cmd_old(prts):
         log(output)
     if errors:
         log(errors)
+    
+    return output + "\n\n" + errors
+
 
 def run_cmd(prts):
-    log("Running command: " + " ".join(prts))
+    # if prts is a list
+    if isinstance(prts, list):
+        log("Running command: " + " ".join(prts))
+        shell = False
+    else:
+        log("Running command: " + prts)
+        shell = True
 
     def run_iter(prts):
-        cmd = subprocess.Popen(prts, stdout=subprocess.PIPE, universal_newlines=True, bufsize=1)
+        cmd = subprocess.Popen(
+            prts, stdout=subprocess.PIPE, universal_newlines=True, bufsize=1,
+            shell=shell
+        )
         for stdout_line in iter(cmd.stdout.readline, ""):
-            yield stdout_line 
+            yield stdout_line
         cmd.stdout.close()
         return_code = cmd.wait()
         if return_code:
             error = cmd.stderr.read()
             print(error)
             raise subprocess.CalledProcessError(return_code, cmd)
+
+    output = ""
     for line in run_iter(prts):
         print(line, end="")
+        output += line
+    
+    return output.strip()
+
 
 def link_to_reference_mol(flnm):
     ext = flnm.split(".")[-1]
@@ -194,13 +215,33 @@ def openfile(filename):
         os.system(f"cp {filename} {filename}.orig")
     return open(f"{filename}.orig", "r")
 
+
+def check_if_restart_sim():
+    if os.path.exists("west.h5"):
+        log(f"STEP {get_step_num()}: Restart previous SubPEx run?", "-")
+        log("It appears you have previously run SubPEx in this directory because a west.h5 exists.")
+        log("Would you like to have SubPEx resume the previous run rather than start over?")
+        if choice("Resume previous run?") == "y":
+            run_cmd("./utils/restart_subpex.sh -n $(ls traj_segs/ | sort -n | tail -n 1)")
+            log("\nYour SubPEx job is now ready for a restart run, likely using one of the run*.sh files.")
+            # clear()
+            return True
+
+    clear()
+    return False
+
+
+
 def check_existing_params():
     if os.path.exists("wizard.saved"):
         log(f"STEP {get_step_num()}: Use previous wizard choices?", "-")
-        log("You previously used this wizard, and your choices were saved. Would you like to use the same choices this time?")
+        log(
+            "You previously used this wizard, and your choices were saved. Would you like to use the same choices this time?"
+        )
         if choice("Use previous choices?") == "n":
             os.system("rm wizard.saved")
         clear()
+
 
 def confirm_environment():
     log(f"STEP {get_step_num()}: Environment", "-")
@@ -428,7 +469,6 @@ def pick_pcoord(westcfg):
     return westcfg, pcoord
 
 
-
 def define_pocket(westcfg):
     log(f"STEP {get_step_num()}: Define the binding pocket", "-")
     log(
@@ -515,6 +555,7 @@ def check_pocket(westcfg):
     clear()
     return westcfg
 
+
 def update_envsh(envsh, engine):
     log(f"STEP {get_step_num()}: Update env.sh", "-")
     envsh = re.sub(
@@ -540,6 +581,7 @@ def update_envsh(envsh, engine):
 
     clear()
     return envsh
+
 
 def define_adaptive_bins(adaptivepy, pcoord):
     # If pcoord is "jd", max is 1.0.
@@ -593,7 +635,6 @@ def define_adaptive_bins(adaptivepy, pcoord):
     return adaptivepy
 
 
-
 def update_run_time_and_job_name(westcfg):
     log(f"STEP {get_step_num()}: Update job run time and name", "-")
     log(
@@ -632,6 +673,7 @@ def update_run_time_and_job_name(westcfg):
     clear()
     return westcfg
 
+
 def run_init():
     log(f"STEP {get_step_num()}: Initialize the SubPEx run", "-")
     if os.path.exists("west.h5"):
@@ -650,7 +692,9 @@ def run_init():
             else:
                 clear()
     else:
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         run_cmd(["rm", "-f", "./job_logs/*"])
         run_cmd(["./init.sh"])
         if not os.path.exists("west.h5"):
@@ -660,17 +704,33 @@ def run_init():
             clear()
     return westcfg
 
+
 def finished():
     log("It appears the wizard was successful.")
     log("Optional steps NOT performed", "-")
-    log("The wizard has NOT performed any of the following optional steps. (The defaults should be fine in most cases.)")
-    log('1. No changes to the list of auxiliary data to calculate ("west.cfg"). Unless you have modified "west.cfg", all such data will be calculated.')
-    log('2. No changes to the "subpex -> resolution" field ("west.cfg"). If you plan to use the "jd" progress coordinate, you may wish to modify this field.')
-    log('3. No changes to some of the minor parameters that control adaptive binning (e.g., "pcoordlength"; see "./adaptive_binning/adaptive.py").')
+    log(
+        "The wizard has NOT performed any of the following optional steps. (The defaults should be fine in most cases.)"
+    )
+    log(
+        '1. No changes to the list of auxiliary data to calculate ("west.cfg"). Unless you have modified "west.cfg", all such data will be calculated.'
+    )
+    log(
+        '2. No changes to the "subpex -> resolution" field ("west.cfg"). If you plan to use the "jd" progress coordinate, you may wish to modify this field.'
+    )
+    log(
+        '3. No changes to some of the minor parameters that control adaptive binning (e.g., "pcoordlength"; see "./adaptive_binning/adaptive.py").'
+    )
     log("Critical steps NOT performed", "-")
-    log("The wizard has also NOT performed any of the following CRITICAL steps, which you must perform separately.")
-    log('1. Some needed changes still required to the "env.sh" file. Edit "env.sh" per your specific computing environment.')
-    log('2. Some needed changes still required to the "run.slurm.*.sh" files. If using SLURM, edit these files per your environment.')
+    log(
+        "The wizard has also NOT performed any of the following CRITICAL steps, which you must perform separately."
+    )
+    log(
+        '1. Some needed changes still required to the "env.sh" file. Edit "env.sh" per your specific computing environment.'
+    )
+    log(
+        '2. Some needed changes still required to the "run.slurm.*.sh" files. If using SLURM, edit these files per your environment.'
+    )
+
 
 # Load files
 with openfile("./west.cfg") as f:
@@ -694,6 +754,10 @@ log(
 )
 log("You may exit this wizard at any time by pressing Ctrl+C.")
 
+if check_if_restart_sim():
+    # Exit
+    sys.exit(0)
+
 check_existing_params()
 # confirm_environment()
 # confirm_dependencies()
@@ -706,8 +770,6 @@ westcfg = define_pocket(westcfg)
 envsh = update_envsh(envsh, engine)
 adaptivepy = define_adaptive_bins(adaptivepy, pcoord)
 westcfg = update_run_time_and_job_name(westcfg)
-
-# TODO: Include restart subpex run in this?
 
 # Save west.cfg
 with open("./west.cfg", "w") as f:
