@@ -119,24 +119,21 @@ fi
 # child pcoord to a file called pcoord.txt.
 
 # RUN PCOORD.PY (try three times because sometimes fails unexpectedly)
-for i in {1..3}
-do
+# for i in {1..3}
+# do
   if [ "$ENGINE" == "NAMD" ] ; then
     # FOR NAMD
     python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.dcd  $WEST_SIM_ROOT/west.cfg --we
   elif [ "$ENGINE" == "AMBER" ] ; then
     # FOR AMBER:
-    echo TRY AMBER >> tmp.log
-    python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.nc  $WEST_SIM_ROOT/west.cfg --we >> tmp.log 2>&1
-    echo FINISH AMBER >> tmp.log
+    python3 $WEST_SIM_ROOT/westpa_scripts/pcoord.py seg.nc  $WEST_SIM_ROOT/west.cfg --we  # >> tmp.log 2>&1
   fi
 
   # if pcoord.txt exists, then break the loop
-  if [ -e pcoord.txt ] ; then
-    echo EXISTS >> tmp.log
-    break
-  fi
-done
+  # if [ -e pcoord.txt ] ; then
+    # break
+  # fi
+# done
 
 cp pcoord.txt $WEST_PCOORD_RETURN
 [[ -e pvol.txt ]] && cp pvol.txt $WEST_PVOL_RETURN
