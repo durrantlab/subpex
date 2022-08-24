@@ -395,9 +395,19 @@ def cluster_dbscan(fop):
         fop (list of list): FOP after clustering
     """
 
+    if len(fop) == 0:
+        # sometimes no points are present in the FOP.
+        return []
+
     db = DBSCAN(eps=0.5, min_samples=2).fit(fop)
     labels = db.labels_
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+
+    if n_clusters_ == 0:
+        # In some cases, even when fop has a few points, there are no clusters.
+        # In this case, just return an empty list.
+        return []
+
     longest = ""
     clusters = {}
     for i in range(n_clusters_):
@@ -412,6 +422,7 @@ def cluster_dbscan(fop):
     for i in clusters:
         if longest == "" or len(clusters[i]) > len(clusters[longest]):
             longest = i
+
     return clusters[longest]
 
 
@@ -429,6 +440,10 @@ def get_jaccard_distance(reference_fop, segment_fop, resolution):
     Returns:
         jaccard (float): Jaccard distance.
     """
+
+    if len(segment_fop) == 0:
+        # sometimes no points are present in the FOP.
+        return 1.0
 
     # Obtaining the trees for both field of points
     reference_tree = sp.spatial.cKDTree(reference_fop)
@@ -510,8 +525,13 @@ def calculate_pocket_gyration(pocket):
         radius_of_gyration (float): radisu of gyration of the pocket.
     """
 
-    centroid = get_centroid(pocket)
     mass = len(pocket)
+
+    if mass == 0:
+        # Sometimes there are no points.
+        return -9999
+
+    centroid = get_centroid(pocket)
     gyration_radius = 0
     for i in pocket:
         gyration_radius += (calculate_distance_two_points(i, centroid))**2
