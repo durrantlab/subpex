@@ -236,8 +236,16 @@ def check_existing_params():
     if os.path.exists("wizard.saved"):
         log(f"STEP {get_step_num()}: Use previous wizard choices?", "-")
         log(
-            "You previously used this wizard, and your choices were saved. Would you like to use the same choices this time?"
+            "You previously used this wizard, and your choices were saved to the file \"wizard.saved\". Here are the previous choices:"
         )
+
+        with open("wizard.saved", "r") as f:
+            config = json.load(f)
+        for key in config:
+            print(f"  {key}: {config[key]}")
+            
+        log("\nWould you like to use the same choices this time?")
+
         if choice("Use previous choices?") == "n":
             os.system("rm wizard.saved")
         clear()
@@ -259,76 +267,79 @@ def confirm_environment():
 def confirm_dependencies():
     log(f"Step {get_step_num()}: Check dependencies", "-")
 
-    # Load environment.yaml into a dictionary
-    with open("environment.yaml", "r") as f:
-        env = yaml.load(f, Loader=YAML_LOADER)
-    env = [v for v in env["dependencies"] if v[:1] != "_"]
-    env = [v.split("=")[0] for v in env]
-    to_ignore = [
-        "biopython",
-        "bzip2",
-        "curl",
-        "freetype",
-        "griddataformats",
-        "hdf4",
-        "hdf5",
-        "ipython",
-        "jpeg",
-        "krb5",
-        "lcms2",
-        "libblas",
-        "libcblas",
-        "libcurl",
-        "libedit",
-        "libev",
-        "libffi",
-        "libgfortran5",
-        "libgomp",
-        "liblapack",
-        "libnetcdf",
-        "libnghttp2",
-        "libopenblas",
-        "libpng",
-        "libsodium",
-        "libssh2",
-        "libtiff",
-        "mdanalysis",
-        "ncurses",
-        "netcdf4",
-        "openssl",
-        "pillow",
-        "python",
-        "python_abi",
-        "pyyaml",
-        "pyzmq",
-        "sqlite",
-        "tk",
-        "westpa",
-        "xz",
-        "zeromq",
-        "zstd",
-    ]
+    if choice("Would you like to check that key dependencies have been installed?") == "y":
+        print("")
 
-    for v in env:
-        if v in to_ignore:
-            continue
-        if "-" in v:
-            continue
-        print(f"Testing module {v}")
-        try:
-            __import__(v)
-        except:
-            log(
-                (
-                    "\nModule "
-                    + v
-                    + " is missing. Have you created and activated the westpa environment?"
+        # Load environment.yaml into a dictionary
+        with open("environment.yaml", "r") as f:
+            env = yaml.load(f, Loader=YAML_LOADER)
+        env = [v for v in env["dependencies"] if v[:1] != "_"]
+        env = [v.split("=")[0] for v in env]
+        to_ignore = [
+            "biopython",
+            "bzip2",
+            "curl",
+            "freetype",
+            "griddataformats",
+            "hdf4",
+            "hdf5",
+            "ipython",
+            "jpeg",
+            "krb5",
+            "lcms2",
+            "libblas",
+            "libcblas",
+            "libcurl",
+            "libedit",
+            "libev",
+            "libffi",
+            "libgfortran5",
+            "libgomp",
+            "liblapack",
+            "libnetcdf",
+            "libnghttp2",
+            "libopenblas",
+            "libpng",
+            "libsodium",
+            "libssh2",
+            "libtiff",
+            "mdanalysis",
+            "ncurses",
+            "netcdf4",
+            "openssl",
+            "pillow",
+            "python",
+            "python_abi",
+            "pyyaml",
+            "pyzmq",
+            "sqlite",
+            "tk",
+            "westpa",
+            "xz",
+            "zeromq",
+            "zstd",
+        ]
+
+        for v in env:
+            if v in to_ignore:
+                continue
+            if "-" in v:
+                continue
+            print(f"Testing module {v}")
+            try:
+                __import__(v)
+            except:
+                log(
+                    (
+                        "\nModule "
+                        + v
+                        + " is missing. Have you created and activated the westpa environment?"
+                    )
                 )
-            )
 
-            log("conda env create -f environment.yaml\n conda activate westpa")
-            log("Please create/activate it and try again.")
-            exit(1)
+                log("conda env create -f environment.yaml\n conda activate westpa")
+                log("Please create/activate it and try again.")
+                exit(1)
     clear()
 
 
@@ -468,6 +479,23 @@ def pick_pcoord(westcfg):
     clear()
     return westcfg, pcoord
 
+def specify_number_iterations(westcfg):
+    log(f"STEP {get_step_num()}: Number of iterations (generations)", "-")
+    log(
+        "SubPEx periodically prunes and duplicates short simulations (walkers) to encourage sampling. How many times (iterations/generations) should SubPEx perform this pruning/duplication before stopping? (Recommendation: 30)"
+    )
+
+    iterations = int(get_choice("iterations", lambda: get_number("Number of iterations")))
+
+    westcfg = re.sub(
+        r"\bmax_total_iterations: .*$",
+        f"max_total_iterations: {iterations}",
+        westcfg,
+        flags=re.MULTILINE,
+    )
+
+    clear()
+    return westcfg
 
 def define_pocket(westcfg):
     log(f"STEP {get_step_num()}: Define the binding pocket", "-")
@@ -500,6 +528,7 @@ def define_pocket(westcfg):
 
     with open("west.cfg", "w") as f:
         f.write(westcfg)
+
     run_cmd(["rm", "-f", f"{CUR_PATH}/reference/fop_ref.xyz"])
     run_cmd(["rm", "-f", f"{CUR_PATH}/reference/selection_string.txt"])
     run_cmd([PYTHON_EXE, "./westpa_scripts/get_reference_fop.py", "west.cfg"])
@@ -759,13 +788,14 @@ if check_if_restart_sim():
     sys.exit(0)
 
 check_existing_params()
-# confirm_environment()
-# confirm_dependencies()
+confirm_environment()
+confirm_dependencies()
 engine, get_pcoord, runseg = amber_or_namd(get_pcoord, runseg)
 get_prelim_sim_files(engine)
 get_sim_last_frame()
 westcfg = update_westcfg_path_vars(westcfg)
 westcfg, pcoord = pick_pcoord(westcfg)
+westcfg = specify_number_iterations(westcfg)
 westcfg = define_pocket(westcfg)
 envsh = update_envsh(envsh, engine)
 adaptivepy = define_adaptive_bins(adaptivepy, pcoord)
