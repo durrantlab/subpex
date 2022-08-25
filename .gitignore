@@ -27,3 +27,4 @@ slurm_nodelist.txt
 wizard.saved.old
 west_old.h5
 tmp_orig_to_reg.sh
+.DS_Store
