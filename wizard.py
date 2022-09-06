@@ -721,9 +721,6 @@ def run_init():
             else:
                 clear()
     else:
-        import pdb
-
-        pdb.set_trace()
         run_cmd(["rm", "-f", "./job_logs/*"])
         run_cmd(["./init.sh"])
         if not os.path.exists("west.h5"):
