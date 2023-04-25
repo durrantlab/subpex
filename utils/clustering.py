@@ -1,18 +1,22 @@
 """Summary
 This script will generate files for clustering or cluster itself the output of a SubPEx run
 """
+
 import MDAnalysis as mda
 import glob
 import argparse
+import contextlib
 import h5py
 import os
 import sys
 import logging
 import numpy as np
+
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 from westpa_scripts.pcoord import check_input_settings_file
+
 
 def check_clustering_parameters(settings):
     """[summary]
@@ -21,10 +25,13 @@ def check_clustering_parameters(settings):
         settings ([type]): [description]
     """
     if "clustering" not in settings or type(settings["clustering"]) is not dict:
-        logging.critical("There is a problem with the clustering parameters. Please check the settings file.")
-        sys.exit("There is a problem with the clustering parameters. Please check the settings file.")
-    else:
-        pass
+        logging.critical(
+            "There is a problem with the clustering parameters. Please check the settings file."
+        )
+        sys.exit(
+            "There is a problem with the clustering parameters. Please check the settings file."
+        )
+
     # TODO finish check_clustering_parameters
     return settings
 
@@ -44,18 +51,16 @@ def get_bins_dictionary(west, settings):
                 elif key in settings["auxdata"]:
                     value = west["iterations"][iteration]["auxdata"][key][walker]
                 for a, bin_val in enumerate(settings["clustering"]["bins"][key]):
-                    if value > bin_val:
-                        pass
-                    else:
-                        name += "{}_".format(a)
+                    if value <= bin_val:
+                        name += f"{a}_"
                         break
-            name  = name[:-1] # I only need to take the last underscore
-            if name in bins.keys():
+            name = name[:-1]  # I only need to take the last underscore
+            if name in bins:
                 bins[name]["walkers"].append((iteration, walker))
             else:
                 bins[name] = {"walkers": [(iteration, walker)]}
     return bins
-    
+
 
 def calculate_clusters_per_bin(bins, settings):
     # determine the maximum number of walkers in a bin for normalization of clusters per bin
@@ -63,16 +68,25 @@ def calculate_clusters_per_bin(bins, settings):
     for key in bins.keys():
         if len(bins[key]["walkers"]) > max_num_walkers:
             max_num_walkers = len(bins[key])
-        else:
-            pass
     # append as the last element of the list the number of clusters we will obtain in said bin
     for key in bins.keys():
-        if len(bins[key]["walkers"]) <= settings["clustering"]["min_number_clusters_generation_bin"]:
+        if (
+            len(bins[key]["walkers"])
+            <= settings["clustering"]["min_number_clusters_generation_bin"]
+        ):
             bins[key]["clusters"] = len(bins[key]["walkers"])
-        elif (len(bins[key]["walkers"]) / max_num_walkers) * settings["clustering"]["max_number_clusters_generation_bin"] <= 3:
+        elif (len(bins[key]["walkers"]) / max_num_walkers) * settings["clustering"][
+            "max_number_clusters_generation_bin"
+        ] <= 3:
             bins[key]["clusters"] = 3
         else:
-            value = int(round((len(bins[key]["walkers"]) / max_num_walkers) * settings["clustering"]["max_number_clusters_generation_bin"], 0))
+            value = int(
+                round(
+                    (len(bins[key]["walkers"]) / max_num_walkers)
+                    * settings["clustering"]["max_number_clusters_generation_bin"],
+                    0,
+                )
+            )
             bins[key]["clusters"] = value
 
 
@@ -83,27 +97,28 @@ def create_bin_cpptraj_files(bins, settings, directory):
         selection_string = get_selection_cpptraj(settings["selection_file"])
     elif settings["clustering"]["clustering_region"] == "backbone":
         selection_string = "'@CA,C,O,N'"
-    else:
-        pass
+
     for key in bins.keys():
-        os.system("mkdir {}".format(directory + "/{}".format(key)))
+        os.system(f"mkdir {directory}/{key}")
         create_cpptraj_file_bins(bins, settings, directory, key, selection_string)
 
 
 def create_cpptraj_file_bins(bins, settings, directory, key, selection_string):
-    with open(directory + "/{}/clustering.in".format(key), "w") as f:
-        f.write("parm {} \n".format(settings["topology"]))
+    with open(f"{directory}/{key}/clustering.in", "w") as f:
+        f.write(f'parm {settings["topology"]} \n')
         for walker in bins[key]["walkers"]:
             filename = glob.glob(settings["west_home"])[0]
             iteration = int(walker[0].split("_")[1])
             walker_num = walker[1]
             filename += "traj_segs/{:06}/{:06}/seg.dcd".format(iteration, walker_num)
             if os.path.exists(filename):
-                f.write("trajin {} \n".format(filename))
-        clustering_command = get_clustering_command_cpptraj(settings["clustering"], bins[key]["walkers"]["clusters"], selection_string)
+                f.write(f"trajin {filename} \n")
+        clustering_command = get_clustering_command_cpptraj(
+            settings["clustering"], bins[key]["walkers"]["clusters"], selection_string
+        )
         f.write(clustering_command)
         f.write("\n")
-        
+
 
 def get_selection_cpptraj(filename):
     """
@@ -124,19 +139,17 @@ def get_selection_cpptraj(filename):
     residues_pocket = []
 
     for i in selection_mdanalysis.split():
-        try:
+        with contextlib.suppress(Exception):
             residues_pocket.append(int(i))
-        except:
-            pass
-    
+
     # Sorting it out just because I wanted
     residues_pocket.sort()
 
     # converting the residues list to selection screen used in cpptraj
     selection_string = "'("
     for resid in residues_pocket[:-1]:
-        selection_string += ":{}|".format(resid)
-    selection_string += ":{})&!@H'".format(residues_pocket[-1])
+        selection_string += f":{resid}|"
+    selection_string += f":{residues_pocket[-1]})&!@H'"
     return selection_string
 
 
@@ -146,17 +159,18 @@ def get_clustering_generation_cpptraj(west_file, settings, directory):
         selection_string = get_selection_cpptraj(settings["selection_file"])
     elif settings["clustering"]["clustering_region"] == "backbone":
         selection_string = "'@CA,C,O,N'"
-    else:
-        pass
+
     west_home = glob.glob(settings["west_home"])[0]
     all_in_files = []
-    number_clusters = get_number_clusters_generation(west_file, settings["clustering"]["max_number_clusters_generation_bin"])
-    if not os.path.isdir(directory + "/last_clustering"):
-        os.system("mkdir {}".format(directory + "/last_clustering" ))
+    number_clusters = get_number_clusters_generation(
+        west_file, settings["clustering"]["max_number_clusters_generation_bin"]
+    )
+    if not os.path.isdir(f"{directory}/last_clustering"):
+        os.system(f"mkdir {directory}/last_clustering")
     for i, iteration in enumerate(west_file["iterations"].keys()):
-        directory_gen = west_home + "traj_segs/{}".format(iteration.split("_")[1][-6:])
+        directory_gen = f'{west_home}traj_segs/{iteration.split("_")[1][-6:]}'
         generation_number = directory_gen.split("/")[-1]
-        # make sure the directory exists (this is because the last iter that appears on the 
+        # make sure the directory exists (this is because the last iter that appears on the
         # h5 file has not yet started)
         if os.path.isdir(directory_gen):
             walkers = get_generation_walkers_list(directory_gen)
@@ -164,46 +178,57 @@ def get_clustering_generation_cpptraj(west_file, settings, directory):
             continue
         # now create a directory where the input file for cpptraj will be created.
         if not os.path.isdir(directory + generation_number):
-            os.system("mkdir {}".format(directory + "/" + generation_number))
+            os.system(f"mkdir {directory}/{generation_number}")
         all_in_files.append(generation_number)
-        make_input_file_cpptraj(directory + "/" + generation_number, walkers, settings, number_clusters[i], selection_string)
-    with open(directory + "/run_cpptraj_per_generation.sh", "w") as f:
+        make_input_file_cpptraj(
+            f"{directory}/{generation_number}",
+            walkers,
+            settings,
+            number_clusters[i],
+            selection_string,
+        )
+    with open(f"{directory}/run_cpptraj_per_generation.sh", "w") as f:
         for i in all_in_files:
-            f.write("cd {} \n".format(i)) 
+            f.write(f"cd {i} \n")
             f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
             f.write("cd ../ \n")
         f.write("cd last_clustering \n")
         f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
-    with open(directory + "/last_clustering/clustering.in", "w") as f:
-        f.write("parm {} \n".format(settings["topology"]))
+    with open(f"{directory}/last_clustering/clustering.in", "w") as f:
+        f.write(f'parm {settings["topology"]} \n')
         for i, numgen in enumerate(all_in_files):
             for j in range(number_clusters[i]):
-                f.write("trajin ../{}/rep.c{}.pdb \n".format(numgen, j))
-        text = get_clustering_command_cpptraj(settings["clustering"]["method"], 
-                                   settings["clustering"]["number_clusters"], selection_string)
+                f.write(f"trajin ../{numgen}/rep.c{j}.pdb \n")
+        text = get_clustering_command_cpptraj(
+            settings["clustering"]["method"],
+            settings["clustering"]["number_clusters"],
+            selection_string,
+        )
         for i in text:
             f.write(i)
-            
+
 
 def get_generation_walkers_list(directory_gen):
     # will check later what the extension for coordinate files is. will work for dcd and nc.
     file_extension = None
     walkers_list = []
     # now search for all the seg.dcd or seg.nc files and append them to walker_lsit
-    walkers = glob.glob(directory_gen + "/*/")
+    walkers = glob.glob(f"{directory_gen}/*/")
     for walker in walkers:
         if file_extension is None:
-            if os.path.isfile(walker + "/seg.dcd"):
+            if os.path.isfile(f"{walker}/seg.dcd"):
                 file_extension = "dcd"
-            elif os.path.isfile(walker + "/seg.nc"):
+            elif os.path.isfile(f"{walker}/seg.nc"):
                 file_extension = "nc"
-        if os.path.isfile(walker + "seg.{}".format(file_extension)):
-            walkers_list.append(walker + "seg.{}".format(file_extension))
+        if os.path.isfile(f"{walker}seg.{file_extension}"):
+            walkers_list.append(f"{walker}seg.{file_extension}")
     walkers_list.sort()
     return walkers_list
 
 
-def make_input_file_cpptraj(directory, walkers_list, settings, num_clusters, selection_string):
+def make_input_file_cpptraj(
+    directory, walkers_list, settings, num_clusters, selection_string
+):
     """[summary]
 
     Args:
@@ -212,11 +237,13 @@ def make_input_file_cpptraj(directory, walkers_list, settings, num_clusters, sel
         settings ([type]): [description]
         selection_string ([type]): [description]
     """
-    text = "parm {} \n".format(settings["topology"])
+    text = f'parm {settings["topology"]} \n'
     for walker in walkers_list:
-        text += "trajin {} \n".format(walker)
-    text += get_clustering_command_cpptraj(settings["clustering"]["method"], num_clusters, selection_string)
-    with open(directory + "/clustering.in", "w") as f:
+        text += f"trajin {walker} \n"
+    text += get_clustering_command_cpptraj(
+        settings["clustering"]["method"], num_clusters, selection_string
+    )
+    with open(f"{directory}/clustering.in", "w") as f:
         f.write(text)
 
 
@@ -242,25 +269,29 @@ def get_clustering_command_cpptraj(method, num_clusters, selection_string):
     info info.dat \ 
     cpopvtime cpopvtime.agr normframe \ 
     repout rep repfmt pdb singlerepout singlerep.nc singlerepfmt netcdf \ 
-    avgout Avg avgfmt restart""".format(num_clust=num_clusters, selection=selection_string)
+    avgout Avg avgfmt restart""".format(
+            num_clust=num_clusters, selection=selection_string
+        )
     else:
         print("Have not implemented this method yet")  # todo add other methods
-        sys.exit("Please change clustering algorithm or adapt script to accommodate the clustering method")
+        sys.exit(
+            "Please change clustering algorithm or adapt script to accommodate the clustering method"
+        )
     return text
 
 
 def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
-    number_walkers = []
-    for iteration in west_file["iterations"].keys():
-        number_walkers.append(len(west["iterations"][iteration]['seg_index']))
+    number_walkers = [
+        len(west["iterations"][iteration]["seg_index"])
+        for iteration in west_file["iterations"].keys()
+    ]
     if min_clusters > np.min(number_walkers):
-        min_clusters = np.min(number_walkers)    
+        min_clusters = np.min(number_walkers)
     max_walkers = np.max(number_walkers)
     number_clusters = []
     for i in number_walkers:
         val = int(np.round((i / max_walkers) * 25))
-        if val < min_clusters:
-            val = min_clusters
+        val = max(val, min_clusters)
         number_clusters.append(val)
     return number_clusters
 
@@ -268,18 +299,29 @@ def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
 def get_clustering_bins_cpptraj(west, settings, directory):
     bins = get_bins_dictionary(west, settings)
     create_bin_cpptraj_files(bins, settings, directory)
-    with open(directory + "/run_clustering_bins.sh", "w") as f:
+    with open(f"{directory}/run_clustering_bins.sh", "w") as f:
         for key in bins.keys:
-            f.write("cd {} \n".format(directory + "/" + key))
+            f.write(f"cd {directory}/{key} \n")
             f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Script that performs clustering or prepares files to run clustering using cpptraj. It can cluster per generation or divided the space in bins according to what the user wants.")
-    parser.add_argument("west", type=str, help="Define the west.h5 file. It is required")
-    parser.add_argument("settings", type=str, help="Define the yaml file with the settings. It is required")
-    parser.add_argument("dir", type=str, help="Define the directory were results will be stored. It is required")
+        description="Script that performs clustering or prepares files to run clustering using cpptraj. It can cluster per generation or divided the space in bins according to what the user wants."
+    )
+    parser.add_argument(
+        "west", type=str, help="Define the west.h5 file. It is required"
+    )
+    parser.add_argument(
+        "settings",
+        type=str,
+        help="Define the yaml file with the settings. It is required",
+    )
+    parser.add_argument(
+        "dir",
+        type=str,
+        help="Define the directory were results will be stored. It is required",
+    )
     args = parser.parse_args()
 
     # loading west.h5 file
@@ -291,17 +333,16 @@ if __name__ == "__main__":
 
     # make sure outdir exists if not, creat it
     if not os.path.isdir(args.dir):
-        os.system("mkdir {}".format(args.dir))
-    
+        os.system(f"mkdir {args.dir}")
+
     # Obtaining full path to directory
-    directory = glob.glob(args.dir)[0] 
+    directory = glob.glob(args.dir)[0]
 
     if settings["clustering"]["clustering_engine"] == "cpptraj":
         if settings["clustering"]["cluster_generation"]:
             get_clustering_generation_cpptraj(west, settings, directory)
         elif settings["clustering"]["cluster_bin"]:
             get_clustering_bins_cpptraj(west, settings, directory)
-        else:
-            pass
+
     elif settings["clustering"]["clustering_engine"] == "MDAnalysis":
         print("Not yet implemented")

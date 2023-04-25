@@ -220,11 +220,11 @@ conda activate westpa
 ___Running SubPEx___
 
 1. To run SubPEx, execute the `./run.sh` file from the command line. 
-   - You can also run SubPEx on a supercomputing cluster. See the `run.slurm.sh`
-     for an example submission script for the slurm job scheduler. Note that you
-     will likely need to modify the submission script for your specific cluster.
-     Please check with your IT administrator to troubleshoot any
-     cluster-specific problems.
+   - You can also run SubPEx on a supercomputing cluster. See the
+     `./aux_scripts/run.slurm.sh` for an example submission script for the slurm
+     job scheduler. Note that you will likely need to modify the submission
+     script for your specific cluster. Please check with your IT administrator
+     to troubleshoot any cluster-specific problems.
 2. If errors occur during execution, check the `./job_logs` directory. (If there
    is no `./job_logs` directory, that alone will cause WESTPA/SubPEx to fail.)
 

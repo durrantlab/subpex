@@ -1,11 +1,17 @@
 from pcoord import *
 
-#todo refactor this script
+# todo refactor this script
 if __name__ == "__main__":
     # Get arguments and load json settings file.
-    parser = argparse.ArgumentParser(description="Obtain jaccard distance using a reference, a topology file and a MD trajectory file.")
-    parser.add_argument("istate", type=str, help="Define the istate or istate PDB file. It is required")
-    parser.add_argument("settings", type=str, help="Define the settings file. It is required")
+    parser = argparse.ArgumentParser(
+        description="Obtain jaccard distance using a reference, a topology file and a MD trajectory file."
+    )
+    parser.add_argument(
+        "istate", type=str, help="Define the istate or istate PDB file. It is required"
+    )
+    parser.add_argument(
+        "settings", type=str, help="Define the settings file. It is required"
+    )
     args = parser.parse_args()
 
     # Function that obtains and checks for settings in the settings json file.
@@ -40,7 +46,11 @@ if __name__ == "__main__":
         if "sigma" in settings:
             sigma = settings["sigma"]
         else:
-            sigma = (1 - len(reference.select_atoms(selection_alignment))/len(reference.select_atoms("backbone"))) / 2
+            sigma = (
+                1
+                - len(reference.select_atoms(selection_alignment))
+                / len(reference.select_atoms("backbone"))
+            ) / 2
 
     # open file with reference field of points
     if settings["fop_filetype"] == "xyz":
@@ -49,6 +59,7 @@ if __name__ == "__main__":
         reference_fop = parse_pdb_fop(settings["reference_fop"])
     elif settings["fop_filetype"] == "pickle":
         import pickle
+
         with open(settings["reference_fop"], "rb") as f:
             reference_fop = pickle.load(f)
     else:
@@ -56,52 +67,76 @@ if __name__ == "__main__":
         raise IOError("could not open reference FOP")
 
     align.alignto(istate, reference, select=selection_alignment)
-    
+
     # Using the selection string to select atoms in the pocket
     pocket_reference = reference.select_atoms(selection_pocket)
 
     # calculate pocket rmsd
 
     if "prmsd" in results.keys():
-        results["prmsd"].append(MDAnalysis.analysis.rms.rmsd(pocket_reference.positions,
-                                                    istate.select_atoms(selection_pocket).positions))
+        results["prmsd"].append(
+            MDAnalysis.analysis.rms.rmsd(
+                pocket_reference.positions,
+                istate.select_atoms(selection_pocket).positions,
+            )
+        )
 
-    if "jd" in results.keys() or "fops" in results.keys() or "pvol" in results.keys() or "rog" in results.keys():
+    if (
+        "jd" in results.keys()
+        or "fops" in results.keys()
+        or "pvol" in results.keys()
+        or "rog" in results.keys()
+    ):
         frame_coordinates = istate.select_atoms("protein").positions
-        pocket_calpha = istate.select_atoms(selection_pocket + " and name CA*").positions
-        frame_fop = get_field_of_points_dbscan(frame_coordinates, pocket_calpha, settings["center"],
-                                    settings["resolution"], settings["radius"])
-        results["jd"].append(get_jaccard_distance(reference_fop, frame_fop, settings["resolution"]))
+        pocket_calpha = istate.select_atoms(
+            selection_pocket + " and name CA*"
+        ).positions
+        frame_fop = get_field_of_points_dbscan(
+            frame_coordinates,
+            pocket_calpha,
+            settings["center"],
+            settings["resolution"],
+            settings["radius"],
+        )
+        results["jd"].append(
+            get_jaccard_distance(reference_fop, frame_fop, settings["resolution"])
+        )
 
     if "fops" in results.keys():
         results["fops"].append(frame_fop)
 
     if "pvol" in results.keys():
-        results["pvol"].append(len(frame_fop) * (settings['resolution'] ** 3))
+        results["pvol"].append(len(frame_fop) * (settings["resolution"] ** 3))
 
     if "rog" in results.keys():
         results["rog"].append(calculate_pocket_gyration(frame_fop))
 
     if "bb" in results.keys():
         align.alignto(istate, reference, select="backbone")
-        results["bb"].append(MDAnalysis.analysis.rms.rmsd(reference.select_atoms("backbone").positions,
-                                                               istate.select_atoms("backbone").positions))
+        results["bb"].append(
+            MDAnalysis.analysis.rms.rmsd(
+                reference.select_atoms("backbone").positions,
+                istate.select_atoms("backbone").positions,
+            )
+        )
 
     if "composite" in results.keys():
         results["composite"].append(results["prmsd"][-1] + (sigma * results["bb"][-1]))
 
-    # writing in text files the progress coordinates and the required auxiliary data if needed. 
+    # writing in text files the progress coordinates and the required auxiliary data if needed.
     with open("pcoord.txt", "w") as f:
         for i in range(len(results[settings["pcoord"][0]])):
             line = ""
             for pcoord in settings["pcoord"]:
-                line += "{:.4f}    ".format(results[pcoord][i])    
+                line += "{:.4f}    ".format(results[pcoord][i])
             f.write(line + "\n")
 
     # save fop in file so it can be piped to h5 file
     if "fops" in results.keys():
         if settings["fop_filetype"] == "xyz":
-            points_to_xyz_file("fop.txt", results["fops"], settings["resolution"], settings["radius"])
+            points_to_xyz_file(
+                "fop.txt", results["fops"], settings["resolution"], settings["radius"]
+            )
         elif settings["fop_filetype"] == "pdb":
             points_to_pdb("fop", results["fops"])
         # not sure pickles work
@@ -112,29 +147,29 @@ if __name__ == "__main__":
     if "pvol" in settings["auxdata"]:
         with open("pvol.txt", "w") as f:
             for i in results["pvol"]:
-                f.write(str(i)+"\n")
+                f.write(str(i) + "\n")
 
     if "rog" in settings["auxdata"]:
         with open("rog.txt", "w") as f:
             for i in results["rog"]:
-                f.write(str(i)+"\n")
+                f.write(str(i) + "\n")
 
     if "bb" in settings["auxdata"]:
         with open("bb.txt", "w") as f:
             for i in results["bb"]:
-                f.write(str(i)+"\n")
+                f.write(str(i) + "\n")
 
     if "prmsd" in settings["auxdata"]:
         with open("prmsd.txt", "w") as f:
             for i in results["prmsd"]:
-                f.write(str(i)+"\n")
+                f.write(str(i) + "\n")
 
     if "jd" in settings["auxdata"]:
         with open("jd.txt", "w") as f:
             for i in results["jd"]:
-                f.write(str(i)+"\n")
+                f.write(str(i) + "\n")
 
     if "composite" in settings["auxdata"]:
         with open("composite.txt", "w") as f:
             for i in results["composite"]:
-                f.write(str(i)+"\n")
+                f.write(str(i) + "\n")
