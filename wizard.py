@@ -1,5 +1,6 @@
 # The programs helps set up the SubPEx run. Runs only on linux.
 
+from io import TextIOWrapper
 import textwrap
 import os
 import json
@@ -8,10 +9,11 @@ import subprocess
 import time
 import re
 import glob
+from typing import List, Tuple
 
 try:
     import yaml
-except:
+except Exception:
     print("\nPyYAML is missing. Have you set up your westpa conda environment?\n")
     print("conda env create -f environment.yaml\nconda activate westpa\n")
     exit(1)
@@ -39,7 +41,14 @@ def get_step_num():
     return str(STEP_NUM - 1)
 
 
-def log(txt, underlined=None):
+def log(txt: str, underlined: bool = None):
+    """Prints text to screen, with optional underlining.
+
+    Args:
+        txt (str): Text to print.
+        underlined (bool, optional): If True, underlines text. Defaults to None.
+    """
+
     txt = txt.split("\n")
     for line in txt:
         t = textwrap.fill(line.strip(), 80)
@@ -49,7 +58,17 @@ def log(txt, underlined=None):
     print("")
 
 
-def choice(prompt, choices=None):
+def choice(prompt: str, choices: List[str] = None) -> str:
+    """Prompts user for input, with optional choices.
+
+    Args:
+        prompt (str): Prompt to display.
+        choices (List[str], optional): List of choices. Defaults to None.
+
+    Returns:
+        str: User's choice.
+    """
+
     if choices is None:
         choices = ["y", "n"]
 
@@ -68,10 +87,21 @@ def choice(prompt, choices=None):
 
 
 def clear():
+    """Clears screen."""
     os.system("clear")
 
 
-def file_path(prompt, ext):
+def file_path(prompt: str, ext: str) -> str:
+    """Prompts user for file path, with optional extension.
+
+    Args:
+        prompt (str): Prompt to display.
+        ext (str): File extension (for checking).
+
+    Returns:
+        str: User's choice, path to file.
+    """
+
     while True:
         answer = input(f"{prompt}: ").strip()
         pth = os.path.abspath(answer)
@@ -84,18 +114,36 @@ def file_path(prompt, ext):
         return pth
 
 
-def get_number(prompt):
+def get_number(prompt: str) -> float:
+    """Prompts user for number.
+
+    Args:
+        prompt (str): Prompt to display.
+
+    Returns:
+        float: User's choice.
+    """
+
     while True:
         answer = input(f"{prompt}: ").strip()
         try:
             answer = float(answer)
-        except:
+        except Exception:
             log("\nPlease enter a number. Try again.")
             continue
         return answer
 
 
-def get_time(prompt):
+def get_time(prompt: str) -> str:
+    """Prompts user for time in format HH:MM:SS.
+
+    Args:
+        prompt (str): Prompt to display.
+
+    Returns:
+        str: User's choice.
+    """
+
     while True:
         answer = input(f"{prompt}: ").strip()
 
@@ -107,7 +155,14 @@ def get_time(prompt):
         return answer
 
 
-def save_choice(key, val):
+def save_choice(key: str, val):
+    """Saves choice to wizard.saved file.
+
+    Args:
+        key (str): Key to save.
+        val (any): Value to save.
+    """
+
     if os.path.exists("wizard.saved"):
         with open("wizard.saved", "r") as f:
             config = json.load(f)
@@ -118,7 +173,17 @@ def save_choice(key, val):
         json.dump(config, f, indent=4)
 
 
-def get_choice(key, func_if_absent):
+def get_choice(key: str, func_if_absent: function) -> any:
+    """Gets choice from wizard.saved file, or prompts user if not present.
+
+    Args:
+        key (str): Key to get.
+        func_if_absent (function): Function to call if key is not present.
+
+    Returns:
+        any: User's choice.
+    """
+
     if not os.path.exists("wizard.saved"):
         val = func_if_absent()
         save_choice(key, val)
@@ -133,7 +198,13 @@ def get_choice(key, func_if_absent):
     return config[key]
 
 
-def forget_choice(key):
+def forget_choice(key: str):
+    """Forgets choice from wizard.saved file.
+
+    Args:
+        key (str): Key to forget.
+    """
+
     if os.path.exists("wizard.saved"):
         with open("wizard.saved", "r") as f:
             config = json.load(f)
@@ -147,46 +218,33 @@ def forget_choice(key):
         json.dump(config, f, indent=4)
 
 
-def run_cmd_old(prts):
-    log("Running command: " + " ".join(prts))
-    cmd = subprocess.Popen(
-        prts,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+def run_cmd(prts: List[str]) -> str:
+    """Runs command, prints output, and returns output.
 
-    cmd.wait()
+    Args:
+        prts (List[str]): Command to run.
 
-    output, errors = cmd.communicate()
-    output = output.strip()
-    errors = errors.strip()
+    Returns:
+        str: Output of command.
+    """
 
-    if output:
-        log(output)
-    if errors:
-        log(errors)
-    
-    return output + "\n\n" + errors
-
-
-def run_cmd(prts):
     # if prts is a list
     if isinstance(prts, list):
         log("Running command: " + " ".join(prts))
         shell = False
     else:
-        log("Running command: " + prts)
+        log(f"Running command: {prts}")
         shell = True
 
     def run_iter(prts):
         cmd = subprocess.Popen(
-            prts, stdout=subprocess.PIPE, universal_newlines=True, bufsize=1,
-            shell=shell
+            prts,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+            bufsize=1,
+            shell=shell,
         )
-        for stdout_line in iter(cmd.stdout.readline, ""):
-            yield stdout_line
+        yield from iter(cmd.stdout.readline, "")
         cmd.stdout.close()
         return_code = cmd.wait()
         if return_code:
@@ -198,11 +256,17 @@ def run_cmd(prts):
     for line in run_iter(prts):
         print(line, end="")
         output += line
-    
+
     return output.strip()
 
 
-def link_to_reference_mol(flnm):
+def link_to_reference_mol(flnm: str):
+    """symbolically links file to reference/mol.ext.
+
+    Args:
+        flnm (str): File to link.
+    """
+
     ext = flnm.split(".")[-1]
     dest_file = f"{CUR_PATH}/reference/mol.{ext}"
     if os.path.exists(dest_file):
@@ -210,20 +274,43 @@ def link_to_reference_mol(flnm):
     run_cmd(["ln", "-s", flnm, dest_file])
 
 
-def openfile(filename):
+def openfile(filename: str) -> TextIOWrapper:
+    """Opens file for editing, creating a backup if necessary.
+
+    Args:
+        filename (str): File to open.
+
+    Returns:
+        file (TextIOWrapper): File object.
+    """
+
     if not os.path.exists(f"{filename}.orig"):
         os.system(f"cp {filename} {filename}.orig")
     return open(f"{filename}.orig", "r")
 
 
-def check_if_restart_sim():
+def check_if_restart_sim() -> bool:
+    """Checks if user wants to restart simulation.
+
+    Returns:
+        bool: True if user wants to restart simulation, False otherwise.
+    """
+
     if os.path.exists("west.h5"):
         log(f"STEP {get_step_num()}: Restart previous SubPEx run?", "-")
-        log("It appears you have previously run SubPEx in this directory because a west.h5 exists.")
-        log("Would you like to have SubPEx resume the previous run rather than start over?")
+        log(
+            "It appears you have previously run SubPEx in this directory because a west.h5 exists."
+        )
+        log(
+            "Would you like to have SubPEx resume the previous run rather than start over?"
+        )
         if choice("Resume previous run?") == "y":
-            run_cmd("./utils/restart_subpex.sh -n $(ls traj_segs/ | sort -n | tail -n 1)")
-            log("\nYour SubPEx job is now ready for a restart run, likely using one of the run*.sh files.")
+            run_cmd(
+                "./utils/restart_subpex.sh -n $(ls traj_segs/ | sort -n | tail -n 1)"
+            )
+            log(
+                "\nYour SubPEx job is now ready for a restart run, likely using one of the run*.sh files."
+            )
             # clear()
             return True
 
@@ -231,27 +318,32 @@ def check_if_restart_sim():
     return False
 
 
-
 def check_existing_params():
-    if os.path.exists("wizard.saved"):
-        log(f"STEP {get_step_num()}: Use previous wizard choices?", "-")
-        log(
-            "You previously used this wizard, and your choices were saved to the file \"wizard.saved\". Here are the previous choices:"
-        )
+    """Checks if user wants to use existing parameters."""
 
-        with open("wizard.saved", "r") as f:
-            config = json.load(f)
-        for key in config:
-            print(f"  {key}: {config[key]}")
-            
-        log("\nWould you like to use the same choices this time?")
+    if not os.path.exists("wizard.saved"):
+        return
 
-        if choice("Use previous choices?") == "n":
-            os.system("rm wizard.saved")
-        clear()
+    log(f"STEP {get_step_num()}: Use previous wizard choices?", "-")
+    log(
+        'You previously used this wizard, and your choices were saved to the file "wizard.saved". Here are the previous choices:'
+    )
+
+    with open("wizard.saved", "r") as f:
+        config = json.load(f)
+    for key in config:
+        print(f"  {key}: {config[key]}")
+
+    log("\nWould you like to use the same choices this time?")
+
+    if choice("Use previous choices?") == "n":
+        os.system("rm wizard.saved")
+    clear()
 
 
 def confirm_environment():
+    """Confirms that user has created and activated anaconda environment."""
+
     log(f"STEP {get_step_num()}: Environment", "-")
     log(
         "You should run this wizard using an appropriate anaconda environment. To create the environment, install anaconda and create/activate the environment like this:"
@@ -265,9 +357,14 @@ def confirm_environment():
 
 
 def confirm_dependencies():
+    """Confirms that user has installed dependencies."""
+
     log(f"Step {get_step_num()}: Check dependencies", "-")
 
-    if choice("Would you like to check that key dependencies have been installed?") == "y":
+    if (
+        choice("Would you like to check that key dependencies have been installed?")
+        == "y"
+    ):
         print("")
 
         # Load environment.yaml into a dictionary
@@ -328,7 +425,7 @@ def confirm_dependencies():
             print(f"Testing module {v}")
             try:
                 __import__(v)
-            except:
+            except Exception:
                 log(
                     (
                         "\nModule "
@@ -343,7 +440,18 @@ def confirm_dependencies():
     clear()
 
 
-def amber_or_namd(get_pcoord, runseg):
+def amber_or_namd(get_pcoord: str, runseg: str) -> Tuple[str, str, str]:
+    """Asks user if they want to use Amber or NAMD.
+
+    Args:
+        get_pcoord (str): contents of the get_pcoord.sh file as a string.
+        runseg (str): contents of the runseg.sh file as a string.
+
+    Returns:
+        Tuple[str, str, str]: Tuple containing the engine, get_pcoord.sh file
+        as a string, and runseg.sh file as a string.
+    """
+
     log(f"STEP {get_step_num()}: MD engine", "-")
 
     engine = get_choice(
@@ -356,14 +464,14 @@ def amber_or_namd(get_pcoord, runseg):
     clear()
     get_pcoord = re.sub(
         r'^export ENGINE=".*?"',
-        (('export ENGINE="' + engine.upper()) + '"'),
+        f'export ENGINE="{engine.upper()}"',
         get_pcoord,
         flags=re.MULTILINE,
     )
 
     runseg = re.sub(
         r'^export ENGINE=".*"',
-        'export ENGINE="' + engine.upper() + '"',
+        f'export ENGINE="{engine.upper()}"',
         runseg,
         flags=re.MULTILINE,
     )
@@ -371,7 +479,13 @@ def amber_or_namd(get_pcoord, runseg):
     return engine, get_pcoord, runseg
 
 
-def get_prelim_sim_files(engine):
+def get_prelim_sim_files(engine: str):
+    """Asks user for preliminary (equilibrated) simulation files.
+
+    Args:
+        engine (str): MD engine to use. "amber" or "namd"
+    """
+
     log(f"STEP {get_step_num()}: Preliminary MD files", "-")
     log(
         "SubPEx assumes you have already run preliminary simulations to equilibrate your system. Where are the coordinate and restart files associated with these preliminary simulations?"
@@ -409,6 +523,8 @@ def get_prelim_sim_files(engine):
 
 
 def get_sim_last_frame():
+    """Asks user for the last frame of the preliminary simulation."""
+
     log(f"STEP {get_step_num()}: Preliminary MD last frame", "-")
     log(
         "SubPEx needs the last frame of the preliminary trajectory as a `pdb` file. You can use programs such as VMD to save the last frame."
@@ -422,7 +538,16 @@ def get_sim_last_frame():
     clear()
 
 
-def update_westcfg_path_vars(westcfg):
+def update_westcfg_path_vars(westcfg: str) -> str:
+    """Updates the path variables in the west.cfg file.
+
+    Args:
+        westcfg (str): contents of the west.cfg file as a string.
+
+    Returns:
+        str: updated west.cfg file as a string.
+    """
+
     westcfg = re.sub(
         r"\bselection_file: .*?$",
         f"selection_file: {CUR_PATH}/reference/selection_string.txt",
@@ -458,7 +583,17 @@ def update_westcfg_path_vars(westcfg):
     return westcfg
 
 
-def pick_pcoord(westcfg):
+def pick_pcoord(westcfg: str) -> Tuple[str, str]:
+    """Asks user to pick a progress coordinate.
+
+    Args:
+        westcfg (str): contents of the west.cfg file as a string.
+
+    Returns:
+        Tuple[str, str]: Tuple containing the updated west.cfg file as a string
+        and the progress coordinate name.
+    """
+
     log(f"STEP {get_step_num()}: Progress coordinate", "-")
     log("Which progress coordinate would you like to use?")
     log(
@@ -479,13 +614,25 @@ def pick_pcoord(westcfg):
     clear()
     return westcfg, pcoord
 
-def specify_number_iterations(westcfg):
+
+def specify_number_iterations(westcfg: str) -> str:
+    """Asks user to specify the number of iterations.
+
+    Args:
+        westcfg (str): contents of the west.cfg file as a string.
+
+    Returns:
+        str: updated west.cfg file as a string.
+    """
+
     log(f"STEP {get_step_num()}: Number of iterations (generations)", "-")
     log(
         "SubPEx periodically prunes and duplicates short simulations (walkers) to encourage sampling. How many times (iterations/generations) should SubPEx perform this pruning/duplication before stopping? (Recommendation: 30)"
     )
 
-    iterations = int(get_choice("iterations", lambda: get_number("Number of iterations")))
+    iterations = int(
+        get_choice("iterations", lambda: get_number("Number of iterations"))
+    )
 
     westcfg = re.sub(
         r"\bmax_total_iterations: .*$",
@@ -497,7 +644,17 @@ def specify_number_iterations(westcfg):
     clear()
     return westcfg
 
-def define_pocket(westcfg):
+
+def define_pocket(westcfg: str) -> str:
+    """Asks user to define the binding pocket.
+
+    Args:
+        westcfg (str): contents of the west.cfg file as a string.
+
+    Returns:
+        str: updated west.cfg file as a string.
+    """
+
     log(f"STEP {get_step_num()}: Define the binding pocket", "-")
     log(
         "You must define the location of the binding pocket you wish to sample. Visual inspection (e.g., using VMD) is often useful for this step. See README.md for more suggestions."
@@ -508,11 +665,8 @@ def define_pocket(westcfg):
     )
 
     pocket_radius = get_choice("pocket_radius", lambda: get_number("Pocket radius"))
-
     x_coor = get_choice("x_coor", lambda: get_number("X coordinate of pocket center"))
-
     y_coor = get_choice("y_coor", lambda: get_number("Y coordinate of pocket center"))
-
     z_coor = get_choice("z_coor", lambda: get_number("Z coordinate of pocket center"))
 
     westcfg = re.sub(
@@ -555,7 +709,16 @@ def define_pocket(westcfg):
     return westcfg
 
 
-def check_pocket(westcfg):
+def check_pocket(westcfg: str) -> str:
+    """Asks user to check the binding pocket.
+
+    Args:
+        westcfg (str): contents of the west.cfg file as a string.
+
+    Returns:
+        str: updated west.cfg file as a string.
+    """
+
     log(f"STEP {get_step_num()}: Check the binding pocket", "-")
     log(
         f"The wizard has generated a pocket-field-of-points (fop) file ({CUR_PATH}/reference/fop_ref.xyz) and a selection-string file ({CUR_PATH}/reference/selection_string.txt)."
@@ -585,11 +748,21 @@ def check_pocket(westcfg):
     return westcfg
 
 
-def update_envsh(envsh, engine):
+def update_envsh(envsh: str, engine: str) -> str:
+    """Asks user to update the env.sh file.
+
+    Args:
+        envsh (str): contents of the env.sh file as a string.
+        engine (str): engine to use.
+
+    Returns:
+        str: updated env.sh file as a string.
+    """
+
     log(f"STEP {get_step_num()}: Update env.sh", "-")
     envsh = re.sub(
         r'^export ENGINE=".*?"',
-        (('export ENGINE="' + engine.upper()) + '"'),
+        f'export ENGINE="{engine.upper()}"',
         envsh,
         flags=re.MULTILINE,
     )
@@ -603,7 +776,7 @@ def update_envsh(envsh, engine):
 
     envsh = re.sub(
         r'^export MODE=".*?"',
-        (('export MODE="' + mode.upper()) + '"'),
+        f'export MODE="{mode.upper()}"',
         envsh,
         flags=re.MULTILINE,
     )
@@ -612,7 +785,17 @@ def update_envsh(envsh, engine):
     return envsh
 
 
-def define_adaptive_bins(adaptivepy, pcoord):
+def define_adaptive_bins(adaptivepy: str, pcoord: str) -> str:
+    """Asks user to define the adaptive bins.
+
+    Args:
+        adaptivepy (str): contents of the adaptive.py file as a string.
+        pcoord (str): progress coordinate to use.
+
+    Returns:
+        str: updated adaptive.py file as a string.
+    """
+
     # If pcoord is "jd", max is 1.0.
     log(f"STEP {get_step_num()}: Define adaptive bins", "-")
     log(
@@ -641,21 +824,21 @@ def define_adaptive_bins(adaptivepy, pcoord):
 
     adaptivepy = re.sub(
         r"^maxcap\s*=\s*\[.*\]",
-        "maxcap = [" + str(maxcap) + "]",
+        f"maxcap = [{str(maxcap)}]",
         adaptivepy,
         flags=re.MULTILINE,
     )
 
     adaptivepy = re.sub(
         r"^binsperdim\s*=\s*\[.*\]",
-        "binsperdim = [" + str(binsperdim) + "]",
+        f"binsperdim = [{str(binsperdim)}]",
         adaptivepy,
         flags=re.MULTILINE,
     )
 
     adaptivepy = re.sub(
         r"^bintargetcount\s*=\s*\d*",
-        "bintargetcount = " + str(bintargetcount),
+        f"bintargetcount = {str(bintargetcount)}",
         adaptivepy,
         flags=re.MULTILINE,
     )
@@ -664,7 +847,16 @@ def define_adaptive_bins(adaptivepy, pcoord):
     return adaptivepy
 
 
-def update_run_time_and_job_name(westcfg):
+def update_run_time_and_job_name(westcfg: str) -> str:
+    """Asks user to update the run time and job name.
+
+    Args:
+        westcfg (str): contents of the west.cfg file as a string.
+
+    Returns:
+        str: updated west.cfg file as a string.
+    """
+
     log(f"STEP {get_step_num()}: Update job run time and name", "-")
     log(
         "How long should your SubPEx job run? (Format your response like HH:MM:SS, e.g., 72:00:00 for 72 hours)"
@@ -676,23 +868,23 @@ def update_run_time_and_job_name(westcfg):
 
     westcfg = re.sub(
         r"\bmax_run_wallclock:\s*\d{1,2}:\d{1,2}:\d{1,2}\b",
-        "max_run_wallclock:    " + run_time,
+        f"max_run_wallclock:    {run_time}",
         westcfg,
         flags=re.MULTILINE,
     )
 
-    for submit_file in glob.glob("run.slurm*.sh"):
+    for submit_file in glob.glob("aux_scripts/run.slurm*.sh"):
         with openfile(submit_file) as f:
             runsh = f.read()
         runsh = re.sub(
             r"^#SBATCH --time=.*$",
-            "#SBATCH --time=" + run_time,
+            f"#SBATCH --time={run_time}",
             runsh,
             flags=re.MULTILINE,
         )
         runsh = re.sub(
             r"^#SBATCH --job-name=.*$",
-            "#SBATCH --job-name=" + job_name,
+            f"#SBATCH --job-name={job_name}",
             runsh,
             flags=re.MULTILINE,
         )
@@ -703,7 +895,13 @@ def update_run_time_and_job_name(westcfg):
     return westcfg
 
 
-def run_init():
+def run_init() -> str:
+    """Runs the init.sh script to initialize the SubPEx run.
+
+    Returns:
+        str: contents of the west.cfg file as a string.
+    """
+
     log(f"STEP {get_step_num()}: Initialize the SubPEx run", "-")
     if os.path.exists("west.h5"):
         log(
@@ -732,6 +930,8 @@ def run_init():
 
 
 def finished():
+    """Prints the final message to the user."""
+
     log("It appears the wizard was successful.")
     log("Optional steps NOT performed", "-")
     log(
@@ -754,7 +954,7 @@ def finished():
         '1. Some needed changes still required to the "env.sh" file. Edit "env.sh" per your specific computing environment.'
     )
     log(
-        '2. Some needed changes still required to the "run.slurm.*.sh" files. If using SLURM, edit these files per your environment.'
+        '2. Some needed changes still required to the "aux_scripts/run.slurm.*.sh" files. If using SLURM, edit these files per your environment.'
     )
 
 
