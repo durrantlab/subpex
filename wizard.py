@@ -35,7 +35,13 @@ YAML_LOADER = yaml.SafeLoader
 STEP_NUM = 1
 
 
-def get_step_num():
+def get_step_num() -> str:
+    """Returns current step number.
+
+    Returns:
+        str: Current step number.
+    """
+
     global STEP_NUM
     STEP_NUM = STEP_NUM + 1
     return str(STEP_NUM - 1)
