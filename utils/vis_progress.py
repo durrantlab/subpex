@@ -18,6 +18,7 @@ def rolling_average(data: List[float], window: int) -> List[float]:
     Returns:
         average (list): list containing the rolling average.
     """
+
     average = []
     for i in range(len(data)):
         if i + window < len(data):
