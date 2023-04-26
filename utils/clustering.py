@@ -2,6 +2,7 @@
 This script will generate files for clustering or cluster itself the output of a SubPEx run
 """
 
+from typing import List
 import MDAnalysis as mda
 import glob
 import argparse
@@ -18,12 +19,16 @@ sys.path.append(parentdir)
 from westpa_scripts.pcoord import check_input_settings_file
 
 
-def check_clustering_parameters(settings):
-    """[summary]
+def check_clustering_parameters(settings: dict) -> dict:
+    """Checks the clustering parameters in the settings.
 
     Args:
-        settings ([type]): [description]
+        settings (dict): The settings dictionary.
+
+    Returns:
+        dict: The settings dictionary.
     """
+
     if "clustering" not in settings or type(settings["clustering"]) is not dict:
         logging.critical(
             "There is a problem with the clustering parameters. Please check the settings file."
@@ -36,7 +41,17 @@ def check_clustering_parameters(settings):
     return settings
 
 
-def get_bins_dictionary(west, settings):
+def get_bins_dictionary(west: dict, settings: dict) -> dict:
+    """Creates a dictionary with the bins and the walkers in each bin.
+    
+    Args:
+        west (dict): The west.h5 file as a dictionary.
+        settings (dict): The settings dictionary.
+        
+    Returns:
+        dict: A dictionary with the bins and the walkers in each bin.
+    """
+
     # create an empty dictionary to store the bins info
     bins = {}
     # now place each walker into a bin
@@ -62,14 +77,21 @@ def get_bins_dictionary(west, settings):
     return bins
 
 
-def calculate_clusters_per_bin(bins, settings):
+def calculate_clusters_per_bin(bins: dict, settings: dict):
+    """Calculates the number of clusters per bin. Updates bin in place.
+
+    Args:
+        bins (dict): A dictionary with the bins and the walkers in each bin.
+        settings (dict): The settings dictionary.
+    """
+
     # determine the maximum number of walkers in a bin for normalization of clusters per bin
     max_num_walkers = 0
-    for key in bins.keys():
+    for key in bins:
         if len(bins[key]["walkers"]) > max_num_walkers:
             max_num_walkers = len(bins[key])
     # append as the last element of the list the number of clusters we will obtain in said bin
-    for key in bins.keys():
+    for key in bins:
         if (
             len(bins[key]["walkers"])
             <= settings["clustering"]["min_number_clusters_generation_bin"]
@@ -90,7 +112,15 @@ def calculate_clusters_per_bin(bins, settings):
             bins[key]["clusters"] = value
 
 
-def create_bin_cpptraj_files(bins, settings, directory):
+def create_bin_cpptraj_files(bins: dict, settings: dict, directory: str):
+    """Creates the cpptraj files for each bin.
+
+    Args:
+        bins (dict): A dictionary with the bins and the walkers in each bin.
+        settings (dict): The settings dictionary.
+        directory (str): The directory where the cpptraj files will be created.
+    """
+
     calculate_clusters_per_bin(bins, settings)
     # will generate the selection string that will be used
     if settings["clustering"]["clustering_region"] == "pocket":
@@ -98,12 +128,24 @@ def create_bin_cpptraj_files(bins, settings, directory):
     elif settings["clustering"]["clustering_region"] == "backbone":
         selection_string = "'@CA,C,O,N'"
 
-    for key in bins.keys():
+    for key in bins:
         os.system(f"mkdir {directory}/{key}")
         create_cpptraj_file_bins(bins, settings, directory, key, selection_string)
 
 
-def create_cpptraj_file_bins(bins, settings, directory, key, selection_string):
+def create_cpptraj_file_bins(
+    bins: dict, settings: dict, directory: str, key: str, selection_string: str
+):
+    """Creates the cpptraj file for a bin.
+
+    Args:
+        bins (dict): A dictionary with the bins and the walkers in each bin.
+        settings (dict): The settings dictionary.
+        directory (str): The directory where the cpptraj files will be created.
+        key (str): The name of the bin.
+        selection_string (str): The selection string that will be used.
+    """
+
     with open(f"{directory}/{key}/clustering.in", "w") as f:
         f.write(f'parm {settings["topology"]} \n')
         for walker in bins[key]["walkers"]:
@@ -120,18 +162,18 @@ def create_cpptraj_file_bins(bins, settings, directory, key, selection_string):
         f.write("\n")
 
 
-def get_selection_cpptraj(filename):
-    """
-    get_selection_cpptraj is a function that takes the filename of the selection string used in 
-    SubPEx and returns a selection string formated for cpptraj. The selection will take all 
-    heavy atoms of each of the residues.
+def get_selection_cpptraj(filename: str) -> str:
+    """Takes the filename of the selection string used in SubPEx and returns a
+    selection string formated for cpptraj. The selection will take all heavy
+    atoms of each of the residues.
 
     Args:
-        filename ([type]): [description]
+        filename (str): The filename of the selection string used in SubPEx.
 
     Returns:
-        [type]: [description]
+        str: The selection string formated for cpptraj.
     """
+
     # open selection files used in subpex
     with open(filename, "r") as f:
         selection_mdanalysis = f.readlines()[0]
@@ -153,7 +195,15 @@ def get_selection_cpptraj(filename):
     return selection_string
 
 
-def get_clustering_generation_cpptraj(west_file, settings, directory):
+def get_clustering_generation_cpptraj(west_file: dict, settings: dict, directory: str):
+    """Creates the cpptraj files for each bin.
+
+    Args:
+        west_file (dict): The west.h5 file contents.
+        settings (dict): The settings dictionary.
+        directory (str): The directory where the cpptraj files will be created.
+    """
+
     # will generate the selection string that will be used
     if settings["clustering"]["clustering_region"] == "pocket":
         selection_string = get_selection_cpptraj(settings["selection_file"])
@@ -208,7 +258,16 @@ def get_clustering_generation_cpptraj(west_file, settings, directory):
             f.write(i)
 
 
-def get_generation_walkers_list(directory_gen):
+def get_generation_walkers_list(directory_gen: str) -> List[str]:
+    """Gets the list of walkers for a given generation.
+
+    Args:
+        directory_gen (str): The directory where the generation is.
+
+    Returns:
+        List[str]: The list of walkers.
+    """
+
     # will check later what the extension for coordinate files is. will work for dcd and nc.
     file_extension = None
     walkers_list = []
@@ -227,16 +286,21 @@ def get_generation_walkers_list(directory_gen):
 
 
 def make_input_file_cpptraj(
-    directory, walkers_list, settings, num_clusters, selection_string
+    directory: str,
+    walkers_list: List[str],
+    settings: dict,
+    num_clusters: int,
+    selection_string: str,
 ):
-    """[summary]
+    """Creates the input file for cpptraj.
 
     Args:
-        directory ([type]): [description]
-        walkers_list ([type]): [description]
-        settings ([type]): [description]
-        selection_string ([type]): [description]
+        directory (str): The directory where the input file will be created.
+        walkers_list (List[str]): The list of walkers for the generation.
+        settings (dict): The settings dictionary.
+        selection_string (str): The selection string for cpptraj.
     """
+
     text = f'parm {settings["topology"]} \n'
     for walker in walkers_list:
         text += f"trajin {walker} \n"
@@ -247,17 +311,20 @@ def make_input_file_cpptraj(
         f.write(text)
 
 
-def get_clustering_command_cpptraj(method, num_clusters, selection_string):
-    """Summary
+def get_clustering_command_cpptraj(
+    method: str, num_clusters: int, selection_string: str
+) -> str:
+    """Creates the clustering command for cpptraj.
     
     Args:
-        method (TYPE): Description
-        num_clusters (TYPE): Description
-        selection_string (TYPE): Description
+        method (str): the clustering method to use. Currently, only hierarchical is implemented.
+        num_clusters (int): The number of clusters to use.
+        selection_string (str): The selection string for cpptraj.
     
     Returns:
-        TYPE: Description
+        str: The clustering command for cpptraj.
     """
+
     if method == "hierarchical":
         text = """cluster C0 \ 
     hieragglo clusters {num_clust} averagelinkage epsilonplot epsilonplot.dat \ 
@@ -280,7 +347,21 @@ def get_clustering_command_cpptraj(method, num_clusters, selection_string):
     return text
 
 
-def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
+def get_number_clusters_generation(
+    west_file: dict, max_clusters: int, min_clusters: int = 3
+) -> List[int]:
+    """Gets the number of clusters for each generation.
+
+    Args:
+        west_file (dict): The west.h5 file.
+        max_clusters (int): The maximum number of clusters to use.
+        min_clusters (int, optional): The minimum number of clusters to use.
+            Defaults to 3.
+
+    Returns:
+        List[int]: The number of clusters for each generation.
+    """
+
     number_walkers = [
         len(west["iterations"][iteration]["seg_index"])
         for iteration in west_file["iterations"].keys()
@@ -296,7 +377,15 @@ def get_number_clusters_generation(west_file, max_clusters, min_clusters=3):
     return number_clusters
 
 
-def get_clustering_bins_cpptraj(west, settings, directory):
+def get_clustering_bins_cpptraj(west: dict, settings: dict, directory: str):
+    """Creates the input files (sh) for cpptraj to cluster the bins.
+
+    Args:
+        west (dict): The west.h5 file.
+        settings (dict): The settings dictionary.
+        directory (str): The directory where the input files will be created.
+    """
+
     bins = get_bins_dictionary(west, settings)
     create_bin_cpptraj_files(bins, settings, directory)
     with open(f"{directory}/run_clustering_bins.sh", "w") as f:

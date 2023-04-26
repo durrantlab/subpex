@@ -9,10 +9,10 @@ def get_pocket_selection(
     selection_file: str,
     distance_constraint: float = 6.7,
 ) -> str:
-    """
-    Takes the protein and center of the pocket and gets the initial selection
-    of the pockets based on the user-specified radius. If water molecules are
-    present, it uses them as a first approximation of the surface residues.
+    """Takes the protein and center of the pocket and gets the initial
+    selection of the pockets based on the user-specified radius. If water
+    molecules are present, it uses them as a first approximation of the surface
+    residues.
 
     Args:
         universe (MDAnalysis Universe): MDA universe with protein 
