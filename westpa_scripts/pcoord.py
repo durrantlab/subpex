@@ -272,6 +272,7 @@ def points_to_xyz_file(
         resolution (float): resolution in Angstroms.
         radius (float): radius in Angstrom for the field of points.
     """
+
     # calculate the volume using the resolution
     # TODO: Erich - modify to be able to do multiframe xyz
     volume = len(coordinates) * (resolution ** 3)
@@ -297,8 +298,9 @@ def calculate_distance_two_points(point1: List[float], point2: List[float]) -> f
         point2 (list): coordinates of second point. [x, y, z]
 
     Returns:
-        distance (flaot): distance between point1 and point2.
+        distance (float): distance between point1 and point2.
     """
+
     distance = 0
     for i in range(len(point1)):
         distance += (point1[i] - point2[i]) ** 2
@@ -509,7 +511,7 @@ def get_jaccard_distance(
 
 
 def point_in_hull(point: List[float], hull, tolerance: float = 1e-12) -> bool:
-    """Determins if a point is contained in a hull. A point is in the hull if
+    """Determines if a point is contained in a hull. A point is in the hull if
     and only if for every equation (describing the facets), the dot product
     between the point and the normal vector (eq[:-1]) plus the offset (eq[-1])
     is less than or equal to zero. You may want to compare to a small, positive
