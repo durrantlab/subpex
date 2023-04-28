@@ -79,14 +79,15 @@ def choice(prompt: str, choices: List[str] = None) -> str:
         choices = ["y", "n"]
 
     lowers = [c.lower() for c in choices]
+    choices_to_show = [c for c in choices if c != ""]
     while True:
-        answer = input(f"{prompt} (" + "/".join(choices) + "): ").lower()
+        answer = input(f"{prompt} (" + "/".join(choices_to_show) + "): ").lower()
         if answer not in lowers:
-            if len(choices) == 2:
-                print("Please answer " + " or ".join(choices))
+            if len(choices_to_show) == 2:
+                print("Please answer " + " or ".join(choices_to_show))
             else:
                 print(
-                    "Please answer " + ", ".join(choices[:-1]) + ", or " + choices[-1]
+                    "Please answer " + ", ".join(choices_to_show[:-1]) + ", or " + choices_to_show[-1]
                 )
             continue
         return answer
