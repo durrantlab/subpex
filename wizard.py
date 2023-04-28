@@ -179,12 +179,12 @@ def save_choice(key: str, val):
         json.dump(config, f, indent=4)
 
 
-def get_choice(key: str, func_if_absent: function) -> any:
+def get_choice(key: str, func_if_absent: callable) -> any:
     """Gets choice from wizard.saved file, or prompts user if not present.
 
     Args:
         key (str): Key to get.
-        func_if_absent (function): Function to call if key is not present.
+        func_if_absent (callable): Function to call if key is not present.
 
     Returns:
         any: User's choice.
