@@ -33,6 +33,7 @@ CUR_PATH = os.path.abspath(os.path.dirname(__file__))
 PYTHON_EXE = os.path.abspath(sys.executable)
 YAML_LOADER = yaml.SafeLoader
 STEP_NUM = 1
+TEST_MODE = False
 
 
 def get_step_num() -> str:
@@ -98,25 +99,19 @@ def clear():
     os.system("clear")
 
 
-def file_path(prompt: str, ext: str, allow_blank: bool = False) -> Union[str, None]:
+def file_path(prompt: str, ext: str) -> str:
     """Prompts user for file path, with optional extension.
 
     Args:
         prompt (str): Prompt to display.
         ext (str): File extension (for checking).
-        allow_blank (bool, optional): If True, allows blank input. Defaults to
-            False.
 
     Returns:
-        Union[str, None]: User's choice. None if allow_blank is True and user
-            enters blank.
+        str: User's choice.
     """
 
     while True:
         answer = input(f"{prompt}: ").strip()
-
-        if answer == "" and allow_blank:
-            return None
         pth = os.path.abspath(answer)
         if not os.path.exists(pth):
             log("\nFile does not exist: " + pth + ". Please try again.")
@@ -134,11 +129,12 @@ def get_number(prompt: str) -> float:
         prompt (str): Prompt to display.
 
     Returns:
-        float: User's choice.
+        loat: User's choice.
     """
 
     while True:
         answer = input(f"{prompt}: ").strip()
+
         try:
             answer = float(answer)
         except Exception:
@@ -300,6 +296,11 @@ def openfile(filename: str) -> TextIOWrapper:
     if not os.path.exists(f"{filename}.orig"):
         os.system(f"cp {filename} {filename}.orig")
     return open(f"{filename}.orig", "r")
+
+def enter_to_continue():
+    """Asks user to press ENTER to continue."""
+
+    input("Press ENTER to continue...")
 
 
 def check_if_restart_sim() -> bool:
@@ -467,18 +468,17 @@ def amber_or_namd(get_pcoord: str, runseg: str) -> Tuple[str, str, str]:
 
     log(f"STEP {get_step_num()}: MD engine", "-")
 
-    log("Press ENTER to use Amber (default for testing).")
-
-    engine = get_choice(
-        "engine",
-        lambda: choice(
-            "Will you use the Amber or NAMD MD engine?", choices=["Amber", "NAMD", ""]
-        ),
-    )
-
-    if engine == "":
-        # Default to Amber
+    if TEST_MODE:
         engine = "amber"
+        log("Using Amber MD engine (test mode).")
+        enter_to_continue()
+    else:
+        engine = get_choice(
+            "engine",
+            lambda: choice(
+                "Will you use the Amber or NAMD MD engine?", choices=["Amber", "NAMD"]
+            ),
+        )
 
     clear()
     get_pcoord = re.sub(
@@ -540,35 +540,31 @@ def get_prelim_sim_files(engine: str):
         "(Note that you can press Ctrl-Z to pause the wizard and search for the file. Type `fg` to resume the wizard when done.)"
     )
 
-    if engine == "amber":
-        log("(Press ENTER alone to download Amber .nc, .rst, and .prmtop files for testing.)")
-        coor_file = get_choice("coor_file", lambda: file_path("Amber .nc file", ".nc", True))
-        if coor_file is None:
-            coor_file = download_testing_files("mol.nc")
-
-        restart_files = [
-            get_choice("restart_files", lambda: file_path("Amber .rst file", ".rst", True))
-        ]
-
-        if restart_files[0] is None:
-            restart_files[0] = download_testing_files("mol.rst")
-
-    elif engine == "namd":
-        coor_file = get_choice("coor_file", lambda: file_path("NAMD .dcd file", ".dcd"))
-
-        restart_files = [
-            get_choice("_ignore", lambda: file_path(f"NAMD {ext} file", ext))
-            for ext in [".xsc", ".coor", ".inpcrd"]
-        ]
-
-        # save_choice("restart_files", restart_files)
-
-    prmtop_file = get_choice(
-        "prmtop_file", lambda: file_path("Parameter (.prmtop) file", ".prmtop", True)
-    )
-
-    if prmtop_file is None:
+    if TEST_MODE:
+        log("Downloading Amber .nc, .rst, and .prmtop files for testing (test mode).")
+        coor_file = download_testing_files("mol.nc")
+        restart_files = [download_testing_files("mol.rst")]
         prmtop_file = download_testing_files("mol.prmtop")
+        enter_to_continue()
+    else:
+        if engine == "amber":
+            coor_file = get_choice("coor_file", lambda: file_path("Amber .nc file", ".nc"))
+            restart_files = [
+                get_choice("restart_files", lambda: file_path("Amber .rst file", ".rst"))
+            ]
+        elif engine == "namd":
+            coor_file = get_choice("coor_file", lambda: file_path("NAMD .dcd file", ".dcd"))
+
+            restart_files = [
+                get_choice("_ignore", lambda: file_path(f"NAMD {ext} file", ext))
+                for ext in [".xsc", ".coor", ".inpcrd"]
+            ]
+
+            # save_choice("restart_files", restart_files)
+
+        prmtop_file = get_choice(
+            "prmtop_file", lambda: file_path("Parameter (.prmtop) file", ".prmtop")
+        )
 
     run_cmd(["rm", "-f", f"{CUR_PATH}/reference/mol.*"])
     link_to_reference_mol(coor_file)
@@ -586,9 +582,14 @@ def get_sim_last_frame():
         "SubPEx needs the last frame of the preliminary trajectory as a `pdb` file. You can use programs such as VMD to save the last frame."
     )
 
-    last_frame_file = get_choice(
-        "last_frame_file", lambda: file_path("Last-frame .pdb file", ".pdb")
-    )
+    if TEST_MODE:
+        log("Downloading Amber .pdb file for testing (test mode).")
+        last_frame_file = download_testing_files("mol.pdb")
+        enter_to_continue()
+    else:
+        last_frame_file = get_choice(
+            "last_frame_file", lambda: file_path("Last-frame .pdb file", ".pdb")
+        )
 
     link_to_reference_mol(last_frame_file)
     clear()
@@ -653,15 +654,20 @@ def pick_pcoord(westcfg: str) -> Tuple[str, str]:
     log(f"STEP {get_step_num()}: Progress coordinate", "-")
     log("Which progress coordinate would you like to use?")
     log(
-        "composite: combination of pocket and back-bone RMSD (recommended)\nprmsd: RMSD of pocket-lining atoms\nbb: RMSD of all back-bone atoms\njd: Jaccard distance between pocket shapes"
+        "composite: combination of pocket and back-bone RMSD (recommended)\nprmsd: RMSD of pocket-lining atoms (not officially supported)\nbb: RMSD of all back-bone atoms (not officially supported)\njd: Jaccard distance between pocket shapes (not officially supported)"
     )
 
-    pcoord = get_choice(
-        "pcoord",
-        lambda: choice(
-            "Which progress coordinate?", choices=["composite", "prmsd", "bb", "jd"]
-        ),
-    )
+    if TEST_MODE:
+        log("Using composite progress coordinate (test mode).")
+        pcoord = "composite"
+        enter_to_continue()
+    else:
+        pcoord = get_choice(
+            "pcoord",
+            lambda: choice(
+                "Which progress coordinate?", choices=["composite", "prmsd", "bb", "jd", ""]
+            ),
+        )
 
     westcfg = re.sub(
         r"(\bpcoord:\s*\n\s*- ).*$", r"\1" + pcoord, westcfg, flags=re.MULTILINE
@@ -686,9 +692,14 @@ def specify_number_iterations(westcfg: str) -> str:
         "SubPEx periodically prunes and duplicates short simulations (walkers) to encourage sampling. How many times (iterations/generations) should SubPEx perform this pruning/duplication before stopping? (Recommendation: 30)"
     )
 
-    iterations = int(
-        get_choice("iterations", lambda: get_number("Number of iterations"))
-    )
+    if TEST_MODE:
+        log("Using 3 iterations (test mode).")
+        iterations = 3
+        enter_to_continue()
+    else:
+        iterations = int(
+            get_choice("iterations", lambda: get_number("Number of iterations"))
+        )
 
     westcfg = re.sub(
         r"\bmax_total_iterations: .*$",
@@ -720,10 +731,18 @@ def define_pocket(westcfg: str) -> str:
         f"Be sure to specify the location of the pocket relative to the reference PDB file: {CUR_PATH}/reference/mol.pdb"
     )
 
-    pocket_radius = get_choice("pocket_radius", lambda: get_number("Pocket radius"))
-    x_coor = get_choice("x_coor", lambda: get_number("X coordinate of pocket center"))
-    y_coor = get_choice("y_coor", lambda: get_number("Y coordinate of pocket center"))
-    z_coor = get_choice("z_coor", lambda: get_number("Z coordinate of pocket center"))
+    if TEST_MODE:
+        log("Using default pocket: radius = 6.5, center = [30.0, 41.5, 30.4] (test mode).")
+        pocket_radius = 6.5
+        x_coor = 30.0
+        y_coor = 41.5
+        z_coor = 30.4
+        enter_to_continue()
+    else:
+        pocket_radius = get_choice("pocket_radius", lambda: get_number("Pocket radius"))
+        x_coor = get_choice("x_coor", lambda: get_number("X coordinate of pocket center"))
+        y_coor = get_choice("y_coor", lambda: get_number("Y coordinate of pocket center"))
+        z_coor = get_choice("z_coor", lambda: get_number("Z coordinate of pocket center"))
 
     westcfg = re.sub(
         r"\bcenter: \[.*\]",
@@ -793,7 +812,10 @@ def check_pocket(westcfg: str) -> str:
         "(Note that the popular molecular visualization program VMD can load xyz files and select residues."
     )
 
-    if choice("Can you confirm the pocket is properly defined?") == "n":
+    if TEST_MODE:
+        log("Assuming pocket correct (test mode).")
+        enter_to_continue()
+    elif choice("Can you confirm the pocket is properly defined?") == "n":
         clear()
         forget_choice("pocket_radius")
         forget_choice("x_coor")
@@ -823,12 +845,17 @@ def update_envsh(envsh: str, engine: str) -> str:
         flags=re.MULTILINE,
     )
 
-    mode = get_choice(
-        "mode",
-        lambda: choice(
-            "How will you run SubPEx?", choices=["MPI", "GPU", "MULTITHREAD"]
-        ),
-    )
+    if TEST_MODE:
+        log("Using GPU (test mode).")
+        mode = "GPU"
+        enter_to_continue()
+    else:
+        mode = get_choice(
+            "mode",
+            lambda: choice(
+                "How will you run SubPEx (only GPU officially supported)?", choices=["GPU", "MPI", "MULTITHREAD"]
+            ),
+        )
 
     envsh = re.sub(
         r'^export MODE=".*?"',
@@ -867,16 +894,34 @@ def define_adaptive_bins(adaptivepy: str, pcoord: str) -> str:
             "What is the maximum value of the progress coordinate beyond which SubPEx should no longer enhance sampling (in Angstroms)? We recommend 5."
         )
 
-        maxcap = get_choice("maxcap", lambda: get_number("Maximum value"))
+        if TEST_MODE:
+            log("Using 5.0 (test mode).")
+            maxcap = 5.0
+            enter_to_continue()
+        else:
+            maxcap = get_choice("maxcap", lambda: get_number("Maximum value"))
+
     log("\nHow many bins would you like to use? We recommend 15.")
-    binsperdim = get_choice("binsperdim", lambda: int(get_number("Bin count")))
+
+    if TEST_MODE:
+        log("Using 15 bins (test mode).")
+        binsperdim = 15
+        enter_to_continue()
+    else:
+        binsperdim = get_choice("binsperdim", lambda: int(get_number("Bin count")))
+    
     log(
         "\nHow many walkers (mini simulations) would you like run per bin? Using more improves sampling at the cost of computer resources. We recommend 3."
     )
 
-    bintargetcount = get_choice(
-        "bintargetcount", lambda: int(get_number("Number of walkers per bin"))
-    )
+    if TEST_MODE:
+        log("Using 3 walkers per bin (test mode).")
+        bintargetcount = 3
+        enter_to_continue()
+    else:
+        bintargetcount = get_choice(
+            "bintargetcount", lambda: int(get_number("Number of walkers per bin"))
+        )
 
     adaptivepy = re.sub(
         r"^maxcap\s*=\s*\[.*\]",
@@ -914,13 +959,25 @@ def update_run_time_and_job_name(westcfg: str) -> str:
     """
 
     log(f"STEP {get_step_num()}: Update job run time and name", "-")
+
     log(
         "How long should your SubPEx job run? (Format your response like HH:MM:SS, e.g., 72:00:00 for 72 hours)"
     )
-    run_time = get_choice("run_time", lambda: get_time("Run time"))
+    if TEST_MODE:
+        log("Using 72:00:00 (test mode).")
+        run_time = "72:00:00"
+        enter_to_continue()
+    else:
+        run_time = get_choice("run_time", lambda: get_time("Run time"))
 
     log('\nWhat is the name of your SubPEx job? (e.g., "my_job")')
-    job_name = get_choice("job_name", lambda: input("Job name: ").replace('"', ""))
+
+    if TEST_MODE:
+        log('Using "subpex_job" (test mode).')
+        job_name = "subpex_job"
+        enter_to_continue()
+    else:
+        job_name = get_choice("job_name", lambda: input("Job name: ").replace('"', ""))
 
     westcfg = re.sub(
         r"\bmax_run_wallclock:\s*\d{1,2}:\d{1,2}:\d{1,2}\b",
@@ -1013,7 +1070,6 @@ def finished():
         '2. Some needed changes still required to the "aux_scripts/run.slurm.*.sh" files. If using SLURM, edit these files per your environment.'
     )
 
-
 # Load files
 with openfile("./west.cfg") as f:
     westcfg = f.read()
@@ -1030,11 +1086,23 @@ with openfile("./westpa_scripts/runseg.sh") as f:
 with openfile("./env.sh") as f:
     envsh = f.read()
 
+
 clear()
 log(
     "This wizard is designed to help users setup and run SubPEx. See the README.md for more details."
 )
 log("You may exit this wizard at any time by pressing Ctrl+C.")
+
+# Does --test appear in the args? If not, let user know that's an option.
+if "--test" not in sys.argv:
+    log(
+        "Developers can run this wizard in test mode to verify codebase changes by passing the --test flag."
+    )
+else:
+    log("Running in test mode.")
+    TEST_MODE = True
+
+enter_to_continue()
 
 if check_if_restart_sim():
     # Exit
