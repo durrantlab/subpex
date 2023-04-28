@@ -74,13 +74,9 @@ echo "Using conda: $(which conda)"
 source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
 conda activate westpa
 
-# TODO: Where is westpa.sh?
-# TODO: It was renamed run.slurm.sh. Why would you source it here? Good to ask Erich.
-# TODO: This is ancient code. Could probably reword to avoid source westpa.sh.
-
 if [ -z "$WEST_ROOT" ]; then
   echo "The environment variable WEST_ROOT is not set."
-  echo "Try running 'source westpa.sh' from the WESTPA installation directory"
+  # echo "Try running 'source westpa.sh' from the WESTPA installation directory"
   echo "This is going to cause problems unless you fix it!!!"
 fi
 
