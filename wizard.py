@@ -300,7 +300,8 @@ def openfile(filename: str) -> TextIOWrapper:
 def enter_to_continue():
     """Asks user to press ENTER to continue."""
 
-    input("Press ENTER to continue...")
+    input("Press ENTER to continue... ")
+    log("")
 
 
 def check_if_restart_sim() -> bool:
@@ -1054,7 +1055,7 @@ def finished():
         '1. No changes to the list of auxiliary data to calculate ("west.cfg"). Unless you have modified "west.cfg", all such data will be calculated.'
     )
     log(
-        '2. No changes to the "subpex -> resolution" field ("west.cfg"). If you plan to use the "jd" progress coordinate, you may wish to modify this field.'
+        '2. No changes to the "subpex -> resolution" field ("west.cfg"). If you plan to use the "jd" progress coordinate (not officially supported), you may wish to modify this field.'
     )
     log(
         '3. No changes to some of the minor parameters that control adaptive binning (e.g., "pcoordlength"; see "./adaptive_binning/adaptive.py").'
@@ -1067,8 +1068,10 @@ def finished():
         '1. Some needed changes still required to the "env.sh" file. Edit "env.sh" per your specific computing environment.'
     )
     log(
-        '2. Some needed changes still required to the "aux_scripts/run.slurm.*.sh" files. If using SLURM, edit these files per your environment.'
+        '2. Some needed changes still required to the "aux_scripts/run.slurm.*.sh" files. If using SLURM (not officially supported), edit these files per your environment.'
     )
+    log("")
+    log("NOTE: To run your SubPEx job, use the ./run.sh script.")
 
 # Load files
 with openfile("./west.cfg") as f:
