@@ -9,7 +9,7 @@ import subprocess
 import time
 import re
 import glob
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 try:
     import yaml
@@ -97,19 +97,25 @@ def clear():
     os.system("clear")
 
 
-def file_path(prompt: str, ext: str) -> str:
+def file_path(prompt: str, ext: str, allow_blank: bool = False) -> Union[str, None]:
     """Prompts user for file path, with optional extension.
 
     Args:
         prompt (str): Prompt to display.
         ext (str): File extension (for checking).
+        allow_blank (bool, optional): If True, allows blank input. Defaults to
+            False.
 
     Returns:
-        str: User's choice, path to file.
+        Union[str, None]: User's choice. None if allow_blank is True and user
+            enters blank.
     """
 
     while True:
         answer = input(f"{prompt}: ").strip()
+
+        if answer == "" and allow_blank:
+            return None
         pth = os.path.abspath(answer)
         if not os.path.exists(pth):
             log("\nFile does not exist: " + pth + ". Please try again.")
@@ -460,12 +466,18 @@ def amber_or_namd(get_pcoord: str, runseg: str) -> Tuple[str, str, str]:
 
     log(f"STEP {get_step_num()}: MD engine", "-")
 
+    log("Press ENTER to use Amber (default for testing).")
+
     engine = get_choice(
         "engine",
         lambda: choice(
-            "Will you use the Amber or NAMD MD engine?", choices=["Amber", "NAMD"]
+            "Will you use the Amber or NAMD MD engine?", choices=["Amber", "NAMD", ""]
         ),
     )
+
+    if engine == "":
+        # Default to Amber
+        engine = "amber"
 
     clear()
     get_pcoord = re.sub(
@@ -485,6 +497,32 @@ def amber_or_namd(get_pcoord: str, runseg: str) -> Tuple[str, str, str]:
     return engine, get_pcoord, runseg
 
 
+def download_testing_files(filename: str) -> str:
+    """Downloads testing files from durrantlab.
+    
+    Args:
+        filename (str): Name of file to download.
+        
+    Returns:
+        str: Path to downloaded file.
+    """
+
+    url = f"https://durrantlab.pitt.edu/apps/subpex/{filename}"
+
+    # Make the downloads directory if it doesn't exist
+    if not os.path.exists("downloads"):
+        os.mkdir("downloads")
+
+    # Download the file using a library from the python standard library
+    import urllib.request
+
+    log(f"Downloading {filename} from {url}...")
+
+    urllib.request.urlretrieve(url, f"downloads/{filename}")
+
+    return os.path.abspath(f"downloads/{filename}")
+
+
 def get_prelim_sim_files(engine: str):
     """Asks user for preliminary (equilibrated) simulation files.
 
@@ -502,10 +540,17 @@ def get_prelim_sim_files(engine: str):
     )
 
     if engine == "amber":
-        coor_file = get_choice("coor_file", lambda: file_path("Amber .nc file", ".nc"))
+        log("(Press ENTER alone to download Amber .nc, .rst, and .prmtop files for testing.)")
+        coor_file = get_choice("coor_file", lambda: file_path("Amber .nc file", ".nc", True))
+        if coor_file is None:
+            coor_file = download_testing_files("mol.nc")
+
         restart_files = [
-            get_choice("restart_files", lambda: file_path("Amber .rst file", ".rst"))
+            get_choice("restart_files", lambda: file_path("Amber .rst file", ".rst", True))
         ]
+
+        if restart_files[0] is None:
+            restart_files[0] = download_testing_files("mol.rst")
 
     elif engine == "namd":
         coor_file = get_choice("coor_file", lambda: file_path("NAMD .dcd file", ".dcd"))
@@ -515,10 +560,14 @@ def get_prelim_sim_files(engine: str):
             for ext in [".xsc", ".coor", ".inpcrd"]
         ]
 
-        save_choice("restart_files", restart_files)
+        # save_choice("restart_files", restart_files)
+
     prmtop_file = get_choice(
-        "prmtop_file", lambda: file_path("Parameter (.prmtop) file", ".prmtop")
+        "prmtop_file", lambda: file_path("Parameter (.prmtop) file", ".prmtop", True)
     )
+
+    if prmtop_file is None:
+        prmtop_file = download_testing_files("mol.prmtop")
 
     run_cmd(["rm", "-f", f"{CUR_PATH}/reference/mol.*"])
     link_to_reference_mol(coor_file)
