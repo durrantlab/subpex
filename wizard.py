@@ -18,6 +18,11 @@ except Exception:
     print("conda env create -f environment.yaml\nconda activate westpa\n")
     exit(1)
 
+# Check to make sure running python3
+if sys.version_info[0] < 3:
+    print("\nPlease run this script with python3.\n")
+    exit(1)
+
 if os.name == "nt":
     print("\nWizard script supported only on Linux. Sorry!\n")
     exit(1)
