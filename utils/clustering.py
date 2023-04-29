@@ -1,5 +1,5 @@
 """Summary
-This script will generate files for clustering or cluster itself the output of a SubPEx run
+This script will generate files to cluster a SubPEx run
 """
 
 from typing import List
@@ -396,20 +396,20 @@ def get_clustering_bins_cpptraj(west: dict, settings: dict, directory: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Script that performs clustering or prepares files to run clustering using cpptraj. It can cluster per generation or divided the space in bins according to what the user wants."
+        description="Prepares files to run clustering on a SubPEx run via cpptraj. See 'clustering' section of west.cfg to configure further (e.g., cluster per generation or dividing the space in bins)."
     )
     parser.add_argument(
-        "west", type=str, help="Define the west.h5 file. It is required"
+        "west", type=str, help="Path to the west.h5 file. It is required"
     )
     parser.add_argument(
         "settings",
         type=str,
-        help="Define the yaml file with the settings. It is required",
+        help="Path to the yaml file with the settings (e.g., west.cfg). It is required",
     )
     parser.add_argument(
         "dir",
         type=str,
-        help="Define the directory were results will be stored. It is required",
+        help="Path to the directory where files will be saved (e.g., ./cluster/). It is required",
     )
     args = parser.parse_args()
 
@@ -435,3 +435,5 @@ if __name__ == "__main__":
 
     elif settings["clustering"]["clustering_engine"] == "MDAnalysis":
         print("Not yet implemented")
+
+    print("\nDone! See files in " + directory)

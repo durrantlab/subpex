@@ -329,7 +329,7 @@ def check_if_restart_sim() -> bool:
                 "./utils/restart_subpex.sh -n $(ls traj_segs/ | sort -n | tail -n 1)"
             )
             log(
-                "\nYour SubPEx job is now ready for a restart run, likely using one of the run*.sh files."
+                "\nYour SubPEx job is now ready for a restart run, using ./run.sh."
             )
             # clear()
             return True
@@ -1075,7 +1075,6 @@ def finished():
     log(
         '2. Some needed changes still required to the "aux_scripts/run.slurm.*.sh" files. If using SLURM (not officially supported), edit these files per your environment.'
     )
-    log("")
     log("NOTE: To run your SubPEx job, use the ./run.sh script.")
 
 # Load files
