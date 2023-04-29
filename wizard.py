@@ -41,7 +41,7 @@ STEP_NUM = 1
 TEST_MODE = False
 
 
-def get_step_num() -> str:
+def get_step_num() -> str:  # Requires Python3
     """Returns current step number.
 
     Returns:
