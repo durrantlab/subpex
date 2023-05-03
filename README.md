@@ -1,4 +1,4 @@
-# SubPEx
+# SubPEx 1.0
 
 ## What is it?
 
