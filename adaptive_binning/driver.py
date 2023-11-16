@@ -7,7 +7,7 @@ import random
 
 
 import westpa
-from west import Segment
+from westpa import Segment
 
 class ConsistencyError(RuntimeError):
     pass
@@ -570,7 +570,7 @@ class WEDriver:
         '''
 
         # This has to be down here to avoid an import race
-        from west.data_manager import weight_dtype
+        from westpa.core.data_manager import weight_dtype
         EPS = numpy.finfo(weight_dtype).eps                
                 
         system = system or westpa.rc.get_system_driver()

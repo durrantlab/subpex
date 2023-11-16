@@ -1,10 +1,10 @@
 from __future__ import print_function, division
 import numpy
-from west.propagators import WESTPropagator
-from west.systems import WESTSystem
-from westpa.binning import RectilinearBinMapper
-from westpa.binning import FuncBinMapper
-from westpa.binning import RecursiveBinMapper
+from westpa.core.propagators import WESTPropagator
+from westpa.core.systems import WESTSystem
+from westpa.core.binning import RectilinearBinMapper
+from westpa.core.binning import FuncBinMapper
+from westpa.core.binning import RecursiveBinMapper
 
 import logging
 log = logging.getLogger('westpa.rc')

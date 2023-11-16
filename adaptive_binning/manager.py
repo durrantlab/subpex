@@ -5,13 +5,13 @@ import logging
 log = logging.getLogger(__name__)
 
 import westpa
-import west
-from west.states import InitialState
-from westpa import extloader
-from west import Segment
+import westpa
+from westpa.core.states import InitialState
+from westpa.core import extloader
+from westpa import Segment
 
-from west import wm_ops
-from west.data_manager import weight_dtype
+from westpa.core import wm_ops
+from westpa.core.data_manager import weight_dtype
 
 from pickle import PickleError
 
@@ -456,7 +456,7 @@ class WESimManager:
         # Dispatch propagation tasks using work manager                
         for segment_block in grouper(self.propagator_block_size, segments):
             segment_block = [_f for _f in segment_block if _f]
-            pbstates, pistates = west.states.pare_basis_initial_states(self.current_iter_bstates, 
+            pbstates, pistates = westpa.core.states.pare_basis_initial_states(self.current_iter_bstates, 
                                                                        list(self.current_iter_istates.values()), segment_block)
             future = self.work_manager.submit(wm_ops.propagate, args=(pbstates, pistates, segment_block))
             futures.add(future)
