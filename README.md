@@ -157,20 +157,20 @@ ___Define the pocket to sample___
       determine the radius from that center required to encompass the pocket of
       interest.
 2.  Return to the `west.cfg` file and edit the following parameters:
-   -   `center`: the pocket center
-   -   `radius`: the pocket radius
-   -   `resolution`: the distance between adjacent pocket-filling grid points
+-   `center`: the pocket center
+-   `radius`: the pocket radius
+-   `resolution`: the distance between adjacent pocket-filling grid points
      (especially important if using the `jd` progress coordinate)
 3.  Run `python westpa_scripts/get_reference_fop.py west.cfg`. This script will
    generate the files specified by the `selection_file` and `reference_fop`
    parameters in the `west.cfg` file.
 4.  Visually inspect the pocket field of points (fop) and/or the selection string
    (MDAnalysis selection syntax).
-   -   Ensure that the points in the fop (`reference_fop`) file entirely fill the
+-   Ensure that the points in the fop (`reference_fop`) file entirely fill the
      pocket of interest.
-   -   Ensure that the residues (`selection_file`) truly line the pocket of
+-   Ensure that the residues (`selection_file`) truly line the pocket of
      interest.
-   -   Note that the popular molecular visualization program VMD can load `xyz`
+-   Note that the popular molecular visualization program VMD can load `xyz`
      files and select residues.
 5.  After visual inspection, adjust the `west.cfg` file (`center`, `radius`, and
      `resolution` parameters) and re-run the
@@ -198,20 +198,20 @@ ___Setup the progress coordinate calculations___
 ___Setup the environment___
 
 1.  Revise the `env.sh` file.
-   -   The file itself contains further instructions as comments.
-   -   Among other things, be sure to set the environmental variables required to
+-   The file itself contains further instructions as comments.
+-   Among other things, be sure to set the environmental variables required to
      run the NAMD or AMBER executables, as well as the appropriate WORKMANAGER.
-   -   Setting the appropriate variables may be complicated if using a
+-   Setting the appropriate variables may be complicated if using a
      supercomputing center. You may need to consult with an IT administrator.
 2.  Modify the appropriate MD configuration file in `./reference/` directory
    (`./reference/amber.prod_npt.in` if using AMBER, `./reference/namd.md.conf`
    if using NAMD).
-   -   Make sure the number of frames saved per simulation equals `pcoordlength`
+-   Make sure the number of frames saved per simulation equals `pcoordlength`
      minus one (`pcoordlength` is defined in the `adaptive_binning/adaptive.py`
      file). For example:
-     -   If using AMBER, modify `./reference/amber.prod_npt.in` to make sure
+    -   If using AMBER, modify `./reference/amber.prod_npt.in` to make sure
        `nstlim` / `ntwx` = `pcoordlength` - 1.
-     -   If using NAMD, modify `./reference/namd.md.conf` to make sure `run` /
+    -   If using NAMD, modify `./reference/namd.md.conf` to make sure `run` /
        `dcdfreq` = `pcoordlength` - 1.
 3.  Activate the WESTPA conda environment and source the init.sh file.
 4.  Execute the `. init.sh` file. Note that this will delete any data from
@@ -224,7 +224,7 @@ conda activate westpa
 ___Running SubPEx___
 
 1.  To run SubPEx, execute the `./run.sh` file from the command line.
-   -   You can also run SubPEx on a supercomputing cluster. See the
+-   You can also run SubPEx on a supercomputing cluster. See the
      `./aux_scripts/run.slurm.sh` for an example submission script for the slurm
      job scheduler. Note that you will likely need to modify the submission
      script for your specific cluster. Please check with your IT administrator
