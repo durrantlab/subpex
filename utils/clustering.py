@@ -3,14 +3,16 @@ This script will generate files to cluster a SubPEx run
 """
 
 from typing import List
-import MDAnalysis as mda
-import glob
+
 import argparse
 import contextlib
-import h5py
+import glob
+import logging
 import os
 import sys
-import logging
+
+import h5py
+import MDAnalysis as mda
 import numpy as np
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
@@ -43,11 +45,11 @@ def check_clustering_parameters(settings: dict) -> dict:
 
 def get_bins_dictionary(west: dict, settings: dict) -> dict:
     """Creates a dictionary with the bins and the walkers in each bin.
-    
+
     Args:
         west (dict): The west.h5 file as a dictionary.
         settings (dict): The settings dictionary.
-        
+
     Returns:
         dict: A dictionary with the bins and the walkers in each bin.
     """
@@ -315,27 +317,27 @@ def get_clustering_command_cpptraj(
     method: str, num_clusters: int, selection_string: str
 ) -> str:
     """Creates the clustering command for cpptraj.
-    
+
     Args:
         method (str): the clustering method to use. Currently, only hierarchical is implemented.
         num_clusters (int): The number of clusters to use.
         selection_string (str): The selection string for cpptraj.
-    
+
     Returns:
         str: The clustering command for cpptraj.
     """
 
     if method == "hierarchical":
-        text = """cluster C0 \ 
-    hieragglo clusters {num_clust} averagelinkage epsilonplot epsilonplot.dat \ 
-    dme {selection} \ 
-    out cpptraj_cluster.dat \ 
-    savepairdist pairdist pairdist.cpp \ 
-    sil Sil \ 
-    summary summary.dat \ 
-    info info.dat \ 
-    cpopvtime cpopvtime.agr normframe \ 
-    repout rep repfmt pdb singlerepout singlerep.nc singlerepfmt netcdf \ 
+        text = """cluster C0 \
+    hieragglo clusters {num_clust} averagelinkage epsilonplot epsilonplot.dat \
+    dme {selection} \
+    out cpptraj_cluster.dat \
+    savepairdist pairdist pairdist.cpp \
+    sil Sil \
+    summary summary.dat \
+    info info.dat \
+    cpopvtime cpopvtime.agr normframe \
+    repout rep repfmt pdb singlerepout singlerep.nc singlerepfmt netcdf \
     avgout Avg avgfmt restart""".format(
             num_clust=num_clusters, selection=selection_string
         )

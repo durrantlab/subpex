@@ -38,7 +38,7 @@ cd $WEST_SIM_ROOT
 mkdir -pv $WEST_CURRENT_SEG_DATA_REF
 cd $WEST_CURRENT_SEG_DATA_REF
 
-# Make symbolic links to the topology file and parameter files. These are not 
+# Make symbolic links to the topology file and parameter files. These are not
 # unique to each segment.
 
 # Either continue an existing tractory, or start a new trajectory. Here, both
@@ -53,7 +53,7 @@ cd $WEST_CURRENT_SEG_DATA_REF
 # generated seed.
 
 # This trajectory segment will start off where its parent segment left off.
-# The "ln" command makes symbolic links to the parent segment's edr, gro, and 
+# The "ln" command makes symbolic links to the parent segment's edr, gro, and
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
 ln -sv $WEST_PARENT_DATA_REF/pcoord.txt ./parent_pcoord.txt
@@ -77,7 +77,7 @@ elif [ "$ENGINE" == "AMBER" ] ; then
 fi
 
 # This trajectory segment will start off where its parent segment left off.
-# The "ln" command makes symbolic links to the parent segment's edr, gro, and 
+# The "ln" command makes symbolic links to the parent segment's edr, gro, and
 # and trr files. This is preferable to copying the files, since it doesn't
 # require writing all the data again.
 
@@ -113,9 +113,9 @@ fi
 ########################## Calculate and return progress coordiante ###########################
 ######################################### SubPEx ##############################################
 
-# Calculate the progress coordinate, which is the jaccard distance between the 
-# bstate and this segment. 
-# The script outputs the distance saving the values of the parent pcoord and the 
+# Calculate the progress coordinate, which is the jaccard distance between the
+# bstate and this segment.
+# The script outputs the distance saving the values of the parent pcoord and the
 # child pcoord to a file called pcoord.txt.
 
 # RUN PCOORD.PY (try three times because sometimes fails unexpectedly)
@@ -144,4 +144,3 @@ else
   #rm timer.txt seg.coor.BAK seg.dcd.BAK seg.vel.BAK seg.xsc.BAK seg.xst.BAK
   #rm *restart*
 fi
-

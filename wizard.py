@@ -1,15 +1,16 @@
 # The programs helps set up the SubPEx run. Runs only on linux.
 
-from io import TextIOWrapper
-import textwrap
-import os
-import json
-import sys
-import subprocess
-import time
-import re
-import glob
 from typing import List, Tuple, Union
+
+import glob
+import json
+import os
+import re
+import subprocess
+import sys
+import textwrap
+import time
+from io import TextIOWrapper
 
 try:
     import yaml
@@ -93,7 +94,10 @@ def choice(prompt: str, choices: List[str] = None) -> str:
                 print("Please answer " + " or ".join(choices_to_show))
             else:
                 print(
-                    "Please answer " + ", ".join(choices_to_show[:-1]) + ", or " + choices_to_show[-1]
+                    "Please answer "
+                    + ", ".join(choices_to_show[:-1])
+                    + ", or "
+                    + choices_to_show[-1]
                 )
             continue
         return answer
@@ -302,6 +306,7 @@ def openfile(filename: str) -> TextIOWrapper:
         os.system(f"cp {filename} {filename}.orig")
     return open(f"{filename}.orig", "r")
 
+
 def enter_to_continue():
     """Asks user to press ENTER to continue."""
 
@@ -328,9 +333,7 @@ def check_if_restart_sim() -> bool:
             run_cmd(
                 "./utils/restart_subpex.sh -n $(ls traj_segs/ | sort -n | tail -n 1)"
             )
-            log(
-                "\nYour SubPEx job is now ready for a restart run, using ./run.sh."
-            )
+            log("\nYour SubPEx job is now ready for a restart run, using ./run.sh.")
             # clear()
             return True
 
@@ -506,10 +509,10 @@ def amber_or_namd(get_pcoord: str, runseg: str) -> Tuple[str, str, str]:
 
 def download_testing_files(filename: str) -> str:
     """Downloads testing files from durrantlab.
-    
+
     Args:
         filename (str): Name of file to download.
-        
+
     Returns:
         str: Path to downloaded file.
     """
@@ -554,12 +557,18 @@ def get_prelim_sim_files(engine: str):
         enter_to_continue()
     else:
         if engine == "amber":
-            coor_file = get_choice("coor_file", lambda: file_path("Amber .nc file", ".nc"))
+            coor_file = get_choice(
+                "coor_file", lambda: file_path("Amber .nc file", ".nc")
+            )
             restart_files = [
-                get_choice("restart_files", lambda: file_path("Amber .rst file", ".rst"))
+                get_choice(
+                    "restart_files", lambda: file_path("Amber .rst file", ".rst")
+                )
             ]
         elif engine == "namd":
-            coor_file = get_choice("coor_file", lambda: file_path("NAMD .dcd file", ".dcd"))
+            coor_file = get_choice(
+                "coor_file", lambda: file_path("NAMD .dcd file", ".dcd")
+            )
 
             restart_files = [
                 get_choice("_ignore", lambda: file_path(f"NAMD {ext} file", ext))
@@ -671,7 +680,8 @@ def pick_pcoord(westcfg: str) -> Tuple[str, str]:
         pcoord = get_choice(
             "pcoord",
             lambda: choice(
-                "Which progress coordinate?", choices=["composite", "prmsd", "bb", "jd", ""]
+                "Which progress coordinate?",
+                choices=["composite", "prmsd", "bb", "jd", ""],
             ),
         )
 
@@ -738,7 +748,9 @@ def define_pocket(westcfg: str) -> str:
     )
 
     if TEST_MODE:
-        log("Using default pocket: radius = 6.5, center = [30.0, 41.5, 30.4] (test mode).")
+        log(
+            "Using default pocket: radius = 6.5, center = [30.0, 41.5, 30.4] (test mode)."
+        )
         pocket_radius = 6.5
         x_coor = 30.0
         y_coor = 41.5
@@ -746,9 +758,15 @@ def define_pocket(westcfg: str) -> str:
         enter_to_continue()
     else:
         pocket_radius = get_choice("pocket_radius", lambda: get_number("Pocket radius"))
-        x_coor = get_choice("x_coor", lambda: get_number("X coordinate of pocket center"))
-        y_coor = get_choice("y_coor", lambda: get_number("Y coordinate of pocket center"))
-        z_coor = get_choice("z_coor", lambda: get_number("Z coordinate of pocket center"))
+        x_coor = get_choice(
+            "x_coor", lambda: get_number("X coordinate of pocket center")
+        )
+        y_coor = get_choice(
+            "y_coor", lambda: get_number("Y coordinate of pocket center")
+        )
+        z_coor = get_choice(
+            "z_coor", lambda: get_number("Z coordinate of pocket center")
+        )
 
     westcfg = re.sub(
         r"\bcenter: \[.*\]",
@@ -859,7 +877,8 @@ def update_envsh(envsh: str, engine: str) -> str:
         mode = get_choice(
             "mode",
             lambda: choice(
-                "How will you run SubPEx (only GPU officially supported)?", choices=["GPU", "MPI", "MULTITHREAD"]
+                "How will you run SubPEx (only GPU officially supported)?",
+                choices=["GPU", "MPI", "MULTITHREAD"],
             ),
         )
 
@@ -915,7 +934,7 @@ def define_adaptive_bins(adaptivepy: str, pcoord: str) -> str:
         enter_to_continue()
     else:
         binsperdim = get_choice("binsperdim", lambda: int(get_number("Bin count")))
-    
+
     log(
         "\nHow many walkers (mini simulations) would you like run per bin? Using more improves sampling at the cost of computer resources. We recommend 3."
     )
@@ -1076,6 +1095,7 @@ def finished():
         '2. Some needed changes still required to the "aux_scripts/run.slurm.*.sh" files. If using SLURM (not officially supported), edit these files per your environment.'
     )
     log("NOTE: To run your SubPEx job, use the ./run.sh script.")
+
 
 # Load files
 with openfile("./west.cfg") as f:

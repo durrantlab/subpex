@@ -1,12 +1,14 @@
-import argparse
 from typing import List, Tuple
+
+import argparse
+import logging
+import sys
+
 import MDAnalysis
 import numpy as np
 import scipy as sp
 from MDAnalysis.analysis import align
 from sklearn.cluster import DBSCAN
-import sys
-import logging
 
 
 def check_input_settings_file(filename: str) -> dict:
@@ -14,7 +16,7 @@ def check_input_settings_file(filename: str) -> dict:
     parameters are available. Otherwise, sets defaults if possible.
 
     Args:
-        filename (str): filename of the settings yaml file (e.g., west.cfg). 
+        filename (str): filename of the settings yaml file (e.g., west.cfg).
 
     Raises:
         IOError: raises error if files do not exist or can't be read.
@@ -23,8 +25,9 @@ def check_input_settings_file(filename: str) -> dict:
         settings (dict): settings for running SubPEx and some of the analysis tools.
     """
 
-    import sys
     import glob
+    import sys
+
     import yaml
 
     try:
@@ -162,8 +165,8 @@ def check_file_exists(settings: dict, keyword: str):
         settings (dict): dictionary with settings for subpex
         keyword (str): keyword of the setting to check the file exists.
     """
-    import sys
     import glob
+    import sys
 
     if keyword not in settings or len(glob.glob(settings[keyword])) != 1:
         logging.critical(
@@ -265,7 +268,7 @@ def points_to_xyz_file(
 ):
     """Takes the coordinates and the resolution, writes write an xyz file that
     users can load into visualization software such as VMD.
-    
+
     Args:
         filename (str): name for the xyz file to be created.
         coordinates (list of lists): contains XYZ coordinates for each atom.
@@ -275,7 +278,7 @@ def points_to_xyz_file(
 
     # calculate the volume using the resolution
     # TODO: Erich - modify to be able to do multiframe xyz
-    volume = len(coordinates) * (resolution ** 3)
+    volume = len(coordinates) * (resolution**3)
 
     # Writing the xyz file.
     with open(filename, "w") as f:
@@ -526,7 +529,7 @@ def point_in_hull(point: List[float], hull, tolerance: float = 1e-12) -> bool:
             to 1e-12.
 
     Returns:
-        (bool): returns True if point in hull, False otherwise 
+        (bool): returns True if point in hull, False otherwise
     """
 
     return all((np.dot(eq[:-1], point) + eq[-1] <= tolerance) for eq in hull.equations)
@@ -545,7 +548,7 @@ def remove_convex_fop(
 
     Returns:
         points_in_hull (list of lists): FOP trimmed of points outside the
-            convex hull defined by the protein. 
+            convex hull defined by the protein.
     """
 
     points_in_hull = []

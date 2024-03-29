@@ -1,10 +1,13 @@
 from typing import List
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
+
 import argparse
 import os
-from .westpa_scripts.jdistance import check_input_settings_file, check_file_exists
+
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+
+from .westpa_scripts.jdistance import check_file_exists, check_input_settings_file
 
 
 def rolling_average(data: List[float], window: int) -> List[float]:
@@ -140,7 +143,7 @@ def plot(jd: List[float], rmsd: List[float], title: str, outdir: str, filename: 
 
 def get_pcoords_for_plotting(westfile: str, settings: dict) -> dict:
     """Gets the pcoord and auxdata from the west.h5 file.
-    
+
     Args:
         westfile (str): path to the west.h5 file.
         settings (dict): dictionary containing the settings for the analysis.
@@ -190,7 +193,7 @@ def plot_stuff(
         min_md_jd (float): minimum Jaccard distance of the MD simulations.
         max_md_jd (float): maximum Jaccard distance of the MD simulations.
         average_jd (float): average Jaccard distance of the MD simulations.
-        jd_max (list): list containing the maximum Jaccard distance.    
+        jd_max (list): list containing the maximum Jaccard distance.
         jd_min (list): list containing the minimum Jaccard distance.
         jd_sd (list): list containing the standard deviation of the Jaccard distance.
     """
@@ -359,4 +362,3 @@ if __name__ == "__main__":
     # plot num of walkers vs generation
     if settings["subpex"]["plotting"]["num_walkers"]:
         plot_num_walkers(west, args.outdir)
-

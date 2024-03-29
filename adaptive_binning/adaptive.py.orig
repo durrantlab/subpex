@@ -20,12 +20,12 @@ binsperdim = [15]            # You will have prod(binsperdim) + numberofdim *
                              #     values of numberofdim (1), splitIsolated (1),
                              #     and activetarget (0), then the total number
                              #     of bins equals the value of binsperdim[0].
-mincap = [-inf]              # For each dimension enter the minimum number at 
+mincap = [-inf]              # For each dimension enter the minimum number at
                              #     which binning can occur, if you do not wish
                              #     to have a cap use -inf
 maxcap = [5]                 # For each dimension enter the maximum number at
                              #     which binning can occur, if you do not wish
-                             #     to have a cap use inf. If using the 
+                             #     to have a cap use inf. If using the
                              #     Jaccard-distance progress coordinate, this
                              #     max should be [1.0]. If using one of the
                              #     RMSD metrics, it is the maximum allowed RMSD
@@ -57,7 +57,7 @@ splitIsolated = 1            # Choose 0 to disable the use of bottleneck
 #########
 
 def function_map(coords, mask, output):
-    splittingrelevant=True #This is to make sure splitting is relevant (not relevant for binner after recycling for example) 
+    splittingrelevant=True #This is to make sure splitting is relevant (not relevant for binner after recycling for example)
     originalcoords=copy(coords) #It is a good idea to keep an original array
     maxlist=[] #Preparing array to contain maximum pcoords in each dimension
     minlist=[] #Preparing array to contain minimum pcoords in each dimension
@@ -65,14 +65,14 @@ def function_map(coords, mask, output):
     flipdifflist=[] #Preparing array to contain "bottleneck" values in negative direction for each dimension
 
     for n in range(numberofdim): #going through each dimension
-        try: 
+        try:
             # because binning should be handled different for recycled
             # trajectories we load in a binbounds.txt created after an iteration
             # completes
-            extremabounds=loadtxt('binbounds.txt') 
+            extremabounds=loadtxt('binbounds.txt')
             currentmax=amax(extremabounds[:,n])
             currentmin=amin(extremabounds[:,n])
-        except: 
+        except:
             # during initialization this may not exitst so use current coords
             # for extrema
             currentmax=amax(coords[:,n])
@@ -80,7 +80,7 @@ def function_map(coords, mask, output):
 
         if maxcap[n]<currentmax: #Checking the maxcap in each dimension
                     currentmax=maxcap[n]
-        
+
         if mincap[n]>currentmin: #Checking the mincap in each dimension
                     currentmin=mincap[n]
         maxlist.append(currentmax) #Need arrays for our extrema since there may be multiple depending on number of dimension
@@ -95,8 +95,8 @@ def function_map(coords, mask, output):
 
             fliptemp=flipud(temp) #Recived sorted array in opposite direction
             difflist.append(0) #Provide starting minimum of 0 (in very unlikely case of pcoord 0 and no tagged this could cause arbitrary tag (very minor impact), work to fix)
-            flipdifflist.append(0)  
-            maxdiff=0 
+            flipdifflist.append(0)
+            maxdiff=0
             flipmaxdiff=0
 
             for i in range(1,len(temp)-1): #calculating of the "bottleneck" values, we need to sum all of the probability past a potential "bottleneck"
@@ -122,18 +122,18 @@ def function_map(coords, mask, output):
             splittingrelevant=False  #if an error is thrown tagging of bottleneck walkers is not needed
 
     for i in range(len(output)): # this section deals with proper assignment of walkers to bins
-        binnumber=2*numberofdim # essentially the bin number 
+        binnumber=2*numberofdim # essentially the bin number
         for n in range(numberofdim):
             if (activetarget==1) and targetstate[n] is not None:
                 if (originalcoords[i,n]*targetstatedirection[n]) >= (targetstate[n]*targetstatedirection[n]): #if the target state has been reached assign to following bin
                     binnumber=prod(binsperdim)+numberofdim*2
-            if (binnumber==prod(binsperdim)+numberofdim*2): #this ends the loop if binned in target state, n= numberofdim should not go in above line because of elif statements 
+            if (binnumber==prod(binsperdim)+numberofdim*2): #this ends the loop if binned in target state, n= numberofdim should not go in above line because of elif statements
                 n=numberofdim
-           
+
             elif coords[i,n]>=maxlist[n] or originalcoords[i,n]>=maxcap[n]: #assign maxima or those over max cap to own bin
                 binnumber= 2*n
                 n=numberofdim
-            
+
             elif coords[i,n]<=minlist[n] or originalcoords[i,n]<=mincap[n]: #assign minima or those under minima to own bin
                 binnumber =2*n+1
                 n=numberofdim
@@ -159,7 +159,7 @@ class System(WESTSystem): #class initialization
     def initialize(self):
         self.pcoord_ndim = numberofdim
         self.pcoord_len = pcoordlength
-        self.pcoord_dtype = numpy.float32 
+        self.pcoord_dtype = numpy.float32
         self.bin_mapper = FuncBinMapper(function_map, prod(binsperdim)+numberofdim*(2+2*splitIsolated)+activetarget) #Changed binsperbin to binsperdim
         self.bin_target_counts = numpy.empty((self.bin_mapper.nbins,), numpy.int_)
         self.bin_target_counts[...] = bintargetcount

@@ -39,5 +39,3 @@ jobs:
 
         - name: Style checks
           run: make check-codestyle
-
-

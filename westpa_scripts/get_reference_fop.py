@@ -1,5 +1,6 @@
-from pcoord import *
 from typing import List
+
+from pcoord import *
 
 
 def get_pocket_selection(
@@ -15,7 +16,7 @@ def get_pocket_selection(
     residues.
 
     Args:
-        universe (MDAnalysis Universe): MDA universe with protein 
+        universe (MDAnalysis Universe): MDA universe with protein
         center (list): x, y, z coordiantes of the pocket center
         radius (float): radius of the pocket to be considered
         selection_file (str): filename for the selection pocket
@@ -193,4 +194,3 @@ if __name__ == "__main__":
     print("Files create successfully:")
     print("   " + settings["selection_file"])
     print("   " + settings["reference_fop"])
-

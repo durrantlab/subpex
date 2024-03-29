@@ -41,7 +41,7 @@ LASTITERNUM=$((10#$LASTITER))
 
 # Move all the generations that were trucated
 for i in $(seq -f "%06g" $GEN $LASTITERNUM)
-do 
+do
     TRAJSEGDEST="reference/$i"
     # Does the directory exist?
     if [ -d $TRAJSEGDEST ]; then
