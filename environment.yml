@@ -1,0 +1,10 @@
+name: subpex-dev
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - conda-lock
+  - poetry
+  - pre-commit
+  - conda-poetry-liaison
+  - nodejs
