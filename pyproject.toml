@@ -1,0 +1,177 @@
+[tool.poetry]
+name = "subpex"
+version = "0.0.0"
+description = "Enhance ensemble virtual screening with rare-event sampling of binding pockets."
+authors = ["durrantlab <durrantj@pitt.edu>"]
+license = "MIT"
+readme = "README.md"
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+loguru = "^0.7.2"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.9.0"
+isort = "^5.12.0"
+pre-commit = "^3.4.0"
+pylint = "^2.17.5"
+mypy = "^1.5.1"
+mypy-extensions = "^1.0.0"
+bump-my-version = "^0.11.0"
+poetry-dynamic-versioning = "^1.1.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.2"
+pytest-cov = "^4.1.0"
+pytest-html = "^4.0.1"
+coverage = "^7.3.1"
+colorama = "^0.4.6"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5.3"
+mkdocs-material = "^9.4.7"
+material-plausible-plugin = "^0.2.0"
+pymdown-extensions = "^10.3.1"
+mkdocs-table-reader-plugin = "^2.0.3"
+mkdocstrings = "^0.23.0"
+mkdocstrings-python = "^1.7.3"
+mkdocs-gen-files = "^0.5.0"
+mkdocs-awesome-pages-plugin = "^2.9.2"
+
+
+[tool.bumpversion]
+current_version = "0.0.0"
+tag = true
+commit = true
+
+[[tool.bumpversion.files]]
+filename = "CHANGELOG.md"
+no_regex = false
+search = "\\[Unreleased\\]"
+replace = "[Unreleased]\n\n## [{new_version}] - {now:%Y-%m-%d}"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+format-jinja = "{%- if distance == 0 -%}{{ serialize_pep440(base) }}{%- else -%}{{ serialize_pep440(base, post=distance) }}{%- endif -%}"
+
+[tool.poetry-dynamic-versioning.substitution]
+patterns = [
+    "(^__version__\\s*(?::.*?)?=\\s*['\"])[^'\"]*(['\"])",
+]
+
+[build-system]
+requires = [
+    "poetry-core>=1.0.0",
+    "poetry-dynamic-versioning>=1.0.0,<2.0.0"
+]
+build-backend = "poetry_dynamic_versioning.backend"
+
+
+[tool.pylint.messages_control]
+# https://pylint.readthedocs.io/en/latest/
+good-names = [
+  "i",
+  "j",
+  "e",
+  "ex"
+]
+ignore = ["CVS", "conf.py"]
+
+
+[tool.black]
+# https://github.com/psf/black
+target-version = ["py312"]
+line-length = 88
+color = true
+
+exclude = '''
+/(
+    \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | env
+    | venv
+)/
+'''
+
+
+[tool.isort]
+# https://github.com/timothycrosley/isort/
+py_version = 312
+line_length = 88
+
+known_typing = ["typing", "types", "typing_extensions", "mypy", "mypy_extensions"]
+sections = ["FUTURE", "TYPING", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+profile = "black"
+include_trailing_comma = true
+multi_line_output = 3
+indent = 4
+color_output = true
+
+
+[tool.mypy]
+# https://mypy.readthedocs.io/en/latest/config_file.html#using-a-pyproject-toml-file
+python_version = "3.12"
+pretty = true
+show_traceback = true
+color_output = true
+
+allow_redefinition = false
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+implicit_reexport = false
+no_implicit_optional = true
+show_column_numbers = true
+show_error_codes = true
+show_error_context = true
+strict_equality = true
+strict_optional = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+
+[tool.pytest.ini_options]
+# https://docs.pytest.org/en/6.2.x/customize.html#pyproject-toml
+# Directories that are not visited by pytest collector:
+norecursedirs =["subpex", "*.egg", ".eggs", "dist", "build", "docs", ".tox", ".git", "__pycache__"]
+doctest_optionflags = ["NUMBER", "NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
+
+# Extra options:
+addopts = [
+  "--strict-markers",
+  "--tb=short",
+  "--doctest-modules",
+  "--doctest-continue-on-failure",
+]
+
+
+[tool.coverage.run]
+source = ["tests"]
+
+
+[coverage.paths]
+source = "subpex"
+
+
+[coverage.run]
+branch = true
+
+
+[coverage.report]
+fail_under = 50
+show_missing = true
