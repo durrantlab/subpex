@@ -2,48 +2,22 @@
 This script will generate files to cluster a SubPEx run
 """
 
-from typing import List
+from typing import Any, List
 
 import argparse
 import contextlib
 import glob
-import logging
 import os
 import sys
+from collections.abc import MutableMapping
 
 import h5py
-import MDAnalysis as mda
 import numpy as np
 
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-from westpa_scripts.pcoord import check_input_settings_file
 
-
-def check_clustering_parameters(settings: dict) -> dict:
-    """Checks the clustering parameters in the settings.
-
-    Args:
-        settings (dict): The settings dictionary.
-
-    Returns:
-        dict: The settings dictionary.
-    """
-
-    if "clustering" not in settings or type(settings["clustering"]) is not dict:
-        logging.critical(
-            "There is a problem with the clustering parameters. Please check the settings file."
-        )
-        sys.exit(
-            "There is a problem with the clustering parameters. Please check the settings file."
-        )
-
-    # TODO finish check_clustering_parameters
-    return settings
-
-
-def get_bins_dictionary(west: dict, settings: dict) -> dict:
+def get_bins_dictionary(
+    west: dict, settings: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
     """Creates a dictionary with the bins and the walkers in each bin.
 
     Args:
@@ -79,7 +53,7 @@ def get_bins_dictionary(west: dict, settings: dict) -> dict:
     return bins
 
 
-def calculate_clusters_per_bin(bins: dict, settings: dict):
+def calculate_clusters_per_bin(bins: dict, settings: MutableMapping[str, Any]) -> None:
     """Calculates the number of clusters per bin. Updates bin in place.
 
     Args:
@@ -114,7 +88,9 @@ def calculate_clusters_per_bin(bins: dict, settings: dict):
             bins[key]["clusters"] = value
 
 
-def create_bin_cpptraj_files(bins: dict, settings: dict, directory: str):
+def create_bin_cpptraj_files(
+    bins: dict, settings: MutableMapping[str, Any], directory: str
+) -> None:
     """Creates the cpptraj files for each bin.
 
     Args:
@@ -136,8 +112,12 @@ def create_bin_cpptraj_files(bins: dict, settings: dict, directory: str):
 
 
 def create_cpptraj_file_bins(
-    bins: dict, settings: dict, directory: str, key: str, selection_string: str
-):
+    bins: dict,
+    settings: MutableMapping[str, Any],
+    directory: str,
+    key: str,
+    selection_string: str,
+) -> None:
     """Creates the cpptraj file for a bin.
 
     Args:
@@ -197,7 +177,9 @@ def get_selection_cpptraj(filename: str) -> str:
     return selection_string
 
 
-def get_clustering_generation_cpptraj(west_file: dict, settings: dict, directory: str):
+def get_clustering_generation_cpptraj(
+    west_file: dict, settings: MutableMapping[str, Any], directory: str
+) -> None:
     """Creates the cpptraj files for each bin.
 
     Args:
@@ -290,10 +272,10 @@ def get_generation_walkers_list(directory_gen: str) -> List[str]:
 def make_input_file_cpptraj(
     directory: str,
     walkers_list: List[str],
-    settings: dict,
+    settings: MutableMapping[str, Any],
     num_clusters: int,
     selection_string: str,
-):
+) -> None:
     """Creates the input file for cpptraj.
 
     Args:
@@ -379,7 +361,9 @@ def get_number_clusters_generation(
     return number_clusters
 
 
-def get_clustering_bins_cpptraj(west: dict, settings: dict, directory: str):
+def get_clustering_bins_cpptraj(
+    west: dict, settings: MutableMapping[str, Any], directory: str
+) -> None:
     """Creates the input files (sh) for cpptraj to cluster the bins.
 
     Args:
@@ -396,7 +380,7 @@ def get_clustering_bins_cpptraj(west: dict, settings: dict, directory: str):
             f.write("cpptraj.OMP -i clustering.in > clustering.log \n")
 
 
-if __name__ == "__main__":
+def run_clustering():
     parser = argparse.ArgumentParser(
         description="Prepares files to run clustering on a SubPEx run via cpptraj. See 'clustering' section of west.cfg to configure further (e.g., cluster per generation or dividing the space in bins)."
     )
@@ -420,7 +404,6 @@ if __name__ == "__main__":
 
     # Loading settings
     settings = check_input_settings_file(args.settings)
-    settings = check_clustering_parameters(settings)
 
     # make sure outdir exists if not, creat it
     if not os.path.isdir(args.dir):
@@ -439,3 +422,7 @@ if __name__ == "__main__":
         print("Not yet implemented")
 
     print("\nDone! See files in " + directory)
+
+
+if __name__ == "__main__":
+    run_clustering()

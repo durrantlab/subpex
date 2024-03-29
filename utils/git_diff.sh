@@ -1,1 +1,0 @@
-git difftool --tool=vimdiff

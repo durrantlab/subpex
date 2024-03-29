@@ -32,7 +32,7 @@ def rolling_average(data: List[float], window: int) -> List[float]:
     return average
 
 
-def plot_num_walkers(west: h5py.File, outdir: str):
+def plot_num_walkers(west: h5py.File, outdir: str) -> None:
     """Plots the number of walkers per iteration. The plot will be saved to the
     specified directory.
 
@@ -61,7 +61,7 @@ def plot_num_walkers(west: h5py.File, outdir: str):
     plt.savefig(f"{outdir}/num_walkers.png")
 
 
-def plot_histogram(results: dict, key: str, title: str, directory: str = None):
+def plot_histogram(results: dict, key: str, title: str, directory: str = None) -> None:
     """Plots the histogram of the specified key. The plot will be saved to the
     specified directory.
 
@@ -110,7 +110,9 @@ def plot_histogram(results: dict, key: str, title: str, directory: str = None):
         fig.savefig(f"{directory}/{key}.png")
 
 
-def plot(jd: List[float], rmsd: List[float], title: str, outdir: str, filename: str):
+def plot(
+    jd: List[float], rmsd: List[float], title: str, outdir: str, filename: str
+) -> None:
     """Plots the Jaccard distance and the RMSD of the pocket heavy atoms. The
     plot will be saved to the specified directory.
 
@@ -184,7 +186,7 @@ def plot_stuff(
     jd_max: List[float],
     jd_min: List[float],
     jd_sd: List[float],
-):
+) -> None:
     """Plots the Jaccard distance against iteration. The plot will be saved to
     the specified directory.
 
