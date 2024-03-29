@@ -1,6 +1,6 @@
 # The programs helps set up the SubPEx run. Runs only on linux.
 
-from typing import List, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import glob
 import json
@@ -54,12 +54,12 @@ def get_step_num() -> str:  # Requires Python3
     return str(STEP_NUM - 1)
 
 
-def log(txt: str, underlined: bool = None):
+def log(txt: str, underlined: bool | None = None) -> None:
     """Prints text to screen, with optional underlining.
 
     Args:
-        txt (str): Text to print.
-        underlined (bool, optional): If True, underlines text. Defaults to None.
+        txt: Text to print.
+        underlined: If True, underlines text. Defaults to None.
     """
 
     txt = txt.split("\n")
@@ -173,7 +173,7 @@ def get_time(prompt: str) -> str:
         return answer
 
 
-def save_choice(key: str, val):
+def save_choice(key: str, val: Any) -> None:
     """Saves choice to wizard.saved file.
 
     Args:
@@ -191,7 +191,7 @@ def save_choice(key: str, val):
         json.dump(config, f, indent=4)
 
 
-def get_choice(key: str, func_if_absent: callable) -> any:
+def get_choice(key: str, func_if_absent: callable) -> Any:
     """Gets choice from wizard.saved file, or prompts user if not present.
 
     Args:
@@ -282,7 +282,7 @@ def link_to_reference_mol(flnm: str):
     """symbolically links file to reference/mol.ext.
 
     Args:
-        flnm (str): File to link.
+        flnm: File to link.
     """
 
     ext = flnm.split(".")[-1]
@@ -533,7 +533,7 @@ def download_testing_files(filename: str) -> str:
     return os.path.abspath(f"downloads/{filename}")
 
 
-def get_prelim_sim_files(engine: str):
+def get_prelim_sim_files(engine: str) -> None:
     """Asks user for preliminary (equilibrated) simulation files.
 
     Args:
@@ -589,7 +589,7 @@ def get_prelim_sim_files(engine: str):
     clear()
 
 
-def get_sim_last_frame():
+def get_sim_last_frame() -> None:
     """Asks user for the last frame of the preliminary simulation."""
 
     log(f"STEP {get_step_num()}: Preliminary MD last frame", "-")
@@ -1026,7 +1026,7 @@ def update_run_time_and_job_name(westcfg: str) -> str:
             runsh,
             flags=re.MULTILINE,
         )
-        with open(submit_file, "w") as f:
+        with open(submit_file, "w", encoding="utf-8") as f:
             f.write(runsh)
 
     clear()
