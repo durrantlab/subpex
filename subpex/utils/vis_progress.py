@@ -15,8 +15,8 @@ def rolling_average(data: List[float], window: int) -> List[float]:
     smaller.
 
     Args:
-        data (list): list of the data to obtain the rolling average.
-        window (int): size of the window to use.
+        data: list of the data to obtain the rolling average.
+        window: size of the window to use.
 
     Returns:
         average (list): list containing the rolling average.
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "outdir",
         type=str,
-        help="Define the output directory to put the files in, it will creat it if it does not exist. It is required",
+        help="Define the output directory to put the files in, it will create it if it does not exist. It is required",
     )
     args = parser.parse_args()
 
