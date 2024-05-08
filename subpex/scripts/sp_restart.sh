@@ -1,29 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script prepares the restart of a SubPEx simulation (or any WESTPA
 # simulation) without loosing any information.
 
-while getopts ":n:e:h" flag
-do
-    case "${flag}" in
-        n)
-            GEN=$OPTARG
-            ;;
-        e)
-            conda activate $OPTARG
-            ;;
-        h)
-            echo "Usage: restart_subpex.sh [options] -n [GENERATION]"
-            echo " "
-            echo "This script automates the truncation of the west.h5 file. It must be run from WEST_HOME"
-            echo "It does the following:"
-            echo " - saves a copy of the original west.h5 for safe keeping"
-            echo " - moves the iterations starting from the trucated one to the reference directory"
-            echo " - moves the binbounds.txt file to a new file"
-            exit 1
-            ;;
-    esac
-done
+# Assumes -n is always passed if script is called.
+
+GEN=$1  # Get the generation number directly from the script argument
 
 # If west.h5 exists
 if [ -f west.h5 ]; then

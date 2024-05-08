@@ -330,9 +330,7 @@ def check_if_restart_sim() -> bool:
             "Would you like to have SubPEx resume the previous run rather than start over?"
         )
         if choice("Resume previous run?") == "y":
-            run_cmd(
-                "./utils/restart_subpex.sh -n $(ls traj_segs/ | sort -n | tail -n 1)"
-            )
+            run_cmd("sp_restart -n $(ls traj_segs/ | sort -n | tail -n 1)")
             log("\nYour SubPEx job is now ready for a restart run, using ./run.sh.")
             # clear()
             return True
