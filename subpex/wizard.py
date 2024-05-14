@@ -8,32 +8,9 @@ import os
 import re
 import subprocess
 import sys
-import textwrap
-import time
-from io import TextIOWrapper
 
-try:
-    import yaml
-except Exception:
-    print("\nPyYAML is missing. Have you set up your westpa conda environment?\n")
-    print("conda env create -f environment.yaml\nconda activate westpa\n")
-    exit(1)
-
-# Check to make sure running python3
-if sys.version_info[0] < 3:
-    print("\nPlease run this script with python3.\n")
-    exit(1)
-
-if os.name == "nt":
-    print("\nWizard script supported only on Linux. Sorry!\n")
-    exit(1)
-
-# Make sure west.cfg in present directory
-if not os.path.exists("west.cfg"):
-    print(
-        "\nPlease run this script from the same directory containing the west.cfg file.\n"
-    )
-    exit(1)
+import yaml
+from loguru import logger
 
 CUR_PATH = os.path.abspath(os.path.dirname(__file__))
 PYTHON_EXE = os.path.abspath(sys.executable)
@@ -42,7 +19,7 @@ STEP_NUM = 1
 TEST_MODE = False
 
 
-def get_step_num() -> str:  # Requires Python3
+def get_step_num() -> str:
     """Returns current step number.
 
     Returns:
@@ -54,29 +31,12 @@ def get_step_num() -> str:  # Requires Python3
     return str(STEP_NUM - 1)
 
 
-def log(txt: str, underlined: bool | None = None) -> None:
-    """Prints text to screen, with optional underlining.
-
-    Args:
-        txt: Text to print.
-        underlined: If True, underlines text. Defaults to None.
-    """
-
-    txt = txt.split("\n")
-    for line in txt:
-        t = textwrap.fill(line.strip(), 80)
-        print(t)
-        if underlined:
-            print(underlined * len(t))
-    print("")
-
-
-def choice(prompt: str, choices: List[str] = None) -> str:
+def choice(prompt: str, choices: List[str] | None = None) -> str:
     """Prompts user for input, with optional choices.
 
     Args:
-        prompt (str): Prompt to display.
-        choices (List[str], optional): List of choices. Defaults to None.
+        prompt: Prompt to display.
+        choices: List of choices. Defaults to None.
 
     Returns:
         str: User's choice.
@@ -123,33 +83,12 @@ def file_path(prompt: str, ext: str) -> str:
         answer = input(f"{prompt}: ").strip()
         pth = os.path.abspath(answer)
         if not os.path.exists(pth):
-            log("\nFile does not exist: " + pth + ". Please try again.")
+            logger.info("\nFile does not exist: " + pth + ". Please try again.")
             continue
         if not pth.lower().endswith(ext.lower()):
-            log("\nFile does not end in ." + ext + ". Please try again.")
+            logger.info("\nFile does not end in ." + ext + ". Please try again.")
             continue
         return pth
-
-
-def get_number(prompt: str) -> float:
-    """Prompts user for number.
-
-    Args:
-        prompt (str): Prompt to display.
-
-    Returns:
-        loat: User's choice.
-    """
-
-    while True:
-        answer = input(f"{prompt}: ").strip()
-
-        try:
-            answer = float(answer)
-        except Exception:
-            log("\nPlease enter a number. Try again.")
-            continue
-        return answer
 
 
 def get_time(prompt: str) -> str:
@@ -167,7 +106,7 @@ def get_time(prompt: str) -> str:
 
         # Make sure answer matches format HH:MM:SS
         if not re.match(r"^\d{1,2}:\d{1,2}:\d{1,2}$", answer):
-            log("\nPlease enter time in the format HH:MM:SS. Try again.")
+            logger.info("\nPlease enter time in the format HH:MM:SS. Try again.")
             continue
 
         return answer
@@ -212,7 +151,7 @@ def get_choice(key: str, func_if_absent: callable) -> Any:
         val = func_if_absent()
         save_choice(key, val)
         return val
-    log(f"Using previous choice for {key}: {str(config[key])}")
+    logger.info(f"Using previous choice for {key}: {str(config[key])}")
     return config[key]
 
 
@@ -240,18 +179,18 @@ def run_cmd(prts: List[str]) -> str:
     """Runs command, prints output, and returns output.
 
     Args:
-        prts (List[str]): Command to run.
+        prts: Command to run.
 
     Returns:
-        str: Output of command.
+        Output of command.
     """
 
     # if prts is a list
     if isinstance(prts, list):
-        log("Running command: " + " ".join(prts))
+        logger.info("Running command: " + " ".join(prts))
         shell = False
     else:
-        log(f"Running command: {prts}")
+        logger.info(f"Running command: {prts}")
         shell = True
 
     def run_iter(prts):
@@ -278,42 +217,6 @@ def run_cmd(prts: List[str]) -> str:
     return output.strip()
 
 
-def link_to_reference_mol(flnm: str):
-    """symbolically links file to reference/mol.ext.
-
-    Args:
-        flnm: File to link.
-    """
-
-    ext = flnm.split(".")[-1]
-    dest_file = f"{CUR_PATH}/reference/mol.{ext}"
-    if os.path.exists(dest_file):
-        os.remove(dest_file)
-    run_cmd(["ln", "-s", flnm, dest_file])
-
-
-def openfile(filename: str) -> TextIOWrapper:
-    """Opens file for editing, creating a backup if necessary.
-
-    Args:
-        filename (str): File to open.
-
-    Returns:
-        file (TextIOWrapper): File object.
-    """
-
-    if not os.path.exists(f"{filename}.orig"):
-        os.system(f"cp {filename} {filename}.orig")
-    return open(f"{filename}.orig", "r")
-
-
-def enter_to_continue():
-    """Asks user to press ENTER to continue."""
-
-    input("Press ENTER to continue... ")
-    log("")
-
-
 def check_if_restart_sim() -> bool:
     """Checks if user wants to restart simulation.
 
@@ -322,16 +225,18 @@ def check_if_restart_sim() -> bool:
     """
 
     if os.path.exists("west.h5"):
-        log(f"STEP {get_step_num()}: Restart previous SubPEx run?", "-")
-        log(
+        logger.info(f"STEP {get_step_num()}: Restart previous SubPEx run?", "-")
+        logger.info(
             "It appears you have previously run SubPEx in this directory because a west.h5 exists."
         )
-        log(
+        logger.info(
             "Would you like to have SubPEx resume the previous run rather than start over?"
         )
         if choice("Resume previous run?") == "y":
             run_cmd("sp_restart -n $(ls traj_segs/ | sort -n | tail -n 1)")
-            log("\nYour SubPEx job is now ready for a restart run, using ./run.sh.")
+            logger.info(
+                "\nYour SubPEx job is now ready for a restart run, using ./run.sh."
+            )
             # clear()
             return True
 
@@ -345,8 +250,8 @@ def check_existing_params():
     if not os.path.exists("wizard.saved"):
         return
 
-    log(f"STEP {get_step_num()}: Use previous wizard choices?", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Use previous wizard choices?", "-")
+    logger.info(
         'You previously used this wizard, and your choices were saved to the file "wizard.saved". Here are the previous choices:'
     )
 
@@ -355,7 +260,7 @@ def check_existing_params():
     for key in config:
         print(f"  {key}: {config[key]}")
 
-    log("\nWould you like to use the same choices this time?")
+    logger.info("\nWould you like to use the same choices this time?")
 
     if choice("Use previous choices?") == "n":
         os.system("rm wizard.saved")
@@ -365,14 +270,14 @@ def check_existing_params():
 def confirm_environment():
     """Confirms that user has created and activated anaconda environment."""
 
-    log(f"STEP {get_step_num()}: Environment", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Environment", "-")
+    logger.info(
         "You should run this wizard using an appropriate anaconda environment. To create the environment, install anaconda and create/activate the environment like this:"
     )
 
-    log("conda env create -f environment.yaml\n conda activate westpa")
+    logger.info("conda env create -f environment.yaml\n conda activate westpa")
     if choice("Have you created and activated the environment?") == "n":
-        log("\nPlease create and activate the environment. Then try again.")
+        logger.info("\nPlease create and activate the environment. Then try again.")
         exit(1)
     clear()
 
@@ -380,7 +285,7 @@ def confirm_environment():
 def confirm_dependencies():
     """Confirms that user has installed dependencies."""
 
-    log(f"Step {get_step_num()}: Check dependencies", "-")
+    logger.info(f"Step {get_step_num()}: Check dependencies", "-")
 
     if (
         choice("Would you like to check that key dependencies have been installed?")
@@ -447,7 +352,7 @@ def confirm_dependencies():
             try:
                 __import__(v)
             except Exception:
-                log(
+                logger.info(
                     (
                         "\nModule "
                         + v
@@ -455,8 +360,10 @@ def confirm_dependencies():
                     )
                 )
 
-                log("conda env create -f environment.yaml\n conda activate westpa")
-                log("Please create/activate it and try again.")
+                logger.info(
+                    "conda env create -f environment.yaml\n conda activate westpa"
+                )
+                logger.info("Please create/activate it and try again.")
                 exit(1)
     clear()
 
@@ -473,11 +380,11 @@ def amber_or_namd(get_pcoord: str, runseg: str) -> Tuple[str, str, str]:
         as a string, and runseg.sh file as a string.
     """
 
-    log(f"STEP {get_step_num()}: MD engine", "-")
+    logger.info(f"STEP {get_step_num()}: MD engine", "-")
 
     if TEST_MODE:
         engine = "amber"
-        log("Using Amber MD engine (test mode).")
+        logger.info("Using Amber MD engine (test mode).")
         enter_to_continue()
     else:
         engine = get_choice(
@@ -524,7 +431,7 @@ def download_testing_files(filename: str) -> str:
     # Download the file using a library from the python standard library
     import urllib.request
 
-    log(f"Downloading {filename} from {url}...")
+    logger.info(f"Downloading {filename} from {url}...")
 
     urllib.request.urlretrieve(url, f"downloads/{filename}")
 
@@ -538,17 +445,19 @@ def get_prelim_sim_files(engine: str) -> None:
         engine (str): MD engine to use. "amber" or "namd"
     """
 
-    log(f"STEP {get_step_num()}: Preliminary MD files", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Preliminary MD files", "-")
+    logger.info(
         "SubPEx assumes you have already run preliminary simulations to equilibrate your system. Where are the coordinate and restart files associated with these preliminary simulations?"
     )
 
-    log(
+    logger.info(
         "(Note that you can press Ctrl-Z to pause the wizard and search for the file. Type `fg` to resume the wizard when done.)"
     )
 
     if TEST_MODE:
-        log("Downloading Amber .nc, .rst, and .prmtop files for testing (test mode).")
+        logger.info(
+            "Downloading Amber .nc, .rst, and .prmtop files for testing (test mode)."
+        )
         coor_file = download_testing_files("mol.nc")
         restart_files = [download_testing_files("mol.rst")]
         prmtop_file = download_testing_files("mol.prmtop")
@@ -590,13 +499,13 @@ def get_prelim_sim_files(engine: str) -> None:
 def get_sim_last_frame() -> None:
     """Asks user for the last frame of the preliminary simulation."""
 
-    log(f"STEP {get_step_num()}: Preliminary MD last frame", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Preliminary MD last frame", "-")
+    logger.info(
         "SubPEx needs the last frame of the preliminary trajectory as a `pdb` file. You can use programs such as VMD to save the last frame."
     )
 
     if TEST_MODE:
-        log("Downloading Amber .pdb file for testing (test mode).")
+        logger.info("Downloading Amber .pdb file for testing (test mode).")
         last_frame_file = download_testing_files("mol.pdb")
         enter_to_continue()
     else:
@@ -664,14 +573,14 @@ def pick_pcoord(westcfg: str) -> Tuple[str, str]:
         and the progress coordinate name.
     """
 
-    log(f"STEP {get_step_num()}: Progress coordinate", "-")
-    log("Which progress coordinate would you like to use?")
-    log(
+    logger.info(f"STEP {get_step_num()}: Progress coordinate", "-")
+    logger.info("Which progress coordinate would you like to use?")
+    logger.info(
         "composite: combination of pocket and back-bone RMSD (recommended)\nprmsd: RMSD of pocket-lining atoms (not officially supported)\nbb: RMSD of all back-bone atoms (not officially supported)\njd: Jaccard distance between pocket shapes (not officially supported)"
     )
 
     if TEST_MODE:
-        log("Using composite progress coordinate (test mode).")
+        logger.info("Using composite progress coordinate (test mode).")
         pcoord = "composite"
         enter_to_continue()
     else:
@@ -701,13 +610,13 @@ def specify_number_iterations(westcfg: str) -> str:
         str: updated west.cfg file as a string.
     """
 
-    log(f"STEP {get_step_num()}: Number of iterations (generations)", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Number of iterations (generations)", "-")
+    logger.info(
         "SubPEx periodically prunes and duplicates short simulations (walkers) to encourage sampling. How many times (iterations/generations) should SubPEx perform this pruning/duplication before stopping? (Recommendation: 30)"
     )
 
     if TEST_MODE:
-        log("Using 3 iterations (test mode).")
+        logger.info("Using 3 iterations (test mode).")
         iterations = 3
         enter_to_continue()
     else:
@@ -736,17 +645,17 @@ def define_pocket(westcfg: str) -> str:
         str: updated west.cfg file as a string.
     """
 
-    log(f"STEP {get_step_num()}: Define the binding pocket", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Define the binding pocket", "-")
+    logger.info(
         "You must define the location of the binding pocket you wish to sample. Visual inspection (e.g., using VMD) is often useful for this step. See README.md for more suggestions."
     )
 
-    log(
+    logger.info(
         f"Be sure to specify the location of the pocket relative to the reference PDB file: {CUR_PATH}/reference/mol.pdb"
     )
 
     if TEST_MODE:
-        log(
+        logger.info(
             "Using default pocket: radius = 6.5, center = [30.0, 41.5, 30.4] (test mode)."
         )
         pocket_radius = 6.5
@@ -786,7 +695,7 @@ def define_pocket(westcfg: str) -> str:
     if not os.path.exists(f"{CUR_PATH}/reference/fop_ref.xyz") or not os.path.exists(
         f"{CUR_PATH}/reference/selection_string.txt"
     ):
-        log(
+        logger.info(
             (
                 (
                     "ERROR: Could not generate reference-fop file (fop_ref.xyz) and/or selection-string file (selection_string.txt) in the directory "
@@ -796,7 +705,7 @@ def define_pocket(westcfg: str) -> str:
             )
         )
 
-        log(
+        logger.info(
             "Are you sure the center and radius specified encompass at least some of the pocket-lining residues?"
         )
 
@@ -816,26 +725,26 @@ def check_pocket(westcfg: str) -> str:
         str: updated west.cfg file as a string.
     """
 
-    log(f"STEP {get_step_num()}: Check the binding pocket", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Check the binding pocket", "-")
+    logger.info(
         f"The wizard has generated a pocket-field-of-points (fop) file ({CUR_PATH}/reference/fop_ref.xyz) and a selection-string file ({CUR_PATH}/reference/selection_string.txt)."
     )
 
-    log("Please visually inspect these files to:")
-    log(
+    logger.info("Please visually inspect these files to:")
+    logger.info(
         "1. Ensure that the points in fop_ref.xyz entirely fill the pocket of interest."
     )
 
-    log(
+    logger.info(
         "2. Ensure that the residues described in selection_string.txt truly line the pocket of interest."
     )
 
-    log(
+    logger.info(
         "(Note that the popular molecular visualization program VMD can load xyz files and select residues."
     )
 
     if TEST_MODE:
-        log("Assuming pocket correct (test mode).")
+        logger.info("Assuming pocket correct (test mode).")
         enter_to_continue()
     elif choice("Can you confirm the pocket is properly defined?") == "n":
         clear()
@@ -859,7 +768,7 @@ def update_envsh(envsh: str, engine: str) -> str:
         str: updated env.sh file as a string.
     """
 
-    log(f"STEP {get_step_num()}: Update env.sh", "-")
+    logger.info(f"STEP {get_step_num()}: Update env.sh", "-")
     envsh = re.sub(
         r'^export ENGINE=".*?"',
         f'export ENGINE="{engine.upper()}"',
@@ -868,7 +777,7 @@ def update_envsh(envsh: str, engine: str) -> str:
     )
 
     if TEST_MODE:
-        log("Using GPU (test mode).")
+        logger.info("Using GPU (test mode).")
         mode = "GPU"
         enter_to_continue()
     else:
@@ -903,42 +812,42 @@ def define_adaptive_bins(adaptivepy: str, pcoord: str) -> str:
     """
 
     # If pcoord is "jd", max is 1.0.
-    log(f"STEP {get_step_num()}: Define adaptive bins", "-")
-    log(
+    logger.info(f"STEP {get_step_num()}: Define adaptive bins", "-")
+    logger.info(
         "SubPEx uses WESTPA to enhance the sampling of your pocket. A progress coordinate assesses the extent of sampling. This progress coordinate is divided into bins, and WESTPA works to make sure the simulations collectively sample all bins equally."
     )
 
-    log(f"You previously selected the progress coordinate: {pcoord}")
+    logger.info(f"You previously selected the progress coordinate: {pcoord}")
     if pcoord == "jd":
         maxcap = 1.0
         save_choice("maxcap", maxcap)
     else:
-        log(
+        logger.info(
             "What is the maximum value of the progress coordinate beyond which SubPEx should no longer enhance sampling (in Angstroms)? We recommend 5."
         )
 
         if TEST_MODE:
-            log("Using 5.0 (test mode).")
+            logger.info("Using 5.0 (test mode).")
             maxcap = 5.0
             enter_to_continue()
         else:
             maxcap = get_choice("maxcap", lambda: get_number("Maximum value"))
 
-    log("\nHow many bins would you like to use? We recommend 15.")
+    logger.info("\nHow many bins would you like to use? We recommend 15.")
 
     if TEST_MODE:
-        log("Using 15 bins (test mode).")
+        logger.info("Using 15 bins (test mode).")
         binsperdim = 15
         enter_to_continue()
     else:
         binsperdim = get_choice("binsperdim", lambda: int(get_number("Bin count")))
 
-    log(
+    logger.info(
         "\nHow many walkers (mini simulations) would you like run per bin? Using more improves sampling at the cost of computer resources. We recommend 3."
     )
 
     if TEST_MODE:
-        log("Using 3 walkers per bin (test mode).")
+        logger.info("Using 3 walkers per bin (test mode).")
         bintargetcount = 3
         enter_to_continue()
     else:
@@ -981,22 +890,22 @@ def update_run_time_and_job_name(westcfg: str) -> str:
         str: updated west.cfg file as a string.
     """
 
-    log(f"STEP {get_step_num()}: Update job run time and name", "-")
+    logger.info(f"STEP {get_step_num()}: Update job run time and name", "-")
 
-    log(
+    logger.info(
         "How long should your SubPEx job run? (Format your response like HH:MM:SS, e.g., 72:00:00 for 72 hours)"
     )
     if TEST_MODE:
-        log("Using 72:00:00 (test mode).")
+        logger.info("Using 72:00:00 (test mode).")
         run_time = "72:00:00"
         enter_to_continue()
     else:
         run_time = get_choice("run_time", lambda: get_time("Run time"))
 
-    log('\nWhat is the name of your SubPEx job? (e.g., "my_job")')
+    logger.info('\nWhat is the name of your SubPEx job? (e.g., "my_job")')
 
     if TEST_MODE:
-        log('Using "subpex_job" (test mode).')
+        logger.info('Using "subpex_job" (test mode).')
         job_name = "subpex_job"
         enter_to_continue()
     else:
@@ -1010,7 +919,7 @@ def update_run_time_and_job_name(westcfg: str) -> str:
     )
 
     for submit_file in glob.glob("aux_scripts/run.slurm*.sh"):
-        with openfile(submit_file) as f:
+        with open(submit_file) as f:
             runsh = f.read()
         runsh = re.sub(
             r"^#SBATCH --time=.*$",
@@ -1038,9 +947,9 @@ def run_init() -> str:
         str: contents of the west.cfg file as a string.
     """
 
-    log(f"STEP {get_step_num()}: Initialize the SubPEx run", "-")
+    logger.info(f"STEP {get_step_num()}: Initialize the SubPEx run", "-")
     if os.path.exists("west.h5"):
-        log(
+        logger.info(
             "Would you like to clear the previous SubPEx run? WARNING: This will delete previously generated files, erasing the previous results so you can start a fresh SubPEx run."
         )
 
@@ -1050,7 +959,7 @@ def run_init() -> str:
             run_cmd(["rm", "-f", "west.h5"])
             run_cmd(["./init.sh"])
             if not os.path.exists("west.h5"):
-                log("ERROR: Could not initialize the SubPEx run.")
+                logger.info("ERROR: Could not initialize the SubPEx run.")
                 sys.exit(1)
             else:
                 clear()
@@ -1058,110 +967,63 @@ def run_init() -> str:
         run_cmd(["rm", "-f", "./job_logs/*"])
         run_cmd(["./init.sh"])
         if not os.path.exists("west.h5"):
-            log("ERROR: Could not initialize the SubPEx run.")
+            logger.info("ERROR: Could not initialize the SubPEx run.")
             sys.exit(1)
         else:
             clear()
     return westcfg
 
 
-def finished():
-    """Prints the final message to the user."""
+def run_wizard():
+    # Load files
+    with open("./west.cfg", "r", encoding="utf-8") as f:
+        westcfg = f.read()
 
-    log("It appears the wizard was successful.")
-    log("Optional steps NOT performed", "-")
-    log(
-        "The wizard has NOT performed any of the following optional steps. (The defaults should be fine in most cases.)"
-    )
-    log(
-        '1. No changes to the list of auxiliary data to calculate ("west.cfg"). Unless you have modified "west.cfg", all such data will be calculated.'
-    )
-    log(
-        '2. No changes to the "subpex -> resolution" field ("west.cfg"). If you plan to use the "jd" progress coordinate (not officially supported), you may wish to modify this field.'
-    )
-    log(
-        '3. No changes to some of the minor parameters that control adaptive binning (e.g., "pcoordlength"; see "./adaptive_binning/adaptive.py").'
-    )
-    log("Critical steps NOT performed", "-")
-    log(
-        "The wizard has also NOT performed any of the following CRITICAL steps, which you must perform separately."
-    )
-    log(
-        '1. Some needed changes still required to the "env.sh" file. Edit "env.sh" per your specific computing environment.'
-    )
-    log(
-        '2. Some needed changes still required to the "aux_scripts/run.slurm.*.sh" files. If using SLURM (not officially supported), edit these files per your environment.'
-    )
-    log("NOTE: To run your SubPEx job, use the ./run.sh script.")
+    with open("./adaptive_binning/adaptive.py", "r", encoding="utf-8") as f:
+        adaptivepy = f.read()
 
+    with open("./westpa_scripts/get_pcoord.sh", "r", encoding="utf-8") as f:
+        get_pcoord = f.read()
 
-# Load files
-with openfile("./west.cfg") as f:
-    westcfg = f.read()
+    with open("./westpa_scripts/runseg.sh", "r", encoding="utf-8") as f:
+        runseg = f.read()
 
-with openfile("./adaptive_binning/adaptive.py") as f:
-    adaptivepy = f.read()
+    with open("./env.sh", "r", encoding="utf-8") as f:
+        envsh = f.read()
 
-with openfile("./westpa_scripts/get_pcoord.sh") as f:
-    get_pcoord = f.read()
+    if check_if_restart_sim():
+        # Exit
+        sys.exit(0)
 
-with openfile("./westpa_scripts/runseg.sh") as f:
-    runseg = f.read()
+    check_existing_params()
+    confirm_environment()
+    confirm_dependencies()
+    engine, get_pcoord, runseg = amber_or_namd(get_pcoord, runseg)
+    get_prelim_sim_files(engine)
+    get_sim_last_frame()
+    westcfg = update_westcfg_path_vars(westcfg)
+    westcfg, pcoord = pick_pcoord(westcfg)
+    westcfg = specify_number_iterations(westcfg)
+    westcfg = define_pocket(westcfg)
+    envsh = update_envsh(envsh, engine)
+    adaptivepy = define_adaptive_bins(adaptivepy, pcoord)
+    westcfg = update_run_time_and_job_name(westcfg)
 
-with openfile("./env.sh") as f:
-    envsh = f.read()
+    # Save west.cfg
+    with open("./west.cfg", "w", encoding="utf-8") as f:
+        f.write(westcfg)
 
+    with open("./adaptive_binning/adaptive.py", "w", encoding="utf-8") as f:
+        f.write(adaptivepy)
 
-clear()
-log(
-    "This wizard is designed to help users setup and run SubPEx. See the README.md for more details."
-)
-log("You may exit this wizard at any time by pressing Ctrl+C.")
+    with open("./westpa_scripts/get_pcoord.sh", "w", encoding="utf-8") as f:
+        f.write(get_pcoord)
 
-# Does --test appear in the args? If not, let user know that's an option.
-if "--test" not in sys.argv:
-    log(
-        "Developers can run this wizard in test mode to verify codebase changes by passing the --test flag."
-    )
-else:
-    log("Running in test mode.")
-    TEST_MODE = True
+    with open("./westpa_scripts/runseg.sh", "w", encoding="utf-8") as f:
+        f.write(runseg)
 
-enter_to_continue()
+    with open("./env.sh", "w", encoding="utf-8") as f:
+        f.write(envsh)
 
-if check_if_restart_sim():
-    # Exit
-    sys.exit(0)
-
-check_existing_params()
-confirm_environment()
-confirm_dependencies()
-engine, get_pcoord, runseg = amber_or_namd(get_pcoord, runseg)
-get_prelim_sim_files(engine)
-get_sim_last_frame()
-westcfg = update_westcfg_path_vars(westcfg)
-westcfg, pcoord = pick_pcoord(westcfg)
-westcfg = specify_number_iterations(westcfg)
-westcfg = define_pocket(westcfg)
-envsh = update_envsh(envsh, engine)
-adaptivepy = define_adaptive_bins(adaptivepy, pcoord)
-westcfg = update_run_time_and_job_name(westcfg)
-
-# Save west.cfg
-with open("./west.cfg", "w") as f:
-    f.write(westcfg)
-
-with open("./adaptive_binning/adaptive.py", "w") as f:
-    f.write(adaptivepy)
-
-with open("./westpa_scripts/get_pcoord.sh", "w") as f:
-    f.write(get_pcoord)
-
-with open("./westpa_scripts/runseg.sh", "w") as f:
-    f.write(runseg)
-
-with open("./env.sh", "w") as f:
-    f.write(envsh)
-
-run_init()
-finished()
+    run_init()
+    finished()
