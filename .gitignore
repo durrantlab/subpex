@@ -1,5 +1,9 @@
 *.orig
 
+*.nc
+*.rst
+*.prmtop
+
 /venv/
 /Test/
 utils/settings.yaml
