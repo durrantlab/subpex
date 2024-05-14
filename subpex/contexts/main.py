@@ -101,7 +101,7 @@ class SubpexContextManager:
 
 
 # pylint: disable-next=too-few-public-methods
-class ContextValidator:
+class SubpexContextValidator:
     """Base class for validating contexts."""
 
     # pylint: disable=unused-argument
