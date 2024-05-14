@@ -196,31 +196,3 @@ class ContextValidator:
             else:
                 logger.debug("  Skipping: None")
         return is_valid
-
-    @staticmethod
-    def write(value: Any, context: dict[str, Any]) -> bool:
-        """Validate `write`"""
-        return True
-
-    @staticmethod
-    def pocket_center(value: Any, context: dict[str, Any]) -> bool:
-        """Validate `pocket_center`"""
-        if len(value) != 3:
-            logger.error("pocket_center must be a list of x, y, and z.")
-            logger.error(f"pocket_center length should be 3, but is {len(value)}")
-            return False
-        for ele in value:
-            if not isinstance(ele, float):
-                logger.error(
-                    f"pocket_center values must be `float` type; found {type(ele)}"
-                )
-                return False
-        return True
-
-    @staticmethod
-    def pocket_radius(value: Any, context: dict[str, Any]) -> bool:
-        """Validate `pocket_radius`"""
-        if not isinstance(value, float):
-            logger.error(f"pocket_radius value must be `float`; found {type(ele)}")
-            return False
-        return True
