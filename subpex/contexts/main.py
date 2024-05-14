@@ -1,6 +1,6 @@
 from typing import Any
 
-from collections.abc import Iterable, MutableMapping
+from collections.abc import Iterable, MutableMapping, MutableSequence
 
 from loguru import logger
 from ruamel.yaml import YAML
@@ -24,8 +24,20 @@ class SubpexContextManager:
         """The center of the pocket."""
         self.pocket_radius: float = 10.9
         """Pocket radius to consider."""
+        self.progress_coord: MutableSequence[str] = ["composite"]
+        """Progress coordinates to calculate.
+
+        -   `jd` for Jaccard distance,
+        -   `prmsd` for pocket heavy atoms RMSD,
+        -   `bb` for backbone RMSD,
+        -   `composite` for composite RMSD.
+        """
         self.clustering_engine: str = "cpptraj"
         """Clustering engine to use. `cpptraj` is the only option at the moment.
+        """
+        self.calculated_points: int = -1
+        """Number of point to calculate per trajectory segment. If `-1`, it will
+        calculate all.
         """
         self.n_clusters: int = 25
         """Number of independent clusters to identify."""
@@ -36,6 +48,14 @@ class SubpexContextManager:
         self.clustering_region: str = "pocket"
         """Region to separate into clusters. This can be `pocket` or `backbone`."""
         self.clustering_method: str = "hierarchical"
+        """TODO:"""
+        self.cluster_generation: bool = True
+        """TODO:"""
+        self.cluster_bin: bool = False
+        """TODO:"""
+        self.plot_n_walkers: bool = False
+        """TODO:"""
+        self.fop_filetype: str = "xyz"
         """TODO:"""
 
         if isinstance(yaml_paths, str):
