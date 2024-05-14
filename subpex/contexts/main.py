@@ -17,6 +17,11 @@ class SubpexContextManager:
         Args:
             yaml_paths: Path(s) to YAML file(s) to load into the context.
         """
+        self.restart: bool = False
+        """Restart a subpex simulation if directly already exists.
+
+        TODO: run the sp_restart script if westpa file exists and this is True.
+        """
         self.md_engine: str = "Amber"
         """Molecular dynamics engine to use. Both `Amber` and `NAMD` are implemented.
         """
