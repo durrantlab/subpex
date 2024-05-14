@@ -1,7 +1,6 @@
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import argparse
-import logging
 import sys
 
 import MDAnalysis
@@ -11,40 +10,16 @@ from MDAnalysis.analysis import align
 from sklearn.cluster import DBSCAN
 
 
-def check_file_exists(settings: dict, keyword: str):
-    """Checks that the keyword is in the dictionary settings and that the file
-    associated with the keyword exists.
-
-    Args:
-        settings (dict): dictionary with settings for subpex
-        keyword (str): keyword of the setting to check the file exists.
-    """
-    import glob
-    import sys
-
-    if keyword not in settings or len(glob.glob(settings[keyword])) != 1:
-        logging.critical(
-            "There is an error with the {} parameter, could not locate the file".format(
-                keyword
-            )
-        )
-        sys.exit("There is an error with the {} file".format(keyword))
-    else:
-        pass
-
-
-def points_to_pdb(filename: str, coordinates: List[List[float]]):
+def points_to_pdb(file_path: str, coordinates: List[List[float]]) -> None:
     """Writes a pdb file full of C-alphas so users can visualize the field of
     points in software such as VMD.
 
     Args:
-        filename (str): name of the pdb file to create.
-        coordinates (list of lists): XYZ coordinates of the field of points to
-            write to pdb file.
+        filename: name of the pdb file to create.
+        coordinates: XYZ coordinates of the field of points to write to pdb file.
     """
-
     # TODO: Erich - modify to be able to do multiframe pdb
-    with open(filename, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         # f.write(header)
         atom_number = 1
         for i in coordinates:
@@ -68,13 +43,13 @@ def parse_pdb_fop(filename: str) -> List[List[float]]:
     'filename', parse it and return the fop as a list of lists.
 
     Args:
-        filename (string): name of the pdb file with the field of points.
+        filename: name of the pdb file with the field of points.
 
     Returns:
-        fop (list of lists): XYZ coordinates of the field of points.
+        fop: XYZ coordinates of the field of points.
     """
 
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         text = f.readlines()
     fop = []
     for line in text:
@@ -101,7 +76,7 @@ def parse_xyz_fop(filename: str) -> List[List[float]]:
     """
 
     # open reference fop xyz file
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         text = f.readlines()
 
     # parse xyz file
@@ -119,15 +94,15 @@ def parse_xyz_fop(filename: str) -> List[List[float]]:
 
 def points_to_xyz_file(
     filename: str, coordinates: List[List[float]], resolution: float, radius: float
-):
+) -> None:
     """Takes the coordinates and the resolution, writes write an xyz file that
     users can load into visualization software such as VMD.
 
     Args:
-        filename (str): name for the xyz file to be created.
-        coordinates (list of lists): contains XYZ coordinates for each atom.
-        resolution (float): resolution in Angstroms.
-        radius (float): radius in Angstrom for the field of points.
+        filename: name for the xyz file to be created.
+        coordinates: contains XYZ coordinates for each atom.
+        resolution: resolution in Angstroms.
+        radius: radius in Angstrom for the field of points.
     """
 
     # calculate the volume using the resolution
@@ -135,7 +110,7 @@ def points_to_xyz_file(
     volume = len(coordinates) * (resolution**3)
 
     # Writing the xyz file.
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf-8") as f:
         f.write(str(len(coordinates)) + "\n")
         f.write(
             "Generated in SubPEx. Res: {res}    Rad: {dim} Ang    Volume: {vol} Ang^3 \n".format(
@@ -158,11 +133,11 @@ def calculate_distance_two_points(point1: List[float], point2: List[float]) -> f
         distance (float): distance between point1 and point2.
     """
 
-    distance = 0
-    for i in range(len(point1)):
-        distance += (point1[i] - point2[i]) ** 2
+    distance = 0.0
+    for p1, p2 in zip(point1, point2):
+        distance += (p1 - p2) ** 2
 
-    return np.sqrt(distance)
+    return float(np.sqrt(distance))
 
 
 def field_of_points(
@@ -265,7 +240,7 @@ def get_field_of_points_dbscan(
         radius (float): radius of sphere for FOP (user defined).
 
     Returns:
-        pocket (list of lists): pocket shape as a field of points.
+        pocket shape as a field of points.
     """
 
     # get starting FOP and snapped center
@@ -289,10 +264,10 @@ def cluster_dbscan(fop: List[List[float]]) -> List[List[float]]:
     the center of the pocket.
 
     Args:
-        fop (list of list): coordinates of field of points.
+        fop: coordinates of field of points.
 
     Returns:
-        fop (list of list): field of points after clustering
+        field of points after clustering
     """
 
     if len(fop) == 0:
@@ -309,7 +284,7 @@ def cluster_dbscan(fop: List[List[float]]) -> List[List[float]]:
         return []
 
     longest = ""
-    clusters = {}
+    clusters: dict[str, List[Any]] = {}
     for i in range(n_clusters_):
         clusters["Cluster_" + str(i + 1)] = []
 
@@ -333,12 +308,12 @@ def get_jaccard_distance(
     the segment_fop. Uses the distance between points to calculate the intersection.
 
     Args:
-        reference_fop (list of lists): reference FOP.
-        segment_fop (list of lists): segment FOP.
-        resolution (float): resolution used to create FOP.
+        reference_fop: reference FOP.
+        segment_fop: segment FOP.
+        resolution: resolution used to create FOP.
 
     Returns:
-        jaccard (float): Jaccard distance.
+        Jaccard distance.
     """
 
     if len(segment_fop) == 0:
@@ -367,7 +342,9 @@ def get_jaccard_distance(
     return jaccard
 
 
-def point_in_hull(point: List[float], hull, tolerance: float = 1e-12) -> bool:
+def point_in_hull(
+    point: List[float], hull: scipy.spatial.ConvexHull, tolerance: float = 1e-12
+) -> bool:
     """Determines if a point is contained in a hull. A point is in the hull if
     and only if for every equation (describing the facets), the dot product
     between the point and the normal vector (eq[:-1]) plus the offset (eq[-1])
@@ -377,15 +354,13 @@ def point_in_hull(point: List[float], hull, tolerance: float = 1e-12) -> bool:
     hull is not in the convex hull).
 
     Args:
-        point (list): coordinates of the point to be considered.
-        hull (scipy.spatial.ConvexHull): Convex hulls in N dimensions.
-        tolerance (flaot, optional): tolerance for the calcualtion. Defaults
-            to 1e-12.
+        point: coordinates of the point to be considered.
+        hull: Convex hulls in N dimensions.
+        tolerance: tolerance for the calculation.
 
     Returns:
-        (bool): returns True if point in hull, False otherwise
+        Returns True if point in hull, False otherwise
     """
-
     return all((np.dot(eq[:-1], point) + eq[-1] <= tolerance) for eq in hull.equations)
 
 
@@ -396,13 +371,12 @@ def remove_convex_fop(
     outside of the protein pocket.
 
     Args:
-        trimmed_fop (list of lists): field of points trimmed of clashes with
-            atoms.
-        trimmed_alpha (list of lists): alpha atoms to define the convex hull.
+        trimmed_fop: field of points trimmed of clashes with atoms.
+        trimmed_alpha: alpha atoms to define the convex hull.
 
     Returns:
-        points_in_hull (list of lists): FOP trimmed of points outside the
-            convex hull defined by the protein.
+        points_in_hull: FOP trimmed of points outside the convex hull defined by the
+            protein.
     """
 
     points_in_hull = []
@@ -418,10 +392,10 @@ def calculate_pocket_gyration(pocket: List[List[float]]) -> float:
     of gyration. It assumes a mass of one for all the points.
 
     Args:
-        pocket (list of lists): the field of points defining the pocket shape.
+        pocket: the field of points defining the pocket shape.
 
     Returns:
-        radius_of_gyration (float): radius of gyration of the pocket.
+        radius of gyration of the pocket.
     """
 
     mass = len(pocket)
@@ -431,11 +405,11 @@ def calculate_pocket_gyration(pocket: List[List[float]]) -> float:
         return -9999
 
     centroid = get_centroid(pocket)
-    gyration_radius = 0
+    gyration_radius = 0.0
     for i in pocket:
         gyration_radius += (calculate_distance_two_points(i, centroid)) ** 2
 
-    return np.sqrt(gyration_radius / mass)
+    return float(np.sqrt(gyration_radius / mass))
 
 
 def get_centroid(pocket: List[List[float]]) -> List[float]:
@@ -449,9 +423,9 @@ def get_centroid(pocket: List[List[float]]) -> List[float]:
         centroid (list): coordinates of the centroid of the pocket.
     """
 
-    x = np.mean([x[0] for x in pocket])
-    y = np.mean([y[1] for y in pocket])
-    z = np.mean([z[2] for z in pocket])
+    x = float(np.mean([x[0] for x in pocket]))
+    y = float(np.mean([y[1] for y in pocket]))
+    z = float(np.mean([z[2] for z in pocket]))
     return [x, y, z]
 
 
