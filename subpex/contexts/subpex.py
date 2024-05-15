@@ -7,11 +7,13 @@ from loguru import logger
 from .base import BaseContextManager, BaseContextValidator
 from .cluster import ClusterContextManager
 from .data import DataContextManager
+from .pocket import PocketContextManager
 
 
 class SubpexContextManager(
     BaseContextManager,
     DataContextManager,
+    PocketContextManager,
     ClusterContextManager,
 ):
     """Contexts for SubPEx."""
