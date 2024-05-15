@@ -30,10 +30,10 @@ if __name__ == "__main__":
     for i in settings["auxdata"]:
         results[i] = []
     if "composite" in results.keys():
-        if "prmsd" not in results:
-            results["prmsd"] = []
-        if "bb" not in results:
-            results["bb"] = []
+        if "p_rmsd" not in results:
+            results["p_rmsd"] = []
+        if "bb_rmsd" not in results:
+            results["bb_rmsd"] = []
 
     # open file with selection string
     with open(settings["selection_file"], "r") as f:
@@ -73,8 +73,8 @@ if __name__ == "__main__":
 
     # calculate pocket rmsd
 
-    if "prmsd" in results.keys():
-        results["prmsd"].append(
+    if "p_rmsd" in results.keys():
+        results["p_rmsd"].append(
             MDAnalysis.analysis.rms.rmsd(
                 pocket_reference.positions,
                 istate.select_atoms(selection_pocket).positions,
@@ -84,8 +84,8 @@ if __name__ == "__main__":
     if (
         "jd" in results.keys()
         or "fops" in results.keys()
-        or "pvol" in results.keys()
-        or "rog" in results.keys()
+        or "p_vol" in results.keys()
+        or "p_rog" in results.keys()
     ):
         frame_coordinates = istate.select_atoms("protein").positions
         pocket_calpha = istate.select_atoms(
@@ -105,15 +105,15 @@ if __name__ == "__main__":
     if "fops" in results.keys():
         results["fops"].append(frame_fop)
 
-    if "pvol" in results.keys():
-        results["pvol"].append(len(frame_fop) * (settings["resolution"] ** 3))
+    if "p_vol" in results.keys():
+        results["p_vol"].append(len(frame_fop) * (settings["resolution"] ** 3))
 
-    if "rog" in results.keys():
-        results["rog"].append(calculate_pocket_gyration(frame_fop))
+    if "p_rog" in results.keys():
+        results["p_rog"].append(get_pocket_rog(frame_fop))
 
-    if "bb" in results.keys():
+    if "bb_rmsd" in results.keys():
         align.alignto(istate, reference, select="backbone")
-        results["bb"].append(
+        results["bb_rmsd"].append(
             MDAnalysis.analysis.rms.rmsd(
                 reference.select_atoms("backbone").positions,
                 istate.select_atoms("backbone").positions,
@@ -121,7 +121,9 @@ if __name__ == "__main__":
         )
 
     if "composite" in results.keys():
-        results["composite"].append(results["prmsd"][-1] + (sigma * results["bb"][-1]))
+        results["composite"].append(
+            results["p_rmsd"][-1] + (sigma * results["bb_rmsd"][-1])
+        )
 
     # writing in text files the progress coordinates and the required auxiliary data if needed.
     with open("pcoord.txt", "w") as f:
@@ -144,24 +146,24 @@ if __name__ == "__main__":
             with open("fop.txt", "wb") as f:
                 pickle.dump(frame_fop, f)
 
-    if "pvol" in settings["auxdata"]:
-        with open("pvol.txt", "w") as f:
-            for i in results["pvol"]:
+    if "p_vol" in settings["auxdata"]:
+        with open("p_vol.txt", "w") as f:
+            for i in results["p_vol"]:
                 f.write(str(i) + "\n")
 
-    if "rog" in settings["auxdata"]:
-        with open("rog.txt", "w") as f:
-            for i in results["rog"]:
+    if "p_rog" in settings["auxdata"]:
+        with open("p_rog.txt", "w") as f:
+            for i in results["p_rog"]:
                 f.write(str(i) + "\n")
 
-    if "bb" in settings["auxdata"]:
-        with open("bb.txt", "w") as f:
-            for i in results["bb"]:
+    if "bb_rmsd" in settings["auxdata"]:
+        with open("bb_rmsd.txt", "w") as f:
+            for i in results["bb_rmsd"]:
                 f.write(str(i) + "\n")
 
-    if "prmsd" in settings["auxdata"]:
-        with open("prmsd.txt", "w") as f:
-            for i in results["prmsd"]:
+    if "p_rmsd" in settings["auxdata"]:
+        with open("p_rmsd.txt", "w") as f:
+            for i in results["p_rmsd"]:
                 f.write(str(i) + "\n")
 
     if "jd" in settings["auxdata"]:

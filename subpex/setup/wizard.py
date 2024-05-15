@@ -179,7 +179,7 @@ def pick_pcoord(westcfg: str) -> Tuple[str, str]:
             "pcoord",
             lambda: choice(
                 "Which progress coordinate?",
-                choices=["composite", "prmsd", "bb", "jd", ""],
+                choices=["composite", "p_rmsd", "bb_rmsd", "jd", ""],
             ),
         )
 

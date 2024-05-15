@@ -158,8 +158,8 @@ def get_pcoords_for_plotting(westfile: str, settings: dict) -> dict:
     for i in settings["auxdata"]:
         results[i] = []
     if "composite" in results:
-        if "prmsd" not in results:
-            results["prmsd"] = []
+        if "p_rmsd" not in results:
+            results["p_rmsd"] = []
         if "bb_rmsd" not in results:
             results["bb_rmsd"] = []
 
