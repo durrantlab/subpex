@@ -21,6 +21,18 @@ class DataContextManager:
         -   `bb` for backbone RMSD,
         -   `composite` for composite RMSD.
         """
+        self.composite_sigma: float | None = None
+        """Sigma to use for composite progress coordinate. If `None`, this defaults
+        to
+
+        ```python
+        sigma = (
+            1
+            - len(reference.select_atoms(selection_alignment))
+            / len(reference.select_atoms("backbone"))
+        ) / 2
+        ```
+        """
         self.clustering_engine: str = "cpptraj"
         """Clustering engine to use. `cpptraj` is the only option at the moment.
         """
