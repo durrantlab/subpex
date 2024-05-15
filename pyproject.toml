@@ -24,10 +24,9 @@ scikit-learn = "^1.4.1.post1"
 sp_restart = "subpex.scripts.sp_restart:main"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.9.0"
+ruff = "^0.4.4"
 isort = "^5.12.0"
 pre-commit = "^3.4.0"
-pylint = "^2.17.5"
 mypy = "^1.5.1"
 mypy-extensions = "^1.0.0"
 bump-my-version = "^0.11.0"
@@ -72,25 +71,30 @@ patterns = [
     "(^__version__\\s*(?::.*?)?=\\s*['\"])[^'\"]*(['\"])",
 ]
 
-[tool.pylint.messages_control]
-good-names = [
-    "i",
-    "j",
-    "e",
-    "ex",
-]
-ignore = [
-    "CVS",
-    "conf.py",
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+indent-width = 4
+exclude = [
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".tox",
+    ".venv",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "env",
+    "venv"
 ]
 
-[tool.black]
-target-version = [
-    "py312",
-]
-line-length = 88
-color = true
-exclude = "/(\n    \\.git\n    | \\.hg\n    | \\.mypy_cache\n    | \\.tox\n    | \\.venv\n    | _build\n    | buck-out\n    | build\n    | dist\n    | env\n    | venv\n)/\n"
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
 
 [tool.isort]
 py_version = 312
