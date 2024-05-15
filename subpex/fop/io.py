@@ -61,6 +61,25 @@ def parse_xyz_fop(file_path: str) -> Sequence[Sequence[float]]:
     return fop
 
 
+def read_fop(file_path: str) -> Sequence[Sequence[float]]:
+    """Load field of points from supported file types.
+
+    Args:
+        file_path: Path to xyz or pdb file.
+
+    Returns:
+        Loaded field of points.
+    """
+    fop_type = file_path.split(".")[-1]
+    if fop_type.lower() == "xyz":
+        fop_ref = parse_xyz_fop(file_path)
+    elif fop_type.lower() == "pdb":
+        fop_ref = parse_pdb_fop(file_path)
+    else:
+        raise ValueError("ref_fop_write must end in `.xyz` or `.pdb`.")
+    return fop_ref
+
+
 def points_to_pdb(file_path: str, fop: Sequence[Sequence[float]]) -> None:
     """Writes a pdb file full of C-alphas so users can visualize the field of
     points in software such as VMD.
