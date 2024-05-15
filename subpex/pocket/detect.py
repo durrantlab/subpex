@@ -4,6 +4,9 @@ from typing import Any
 
 from collections.abc import MutableMapping, Sequence
 
+import MDAnalysis as mda
+from loguru import logger
+
 from ..fop.clean import remove_convex_fop, remove_fop_atom_clash
 from ..fop.cluster import cluster_fop
 from ..fop.gen import gen_fop
@@ -51,3 +54,74 @@ def get_fop_pocket(
     )
 
     return fop_pocket
+
+
+def get_pocket_selection(
+    universe: mda.Universe,
+    center: Sequence[float],
+    radius: float,
+    selection_file: str,
+    distance_constraint: float = 6.7,
+) -> str:
+    """Takes the protein and center of the pocket and gets the initial
+    selection of the pockets based on the user-specified radius. If water
+    molecules are present, it uses them as a first approximation of the surface
+    residues.
+
+    Args:
+        universe: MDA universe with protein.
+        center: XYZ coordinates of the pocket center.
+        radius: radius of the pocket to be considered.
+        selection_file: filename for the selection pocket.
+        distance_constraint: Constraint to use for proximity to calculate surface
+            residues.
+
+    Returns:
+        Selection string of the pocket as used in MDAnalysis.
+    """
+    water_pocket = universe.select_atoms(
+        f"point {center[0]} {center[1]} {center[2]} {radius} and resname WAT"
+    )
+    residues_pocket = universe.select_atoms(
+        f"protein and point {center[0]} {center[1]} {center[2]} {radius}"
+    )
+
+    if len(water_pocket.residues) == 0:
+        logger.warning(
+            "There are no water molecules to obtain distances, some buried residues may end up in the pocket selection"
+        )
+        # obtain all residues in the pocket and create a selection pocket string.
+        pocket_residues = []
+        for residue in residues_pocket.residues:
+            if residue.resid not in pocket_residues:
+                pocket_residues.append(residue.resid)
+        selection_pocket = f"resid {pocket_residues[0]} "
+        for i in pocket_residues[1:]:
+            selection_pocket += f" or resid {str(i)} "
+
+    else:
+        distances = []
+        list_close_water = []
+        # we want to make sure that the residues we are selecting are close to the
+        # surface, we will approximate the surface accessible residues
+        # using water molecules and a distance cutoff for that purpose.
+        for i in water_pocket.residues:
+            water = universe.select_atoms(f"resid {i.resid}")
+            for j in residues_pocket.residues:
+                residue = universe.select_atoms(f"resid {j.resid}")
+                distance = calculate_distance_two_points(
+                    water.center_of_geometry(), residue.center_of_geometry()
+                )
+                distances.append(distance)
+                if distance < distance_constraint and j.resid not in list_close_water:
+                    list_close_water.append(j.resid)
+
+        # creating selection pocket string compatible with
+        selection_pocket = f"resid {list_close_water[0]} "
+        for i in list_close_water[1:]:
+            selection_pocket += f" or resid {str(i)} "
+
+            # save the pocket selection string so it can be used in other places
+    selection_pocket += "and (not name H*)"
+
+    return selection_pocket

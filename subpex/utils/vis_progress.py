@@ -7,7 +7,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .westpa_scripts.jdistance import check_file_exists, check_input_settings_file
+from .westpa_scripts.jdistance import check_input_settings_file
 
 
 def rolling_average(data: List[float], window: int) -> List[float]:

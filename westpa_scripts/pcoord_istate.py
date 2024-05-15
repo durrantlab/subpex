@@ -91,7 +91,7 @@ if __name__ == "__main__":
         pocket_calpha = istate.select_atoms(
             selection_pocket + " and name CA*"
         ).positions
-        frame_fop = get_field_of_points_dbscan(
+        frame_fop = get_fop_pocket(
             frame_coordinates,
             pocket_calpha,
             settings["center"],
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     # save fop in file so it can be piped to h5 file
     if "fops" in results.keys():
         if settings["fop_filetype"] == "xyz":
-            points_to_xyz_file(
+            points_to_xyz(
                 "fop.txt", results["fops"], settings["resolution"], settings["radius"]
             )
         elif settings["fop_filetype"] == "pdb":

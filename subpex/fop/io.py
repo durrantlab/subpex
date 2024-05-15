@@ -4,6 +4,7 @@ from collections.abc import Sequence
 
 from loguru import logger
 
+from ..contexts.subpex import SubpexContextManager
 from .prop import get_fop_volume
 
 
@@ -89,7 +90,7 @@ def points_to_pdb(file_path: str, fop: Sequence[Sequence[float]]) -> None:
         f.write("\n")
 
 
-def points_to_xyz_file(
+def points_to_xyz(
     file_path: str, fop: Sequence[Sequence[float]], resolution: float, radius: float
 ) -> None:
     """Takes the coordinates and the resolution, writes write an xyz file that
@@ -116,3 +117,22 @@ def points_to_xyz_file(
         # Adding each coordinate as a C-alpha for visualization purposes
         for i in fop:
             f.write(f"CA    {i[0]}    {i[1]}    {i[2]} \n")
+
+
+def write_fop(fop: Sequence[Sequence[float]], subpex_cm: SubpexContextManager) -> None:
+    # Save FOP to a xyz, pdb or pickle file.
+    if subpex_cm.ref_fop_write is not None:
+        fop_type = subpex_cm.ref_fop_write.split(".")[-1]
+        if fop_type.lower() == "xyz":
+            points_to_xyz(
+                subpex_cm.ref_fop_write,
+                fop,
+                subpex_cm.pocket_resolution,
+                subpex_cm.pocket_radius,
+            )
+        elif fop_type.lower() == "pdb":
+            points_to_pdb(subpex_cm.ref_fop_write, fop)
+        else:
+            raise ValueError("ref_fop_write must end in `.xyz` or `.pdb`.")
+    else:
+        logger.info("No reference FOP file will be saved.")

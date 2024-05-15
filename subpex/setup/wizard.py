@@ -1,6 +1,6 @@
 # The programs helps set up the SubPEx run. Runs only on linux.
 
-from typing import Any, List, Tuple
+from typing import Tuple
 
 import glob
 import os

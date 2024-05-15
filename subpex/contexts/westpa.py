@@ -2,8 +2,6 @@ from typing import Any
 
 from collections.abc import Iterable, MutableMapping
 
-from loguru import logger
-
 from .base import BaseContextManager, BaseContextValidator
 
 
