@@ -7,7 +7,7 @@ import numpy as np
 from ..utils.spatial import calculate_distance_two_points, get_centroid
 
 
-def calculate_pocket_gyration(fop_pocket: Sequence[Sequence[float]]) -> float:
+def get_pocket_rog(fop_pocket: Sequence[Sequence[float]]) -> float:
     """Takes the xyz coordinates of a field of points and calculates the radius
     of gyration. It assumes a mass of one for all the points.
 
