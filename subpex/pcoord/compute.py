@@ -4,6 +4,7 @@ from collections.abc import MutableMapping, Sequence
 
 import MDAnalysis as mda
 import numpy as np
+import pandas as pd
 from mda.analysis import align
 
 from ..contexts.subpex import SubpexContextManager
@@ -12,7 +13,7 @@ from ..fop.prop import get_fop_volume
 from ..pocket.detect import get_fop_pocket
 from ..pocket.props import get_pocket_rog
 from .desc import get_rmsd
-from .io import initialize_pcoord_data
+from .io import initialize_data, write_data
 from .jaccard import get_jaccard_distance
 
 
@@ -103,7 +104,7 @@ def run_compute_pcoord(
     selection_align_suffix: str = " and backbone",
     write: bool = True,
     write_dir: str | None = None,
-) -> None:
+) -> MutableMapping[str, MutableSequence[float | MutableSequence[float]]]:
     """Computes progress coordinate for production run.
 
     Args:
@@ -134,9 +135,11 @@ def run_compute_pcoord(
         num_points = len(u_ensemble.trajectory)
 
     # Create a dictionary with all the elements to calculate
-    results = initialize_pcoord_data(subpex_cm, data_dir=write_dir)
+    results = initialize_data(subpex_cm, data_dir=write_dir)
 
     # get selection string for alignment
+    if subpex_cm.pocket_selection_str is None:
+        raise ValueError("pocket_selection_str cannot be None")
     selection_alignment = subpex_cm.pocket_selection_str + selection_align_suffix
 
     # if we are calculating the composite
@@ -166,60 +169,12 @@ def run_compute_pcoord(
             subpex_cm=subpex_cm,
             composite_sigma=composite_sigma,
         )
+        for key, value in results_frame.items():
+            results[key].append(value)
 
-    # writing in text files the progress coordinates and the required auxiliary
-    # data if needed.
-    with open("pcoord.txt", "w") as f:
-        for i in range(len(results[settings["pcoord"][0]])):
-            line = ""
-            for pcoord in settings["pcoord"]:
-                line += "{:.4f}    ".format(results[pcoord][i])
-            f.write(line + "\n")
+    write_data(results, subpex_cm=subpex_cm, data_dir=write_dir)
 
-    # save fop in file so it can be piped to h5 file
-    if "fops" in results.keys():
-        if settings["fop_filetype"] == "xyz":
-            points_to_xyz(
-                "fop.txt", results["fops"], settings["resolution"], settings["radius"]
-            )
-        elif settings["fop_filetype"] == "pdb":
-            points_to_pdb("fop", results["fops"])
-
-    if "p_vol" in settings["auxdata"]:
-        with open("p_vol.txt", "w") as f:
-            for i in results["p_vol"]:
-                f.write(str(i) + "\n")
-
-    if "p_rog" in settings["auxdata"]:
-        with open("p_rog.txt", "w") as f:
-            for i in results["p_rog"]:
-                f.write(str(i) + "\n")
-
-    if "bb_rmsd" in settings["auxdata"]:
-        with open("bb_rmsd.txt", "w") as f:
-            for i in results["bb_rmsd"]:
-                f.write(str(i) + "\n")
-
-    if "p_rmsd" in settings["auxdata"]:
-        with open("p_rmsd.txt", "w") as f:
-            for i in results["p_rmsd"]:
-                f.write(str(i) + "\n")
-
-    if "jd" in settings["auxdata"]:
-        with open("jd.txt", "w") as f:
-            for i in results["jd"]:
-                f.write(str(i) + "\n")
-
-    if "composite" in settings["auxdata"]:
-        with open("composite.txt", "w") as f:
-            for i in results["composite"]:
-                f.write(str(i) + "\n")
-
-    if args.csv is not None:
-        import pandas as pd
-
-        results_pd = pd.DataFrame(results)
-        results_pd.to_csv(args.csv)
+    return results
 
 
 def cli_get_pcoord():
@@ -280,7 +235,7 @@ def cli_get_pcoord():
 
     fop_ref = read_fop(args.fop_ref_path)
 
-    run_compute_pcoord(
+    results = run_compute_pcoord(
         topo_path=args.topo_path,
         traj_path=args.traj_path,
         ref_path=args.ref_path,
@@ -288,3 +243,7 @@ def cli_get_pcoord():
         subpex_cm=subpex_cm,
         write_dir=args.write_dir,
     )
+
+    if args.csv is not None:
+        df_results = pd.DataFrame(results)
+        df_results.to_csv(args.csv)
