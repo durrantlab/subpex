@@ -1,5 +1,6 @@
 """Reading and writing field of points."""
 
+import os
 from collections.abc import Sequence
 
 from loguru import logger
@@ -138,20 +139,25 @@ def points_to_xyz(
             f.write(f"CA    {i[0]}    {i[1]}    {i[2]} \n")
 
 
-def write_fop(fop: Sequence[Sequence[float]], subpex_cm: SubpexContextManager) -> None:
-    # Save FOP to a xyz, pdb or pickle file.
-    if subpex_cm.ref_fop_write is not None:
-        fop_type = subpex_cm.ref_fop_write.split(".")[-1]
-        if fop_type.lower() == "xyz":
-            points_to_xyz(
-                subpex_cm.ref_fop_write,
-                fop,
-                subpex_cm.pocket_resolution,
-                subpex_cm.pocket_radius,
-            )
-        elif fop_type.lower() == "pdb":
-            points_to_pdb(subpex_cm.ref_fop_write, fop)
-        else:
-            raise ValueError("ref_fop_write must end in `.xyz` or `.pdb`.")
+def write_fop(
+    fop: Sequence[Sequence[float]],
+    f_path: str,
+    subpex_cm: SubpexContextManager,
+    data_dir: str | None = None,
+) -> None:
+    if data_dir is None:
+        data_dir = ""
+    f_path = os.path.join(data_dir, f_path)
+
+    fop_type = f_path.split(".")[-1]
+    if fop_type.lower() == "xyz":
+        points_to_xyz(
+            f_path,
+            fop,
+            subpex_cm.pocket_resolution,
+            subpex_cm.pocket_radius,
+        )
+    elif fop_type.lower() == "pdb":
+        points_to_pdb(f_path, fop)
     else:
-        logger.info("No reference FOP file will be saved.")
+        raise ValueError("f_path must end in `.xyz` or `.pdb`.")
