@@ -10,7 +10,7 @@ from loguru import logger
 from ..fop.clean import remove_convex_fop, remove_fop_atom_clash
 from ..fop.cluster import cluster_fop
 from ..fop.gen import gen_fop
-from ..fop.utils import calculate_distance_two_points
+from ..utils.spatial import calculate_distance_two_points
 
 
 def get_fop_pocket(
@@ -60,7 +60,6 @@ def get_pocket_selection(
     universe: mda.Universe,
     center: Sequence[float],
     radius: float,
-    selection_file: str,
     distance_constraint: float = 6.7,
 ) -> str:
     """Takes the protein and center of the pocket and gets the initial
@@ -72,7 +71,6 @@ def get_pocket_selection(
         universe: MDA universe with protein.
         center: XYZ coordinates of the pocket center.
         radius: radius of the pocket to be considered.
-        selection_file: filename for the selection pocket.
         distance_constraint: Constraint to use for proximity to calculate surface
             residues.
 
@@ -117,11 +115,11 @@ def get_pocket_selection(
                     list_close_water.append(j.resid)
 
         # creating selection pocket string compatible with
-        selection_pocket = f"resid {list_close_water[0]} "
+        selection_pocket = f"resid {list_close_water[0]}"
         for i in list_close_water[1:]:
-            selection_pocket += f" or resid {str(i)} "
+            selection_pocket += f" or resid {str(i)}"
 
             # save the pocket selection string so it can be used in other places
-    selection_pocket += "and (not name H*)"
+    selection_pocket += " and (not name H*)"
 
     return selection_pocket
