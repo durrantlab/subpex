@@ -1,4 +1,32 @@
-# SubPEx 1.0
+<h1 align="center">SubPEx</h1>
+
+<h4 align="center">Generate a diverse ensemble of protein conformations for use in ensemble docking</h4>
+
+<h4 align="center" style="padding-bottom: 0.5em;"><a href="https://durrantlab.github.io/subpex/">Documentation</a></h4>
+
+<p align="center">
+    <a href="https://github.com/durrantlab/subpex/actions/workflows/build.yml">
+        <img src="https://github.com/durrantlab/subpex/actions/workflows/build.yml/badge.svg" alt="Build Status ">
+    </a>
+    <a href="https://codecov.io/gh/durrantlab/subpex">
+        <img src="https://codecov.io/gh/durrantlab/subpex/graph/badge.svg?token=784B2H5JW0" alt="codecov">
+    </a>
+    <a href="https://github.com/durrantlab/subpex/releases">
+        <img src="https://img.shields.io/github/v/release/durrantlab/subpex" alt="GitHub release (latest by date)">
+    </a>
+    <a href="https://github.com/durrantlab/subpex/blob/main/LICENSE.md" target="_blank">
+        <img src="https://img.shields.io/github/license/durrantlab/subpex" alt="License">
+    </a>
+    <a href="https://github.com/durrantlab/subpex/" target="_blank">
+        <img src="https://img.shields.io/github/repo-size/durrantlab/subpex" alt="GitHub repo size">
+    </a>
+    <a href="https://github.com/psf/black" target="_blank">
+        <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Black style">
+    </a>
+    <a href="https://github.com/astral-sh/ruff" target="_blank">
+        <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Black style">
+    </a>
+</p>
 
 ## What is it?
 
