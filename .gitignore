@@ -9,7 +9,6 @@
 utils/settings.yaml
 *.sublime-project
 *.todo
-*/__init__.py
 /.idea/
 *sublime-workspace
 reference/mol.*
