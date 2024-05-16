@@ -6,6 +6,7 @@ from collections.abc import MutableMapping, MutableSequence
 from loguru import logger
 
 from ..contexts.subpex import SubpexContextManager
+from ..fop.io import write_fop
 
 
 def _load_data(data_dir: str, fname_data: str) -> float | MutableSequence[float]:
@@ -24,9 +25,9 @@ def _load_data(data_dir: str, fname_data: str) -> float | MutableSequence[float]
     return []
 
 
-def initialize_pcoord_data(
+def initialize_data(
     subpex_cm: SubpexContextManager, data_dir: str | None = None
-) -> MutableMapping[str, MutableSequence[float] | float]:
+) -> MutableMapping[str, MutableSequence[float | MutableSequence[float]]]:
     """Initialize and load the last value of activated progress coordinate data.
 
     Args:
@@ -37,17 +38,68 @@ def initialize_pcoord_data(
     Returns:
         The last value of data we could find.
     """
-    data = {}
+    data: MutableMapping[str, MutableSequence[float | MutableSequence[float]]] = {}
 
     for activated, key, fname in zip(
-        subpex_cm.data_activated, subpex_cm.data_keys, subpex_cm.data_file_names
+        sorted(subpex_cm.data_activated),
+        sorted(subpex_cm.data_keys),
+        sorted(subpex_cm.data_file_names),
     ):
         if not activated:
             continue
+        _data = []
         if data_dir is not None:
-            _data = _load_data(data_dir, getattr(subpex_cm, fname))
-        else:
-            _data = []
+            _data.append(_load_data(data_dir, getattr(subpex_cm, fname)))
         data[getattr(subpex_cm, key)] = _data
 
     return data
+
+
+def write_data(
+    data: MutableMapping[str, MutableSequence[float | MutableSequence[float]]],
+    subpex_cm: SubpexContextManager,
+    data_dir: str | None = None,
+) -> None:
+    if data_dir is None:
+        data_dir = ""
+    for activated, key, fname in zip(
+        sorted(subpex_cm.data_activated),
+        sorted(subpex_cm.data_keys),
+        sorted(subpex_cm.data_file_names),
+    ):
+        if not activated:
+            continue
+        f_path = os.path.join(data_dir, fname)
+        f_ext = fname.split(".")[-1]
+
+        _data = data[getattr(subpex_cm, key)]
+        if f_ext in ("xyz", "pdb"):
+            if isinstance(_data[0], float):
+                logger.warning(f"File extension for {key} is {f_ext}")
+                logger.warning("However, data is not a field of points.")
+                logger.warning("Not writing this data.")
+                continue
+            write_fop(
+                data[getattr(subpex_cm, key)],
+                f_path,
+                subpex_cm=subpex_cm,
+                data_dir=data_dir,
+            )
+        elif f_ext == "txt":
+            if isinstance(_data[0], float):
+                with open(f_path, "w", encoding="utf-8") as f:
+                    for _value in _data:
+                        f.write(str(_value) + "\n")
+            elif isinstance(_data[0], list):
+                with open(f_path, "w", encoding="utf-8") as f:
+                    for _data_frame in _data:
+                        line = ""
+                        for _data_frame_pcoord in _data_frame:
+                            line += "{:.4f}    ".format(_data_frame_pcoord)
+                        f.write(line + "\n")
+            else:
+                logger.warning(f"{type(_data[0])} has not been accounted for")
+                logger.warning(f"Skipping {key}")
+        else:
+            logger.warning(f"{f_ext} file extension is not supported")
+            logger.warning(f"Skipping {key}")
