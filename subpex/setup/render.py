@@ -10,6 +10,7 @@ from jinja2 import Template
 
 from .. import DIR_TEMPLATE
 from ..contexts.subpex import SubpexContextManager
+from ..contexts.westpa import WestpaContextManager
 
 SLURM_TEMPLATE_PATH = os.path.join(DIR_TEMPLATE, "workload_managers/job.sbatch")
 
@@ -29,21 +30,23 @@ def clean_render(render_string: str) -> str:
 
 
 def slurm(
-    subex_cm: SubpexContextManager,
+    subpex_cm: SubpexContextManager,
     file_name: str | None = None,
     save_dir: str | None = None,
 ) -> Sequence[str]:
-    """Render slurm sbatch script
+    """Render slurm sbatch script.
 
     Args:
-        save_dir: Directory to render and save
+        subpex_cm: SubPEx context manager.
+        file_name: Name for the file including the extension.
+        save_dir: Directory to save rendered file.
     """
     if file_name is None:
         file_name = "job.sbatch"
 
     template = Template(load_template(SLURM_TEMPLATE_PATH))
 
-    rendered_file = template.render(**subex_cm.get())
+    rendered_file = template.render(**subpex_cm.get())
     rendered_file = clean_render(rendered_file)
 
     if save_dir is not None:
@@ -52,6 +55,15 @@ def slurm(
             f.write(rendered_file)
 
     return rendered_file
+
+
+def west_cfg(
+    westpa_cm: WestpaContextManager,
+    file_name: str | None = None,
+    save_dir: str | None = None,
+) -> None:
+    """Writes `west.cfg` file for WESTPA simulations."""
+    westpa_cm.to_yaml(save_dir=save_dir)
 
 
 def cli_renderer():
@@ -73,11 +85,16 @@ def cli_renderer():
     )
     args = parser.parse_args()
 
-    subpex_cm = SubpexContextManager()
+    if args.function_name == "west_cfg":
+        cm = WestpaContextManager()
+    elif args.function_name in ["slurm"]:
+        cm = SubpexContextManager()
+    else:
+        raise ValueError(f"Could not find function with name {args.function_name}")
     if args.yaml is None:
         args.yaml = []
     for yaml_path in reversed(args.yaml):
-        subpex_cm.from_yaml(yaml_path)
+        cm.from_yaml(yaml_path)
 
     if args.save_dir is None:
         args.save_dir = ""
@@ -85,8 +102,6 @@ def cli_renderer():
     current_module = sys.modules[__name__]
     renderer = getattr(current_module, args.function_name, None)
     if callable(renderer):
-        return renderer(subpex_cm, args.name, args.save_dir)
+        return renderer(cm, args.name, args.save_dir)
     else:
-        raise AttributeError(
-            f"No callable function named '{args.function_name}' found."
-        )
+        raise ValueError(f"No callable function named '{args.function_name}' found.")
