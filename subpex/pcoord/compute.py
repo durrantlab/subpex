@@ -1,6 +1,6 @@
 import argparse
 import sys
-from collections.abc import MutableMapping, Sequence
+from collections.abc import MutableMapping, MutableSequence, Sequence
 
 import MDAnalysis as mda
 import numpy as np
