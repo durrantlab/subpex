@@ -1,7 +1,7 @@
 /*Indentation.*/
 div.doc-contents:not(.first) {
-    padding-left: 25px;
-    border-left: .05rem solid var(--md-typeset-table-color);
+    padding-left: 35px; /*25px is the default*/
+    border-left: .15rem solid #ededed;
 }
 
 /*Mark external links as such. */
