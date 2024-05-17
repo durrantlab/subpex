@@ -206,12 +206,6 @@ def cli_get_pcoord():
         type=str,
         help="will save results in an csv file with the provided filename",
     )
-    parser.add_argument(
-        "--we",
-        action="store_true",
-        help="Use this when you are using this for a progress coordinate "
-        "calculation in a weighted u_ensemble simulation",
-    )
     args = parser.parse_args()
 
     subpex_cm = SubpexContextManager()
