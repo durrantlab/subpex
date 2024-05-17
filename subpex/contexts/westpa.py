@@ -10,8 +10,10 @@ class System:
     """System settings for WESTPA."""
 
     def __init__(self) -> None:
-        self.driver: str = "adaptive.System"
-        """The driver parameter must be set to a subclass of `WESTSystem`."""
+        self.driver: str = "westpa.core.systems.WESTSystem"
+        """An import string to a WESTPA system representation. Additional documentation
+        can be found [here](https://westpa.readthedocs.io/en/latest/documentation/core/westpa.core.html#westpa.core.systems.WESTSystem).
+        """
         self.module_path: str = "$WEST_SIM_ROOT/adaptive_binning/"
         """Path where the class is defined."""
 
