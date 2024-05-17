@@ -1,10 +1,10 @@
-# type: ignore[attr-defined]
-
 import os
 import sys
 from ast import literal_eval
 
 from loguru import logger
+
+DIR_TEMPLATE = os.path.join(os.path.dirname(__file__), "templates/")
 
 logger.disable("subpex")
 
