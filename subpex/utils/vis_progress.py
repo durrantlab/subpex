@@ -46,7 +46,7 @@ def plot_num_walkers(west: h5py.File, outdir: str) -> None:
         len(west["iterations"][k]["pcoord"][()]) for k in west["iterations"].keys()
     ]
     # Plotting the num of walkers per iteration.
-    fig = plt.subplots(1, figsize=(10, 7))
+    plt.subplots(1, figsize=(10, 7))
     plt.title("Number of Walkers per iteration", fontsize=32)
     plt.plot(
         range(1, len(num_walkers) + 1),
@@ -201,7 +201,7 @@ def plot_stuff(
     """
 
     # TODO: Erich - this plot needs to  be redone
-    fig = plt.subplots(1, 1, figsize=(10, 8))
+    plt.subplots(1, 1, figsize=(10, 8))
     plt.title("Jaccard distance against iteration", fontsize=20)
     plt.ylabel("JD", fontsize=18)
     plt.errorbar(
