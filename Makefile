@@ -86,7 +86,7 @@ validate:
 formatting:
 	- $(CONDA) isort --settings-path pyproject.toml ./
 	- $(CONDA) black --config pyproject.toml ./
-	- $(CONDA) ruff check . --fix
+	- $(CONDA) ruff check . --fix --unsafe-fixes
 
 
 
