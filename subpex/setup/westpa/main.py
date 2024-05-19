@@ -1,6 +1,5 @@
 import argparse
 import os
-import shutil
 import sys
 
 from loguru import logger
@@ -23,17 +22,16 @@ def run_westpa_setup(
         logger.info(f"Directory at {write_dir} exists")
         if overwrite:
             logger.info("Overwrite is `True`")
-            logger.info("Removing directory")
-            shutil.rmtree(write_dir)
         else:
             logger.error("Overwrite is `False`")
             logger.error("Aborting")
             sys.exit(1)
 
     logger.info(f"Creating directory at {write_dir}")
-    os.makedirs(write_dir, exist_ok=False)
+    os.makedirs(write_dir, exist_ok=True)
 
     logger.info("Creating all necessary directories")
+    logger.debug("   - Creating bstates")
     os.makedirs(os.path.join(write_dir, "bstates"))
 
 
