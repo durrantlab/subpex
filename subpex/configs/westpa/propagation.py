@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class Propagation(BaseModel):
+class PropagationConfig(BaseModel):
     """Propagation settings for WESTPA."""
 
     gen_istates: bool = Field(default=True)

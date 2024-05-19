@@ -40,7 +40,7 @@ class SystemOptions(BaseModel):
     """A vector of target counts, one per bin."""
 
 
-class System(BaseModel):
+class SystemConfig(BaseModel):
     """System settings for WESTPA."""
 
     driver: str = Field(default="westpa.core.systems.WESTSystem")
