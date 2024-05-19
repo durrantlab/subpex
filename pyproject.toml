@@ -27,6 +27,7 @@ pydantic-settings = "^2.2.1"
 sp_restart = "subpex.scripts.sp_restart:main"
 sp_renderer = "subpex.setup.render:cli_renderer"
 sp_westpa_config = "subpex.configs.westpa.cli:cli_westpa_config"
+sp_westpa_init = "subpex.setup.westpa.main:cli_run_westpa_setup"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.4"
