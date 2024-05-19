@@ -33,5 +33,5 @@ class YamlIO:
             IOError: If the file cannot be written to.
         """
         config_dict = self.dict()
-        with open(file_name, "w") as f:
+        with open(file_path, "w") as f:
             yaml.dump(config_dict, f, default_flow_style=False)

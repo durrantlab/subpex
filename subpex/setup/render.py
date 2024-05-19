@@ -9,8 +9,7 @@ from collections.abc import Sequence
 from jinja2 import Template
 
 from .. import DIR_TEMPLATE
-from ..configs import SubpexConfig
-from ..contexts.westpa import WestpaConfig
+from ..configs import SubpexConfig, WestpaConfig
 
 SLURM_TEMPLATE_PATH = os.path.join(DIR_TEMPLATE, "workload_managers/job.sbatch")
 
