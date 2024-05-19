@@ -15,7 +15,7 @@ from ..utils.spatial import calculate_distance_two_points
 
 def get_fop_pocket(
     protein: Sequence[Sequence[float]],
-    alphas: Sequence[Sequence[float]],
+    pocket_c_alphas: Sequence[Sequence[float]],
     center: Sequence[float],
     resolution: float,
     radius: float,
@@ -27,26 +27,31 @@ def get_fop_pocket(
 
     Args:
         protein: XYZ coordinates of protein atoms.
-        alphas: XYZ coordinates of all alpha carbons.
+        pocket_c_alphas: XYZ coordinates of all alpha carbons.
         center: XYZ center of the pocket.
-        resolution: resolution for the FOP.
-        radius: radius of sphere for FOP.
+        resolution: Resolution for the FOP.
+        radius: Radius of sphere for FOP.
         clustering_model: Scikit-learn clustering model class to use.
         clustering_kwargs: Keyword arguments for `clustering_model` initialization.
 
     Returns:
         Pocket shape as a field of points.
     """
-    # get starting FOP and snapped center
+    # Generate the initial FOP and snapped center
     fop_pocket, fop_center = gen_fop(center, resolution, radius)
-    # trim protein atoms to those within the FOP sphere.
+
+    # Trim protein atoms to those within the FOP sphere
     trimmed_coords_protein = [
         x for x in protein if calculate_distance_two_points(x, fop_center) < radius
     ]
-    # remove points in FOP that have steric clashes with protein.
+
+    # Remove points in FOP that have steric clashes with protein
     fop_pocket = remove_fop_atom_clash(fop_pocket, trimmed_coords_protein)
-    # remove points outside the convex hull created by the alpha carbons in the pocket.
-    fop_pocket = remove_convex_fop(fop_pocket, alphas)
+
+    # Remove points outside the convex hull created by the alpha carbons in the pocket
+    fop_pocket = remove_convex_fop(fop_pocket, pocket_c_alphas)
+
+    # Cluster the FOP points if a clustering model is provided
     fop_pocket = cluster_fop(
         fop_pocket,
         clustering_model=clustering_model,

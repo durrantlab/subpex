@@ -35,11 +35,11 @@ def test_pocket_fop_gen_m7g(path_m7g_ref_pdb):
     pocket_calpha = u.select_atoms(pocket_selection_str + " and name CA*").positions
 
     fop_frame = get_fop_pocket(
-        protein_coords,
-        pocket_calpha,
-        pocket_center,
-        pocket_resolution,
-        pocket_radius,
+        protein=protein_coords,
+        pocket_c_alphas=pocket_calpha,
+        center=pocket_center,
+        resolution=pocket_resolution,
+        radius=pocket_radius,
     )
 
     assert len(fop_frame) == 1057
