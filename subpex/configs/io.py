@@ -20,7 +20,7 @@ class YamlIO:
             with open(yaml_path, "r") as f:
                 yaml_data = yaml.safe_load(f)
                 for key, value in yaml_data.items():
-                    if key in self.__fields__:
+                    if key in self.__fields__:  # type: ignore
                         setattr(self, key, value)
 
     def to_yaml(self, file_path: str) -> None:
@@ -32,6 +32,6 @@ class YamlIO:
         Raises:
             IOError: If the file cannot be written to.
         """
-        config_dict = self.dict()
+        config_dict = self.dict()  # type: ignore
         with open(file_path, "w") as f:
             yaml.dump(config_dict, f, default_flow_style=False)
