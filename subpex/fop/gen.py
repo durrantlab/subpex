@@ -23,8 +23,8 @@ def gen_fop(
         round_decimals: Number of decimals to round FOP and center to.
 
     Returns:
-        field_of_points (list of lists): a spherical field of points
-        center (list): center of the field of points
+        field_of_points: a spherical field of points
+        center: center of the field of points
     """
     logger.info("Generating spherical field of points (FOP)")
     logger.debug(f"FOP radius: {radius}")

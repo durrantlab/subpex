@@ -5,159 +5,218 @@ from collections.abc import Sequence
 
 from loguru import logger
 
-from ..configs import SubpexConfig
-from .prop import get_fop_volume
-
 
 def parse_pdb_fop(file_path: str) -> Sequence[Sequence[float]]:
-    """Parse and return the field of points that is stored in a pdb file.
+    """Parse and return the field of points (FOP) stored in a PDB file.
+
+    This function reads a PDB file, extracts the XYZ coordinates from lines that start
+    with 'ATOM', and returns them as a list of lists of floats.
 
     Args:
-        file_path: Path to the pdb file with the field of points.
+        file_path: Path to the PDB file containing the field of points.
 
     Returns:
-        Field of points XYZ coordinates.
+        A list of [X, Y, Z] coordinates.
+
+    Raises:
+        FileNotFoundError: If the file at the given path does not exist.
+        ValueError: If the file contains improperly formatted lines.
     """
     logger.debug(f"Parsing {file_path} for FOP")
-    with open(file_path, "r", encoding="utf-8") as f:
-        text = f.readlines()
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {file_path}")
+        raise e
+
     fop = []
-    for line in text:
+    for line in lines:
         if line.startswith("ATOM"):
-            split = line.split()
-            x = float(split[4])
-            y = float(split[5])
-            z = float(split[6])
-            fop.append([x, y, z])
-        else:
-            pass
+            try:
+                x = float(line[30:38].strip())
+                y = float(line[38:46].strip())
+                z = float(line[46:54].strip())
+                fop.append([x, y, z])
+            except ValueError as e:
+                logger.error(f"Error parsing line: {line.strip()}")
+                raise e
+
+    logger.debug(f"Successfully parsed {len(fop)} points from {file_path}")
     return fop
 
 
 def parse_xyz_fop(file_path: str) -> Sequence[Sequence[float]]:
-    """Reads a filename and parses the field of points to convert it into a
-    list of lists.
+    """Reads a filename and parses the field of points (FOP) from an XYZ file format.
+
+    This function reads an XYZ file, extracts the XYZ coordinates from the lines, and
+    returns them as a list of lists of floats. The first two lines are typically headers
+    and are skipped.
 
     Args:
-        file_path: filename of the field of points to open and parse
+        file_path: Filename of the field of points to open and parse.
 
     Returns:
-        Field of points XYZ coordinates.
+        A list of [X, Y, Z] coordinates.
+
+    Raises:
+        FileNotFoundError: If the file at the given path does not exist.
+        ValueError: If the file contains improperly formatted lines.
     """
     logger.debug(f"Parsing {file_path} for FOP")
-    # open reference fop xyz file
-    with open(file_path, "r", encoding="utf-8") as f:
-        text = f.readlines()
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {file_path}")
+        raise e
 
-    # parse xyz file
-    fop = []
-    for i in text[2:]:
-        line = i.split()
-        if len(line) == 4:
-            point = [float(line[1]), float(line[2]), float(line[3])]
-            fop.append(point)
-        else:
-            pass
+    try:
+        fop = [
+            [float(line.split()[1]), float(line.split()[2]), float(line.split()[3])]
+            for line in lines[2:]
+            if len(line.split()) == 4
+        ]
+    except ValueError as e:
+        logger.error(f"Error parsing file: {file_path}")
+        raise e
 
+    logger.debug(f"Successfully parsed {len(fop)} points from {file_path}")
     return fop
 
 
 def read_fop(file_path: str) -> Sequence[Sequence[float]]:
-    """Load field of points from supported file types.
+    """Load field of points (FOP) from supported file types (.xyz or .pdb).
+
+    This function determines the file type based on the file extension and
+    calls the appropriate parsing function to load the field of points.
 
     Args:
-        file_path: Path to xyz or pdb file.
+        file_path: Path to the .xyz or .pdb file containing the field of points.
 
     Returns:
-        Loaded field of points.
+        A list of [X, Y, Z] coordinates.
+
+    Raises:
+        ValueError: If the file extension is not supported.
+        FileNotFoundError: If the file at the given path does not exist.
+        ValueError: If the file contains improperly formatted lines.
     """
-    fop_type = file_path.split(".")[-1]
-    if fop_type.lower() == "xyz":
+    fop_type = file_path.split(".")[-1].lower()
+    logger.debug(f"Reading FOP from {file_path}, detected file type: {fop_type}")
+
+    if fop_type == "xyz":
         fop_ref = parse_xyz_fop(file_path)
-    elif fop_type.lower() == "pdb":
+    elif fop_type == "pdb":
         fop_ref = parse_pdb_fop(file_path)
     else:
-        raise ValueError("ref_fop_write must end in `.xyz` or `.pdb`.")
+        logger.error("Unsupported file extension: must be .xyz or .pdb")
+        raise ValueError("File must end in `.xyz` or `.pdb`.")
+
+    logger.debug(f"Successfully loaded FOP from {file_path}")
     return fop_ref
 
 
-def points_to_pdb(file_path: str, fop: Sequence[Sequence[float]]) -> None:
-    """Writes a pdb file full of C-alphas so users can visualize the field of
+def points_to_pdb(
+    file_path: str,
+    fop_input: Sequence[Sequence[float]] | Sequence[Sequence[Sequence[float]]],
+) -> None:
+    """Writes a PDB file full of C-alphas so users can visualize the field of
     points in software such as VMD.
 
+    This function creates a PDB file with each point represented as a C-alpha
+    (CA) atom, allowing for visualization in molecular visualization software.
+    The function supports creating a multiframe PDB file if the input sequence
+    contains multiple frames of points.
+
     Args:
-        filename: name of the pdb file to create.
-        fop: Field of points XYZ coordinates.
+        file_path: Name of the PDB file to create.
+        fop_input: Field of points XYZ coordinates. Can contain multiple frames of points.
     """
     logger.debug(f"Writing FOP to {file_path}")
-    # TODO: Erich - modify to be able to do multiframe pdb
+
+    # Ensure fop is a 3D list
+    if all(isinstance(i, (float, int)) for i in fop_input[0]):
+        fop = [fop_input]
+    else:
+        fop = fop_input
+
     with open(file_path, "w", encoding="utf-8") as f:
-        # f.write(header)
-        atom_number = 1
-        for i in fop:
-            text = "ATOM" + "{:>7}".format(atom_number)
-            text += "{:^6}".format("CA")
-            text += "{:>3}".format("ALA")
-            text += "{:>6}".format("A")
-            text += "{:>12}".format(i[0])
-            text += "{:>8}".format(i[1])
-            text += "{:>8}".format(i[2])
-            text += "{:>6}".format("1.0")
-            text += "{:>6}".format("1.0")
-            text += "\n"
-            f.write(text)
-            atom_number += 1
-        f.write("\n")
+        frame_number = 1
+        for frame in fop:
+            atom_number = 1
+            f.write(f"MODEL     {frame_number}\n")
+            for point in frame:
+                text = f"ATOM  {atom_number:>5}  CA  ALA A {atom_number:>4}    "
+                text += f"{point[0]:>8.3f}{point[1]:>8.3f}{point[2]:>8.3f}  1.00  0.00           C\n"
+                f.write(text)
+                atom_number += 1
+            f.write("ENDMDL\n")
+            frame_number += 1
+
+    logger.debug(f"Successfully wrote FOP to {file_path}")
 
 
 def points_to_xyz(
-    file_path: str, fop: Sequence[Sequence[float]], resolution: float, radius: float
+    file_path: str,
+    fop_input: Sequence[Sequence[float]] | Sequence[Sequence[Sequence[float]]],
 ) -> None:
-    """Takes the coordinates and the resolution, writes write an xyz file that
-    users can load into visualization software such as VMD.
+    """Writes an XYZ file that users can load into visualization software such as VMD.
+
+    This function creates an XYZ file with each point represented as a CA atom,
+    allowing for visualization in molecular visualization software. The function
+    supports creating a multiframe XYZ file if the input sequence contains multiple
+    frames of points.
 
     Args:
-        file_path: name for the xyz file to be created.
-        fop: contains XYZ coordinates for each atom.
-        resolution: resolution in Angstroms.
-        radius: radius in Angstrom for the field of points.
+        file_path: Name for the XYZ file to be created.
+        fop: Contains XYZ coordinates for each atom. Can be a 2D list (single frame)
+             or a 3D list (multiple frames).
     """
     logger.debug(f"Writing FOP to {file_path}")
 
-    volume = get_fop_volume(fop, resolution)
+    # Ensure fop is a 3D list
+    if all(isinstance(i, (float, int)) for i in fop_input[0]):
+        fop = [fop_input]  # Wrap in an outer list to make it a 3D list
+    else:
+        fop = fop_input
 
-    # TODO: Erich - modify to be able to do multiframe xyz
     with open(file_path, "w", encoding="utf-8") as f:
-        f.write(str(len(fop)) + "\n")
-        f.write(
-            "Generated in SubPEx. Res: {res}    Rad: {dim} Ang    Volume: {vol} Ang^3 \n".format(
-                res=resolution, dim=radius, vol=volume
-            )
-        )
-        # Adding each coordinate as a C-alpha for visualization purposes
-        for i in fop:
-            f.write(f"CA    {i[0]}    {i[1]}    {i[2]} \n")
+        for frame in fop:
+            f.write(f"{len(frame)}\n\n")  # Number of atoms and a blank line
+            for point in frame:
+                f.write(f"CA    {point[0]:.3f}    {point[1]:.3f}    {point[2]:.3f}\n")
+
+    logger.debug(f"Successfully wrote FOP to {file_path}")
 
 
 def write_fop(
-    fop: Sequence[Sequence[float]],
+    fop: Sequence[Sequence[float]] | Sequence[Sequence[Sequence[float]]],
     f_path: str,
-    subpex_config: SubpexConfig,
     data_dir: str | None = None,
 ) -> None:
+    """Writes the field of points (FOP) to a file in either XYZ or PDB format.
+
+    This function saves the given field of points to a specified file path. It supports
+    both XYZ and PDB file formats and can handle both single-frame and multi-frame data.
+
+    Args:
+        fop: Field of points XYZ coordinates. Can be a 2D list (single frame) or a 3D list (multiple frames).
+        f_path: File path where the FOP should be saved. The file extension must be either `.xyz` or `.pdb`.
+        data_dir: Directory to save the file in. If None, the file will be saved in the current directory.
+
+    Raises:
+        ValueError: If the file extension is not `.xyz` or `.pdb`.
+    """
     if data_dir is None:
         data_dir = ""
-    f_path = os.path.join(data_dir, f_path)
 
-    fop_type = f_path.split(".")[-1]
-    if fop_type.lower() == "xyz":
-        points_to_xyz(
-            f_path,
-            fop,
-            subpex_config.pocket.resolution,
-            subpex_config.pocket.radius,
-        )
-    elif fop_type.lower() == "pdb":
-        points_to_pdb(f_path, fop)
+    full_path = os.path.join(data_dir, f_path)
+    fop_type = full_path.split(".")[-1].lower()
+
+    if fop_type == "xyz":
+        points_to_xyz(full_path, fop)
+    elif fop_type == "pdb":
+        points_to_pdb(full_path, fop)
     else:
         raise ValueError("f_path must end in `.xyz` or `.pdb`.")
