@@ -3,7 +3,7 @@ from typing import Any
 from collections.abc import Iterable, MutableMapping, Sequence
 
 
-class SlurmContextManager:
+class SlurmConfig:
     """Context manager for Slurm job submission scripts."""
 
     def __init__(

@@ -14,12 +14,12 @@ class PocketConfig(BaseModel):
     """
     selection_append: str | None = "and protein and (not name H*)"
     """String to append to pocket selection if desired."""
-    resids: Sequence[int] | None = Field(default=None)
+    selection_resids: Sequence[int] | None = Field(default=None)
     """Residue IDs to form the pocket.
     """
     selection_str: str | None = Field(default=None)
     """Final pocket selection string."""
-    pocket_center: Sequence[float] | None = Field(default=None)
+    center: Sequence[float] | None = Field(default=None)
     """The pocket center XYZ coordinates."""
     radius: float = Field(default=10.0)
     """Pocket radius to consider."""

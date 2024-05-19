@@ -9,8 +9,8 @@ from collections.abc import Sequence
 from jinja2 import Template
 
 from .. import DIR_TEMPLATE
-from ..contexts.subpex import SubpexContextManager
-from ..contexts.westpa import WestpaContextManager
+from ..configs import SubpexConfig
+from ..contexts.westpa import WestpaConfig
 
 SLURM_TEMPLATE_PATH = os.path.join(DIR_TEMPLATE, "workload_managers/job.sbatch")
 
@@ -30,14 +30,14 @@ def clean_render(render_string: str) -> str:
 
 
 def slurm(
-    subpex_cm: SubpexContextManager,
+    spx_config: SubpexConfig,
     file_name: str | None = None,
     save_dir: str | None = None,
 ) -> Sequence[str]:
     """Render slurm sbatch script.
 
     Args:
-        subpex_cm: SubPEx context manager.
+        spx_config: SubPEx context manager.
         file_name: Name for the file including the extension.
         save_dir: Directory to save rendered file.
     """
@@ -46,7 +46,7 @@ def slurm(
 
     template = Template(load_template(SLURM_TEMPLATE_PATH))
 
-    rendered_file = template.render(**subpex_cm.get())
+    rendered_file = template.render(**spx_config.get())
     rendered_file = clean_render(rendered_file)
 
     if save_dir is not None:
@@ -58,7 +58,7 @@ def slurm(
 
 
 def west_cfg(
-    westpa_cm: WestpaContextManager,
+    westpa_cm: WestpaConfig,
     file_name: str | None = None,
     save_dir: str | None = None,
 ) -> None:
@@ -86,9 +86,9 @@ def cli_renderer():
     args = parser.parse_args()
 
     if args.function_name == "west_cfg":
-        cm = WestpaContextManager()
+        cm = WestpaConfig()
     elif args.function_name in ["slurm"]:
-        cm = SubpexContextManager()
+        cm = SubpexConfig()
     else:
         raise ValueError(f"Could not find function with name {args.function_name}")
     if args.yaml is None:

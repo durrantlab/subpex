@@ -5,7 +5,7 @@ from collections.abc import MutableMapping, MutableSequence
 
 from loguru import logger
 
-from ..contexts.subpex import SubpexContextManager
+from ..configs import SubpexConfig
 from ..fop.io import write_fop
 
 
@@ -26,12 +26,12 @@ def _load_data(data_dir: str, fname_data: str) -> float | MutableSequence[float]
 
 
 def initialize_data(
-    subpex_cm: SubpexContextManager, data_dir: str | None = None
+    spx_config: SubpexConfig, data_dir: str | None = None
 ) -> MutableMapping[str, MutableSequence[float | MutableSequence[float]]]:
     """Initialize and load the last value of activated progress coordinate data.
 
     Args:
-        subpex_cm: Subpex context manager.
+        spx_config: Subpex context manager.
         data_dir: Directory to search for progress coordinate data files. If `None`,
             we will initialize the data with an empty list.
 
@@ -41,38 +41,38 @@ def initialize_data(
     data: MutableMapping[str, MutableSequence[float | MutableSequence[float]]] = {}
 
     for activated, key, fname in zip(
-        sorted(subpex_cm.data_activated),
-        sorted(subpex_cm.data_keys),
-        sorted(subpex_cm.data_file_names),
+        sorted(spx_config.data_activated),
+        sorted(spx_config.data_keys),
+        sorted(spx_config.data_file_names),
     ):
         if not activated:
             continue
         _data = []
         if data_dir is not None:
-            _data.append(_load_data(data_dir, getattr(subpex_cm, fname)))
-        data[getattr(subpex_cm, key)] = _data
+            _data.append(_load_data(data_dir, getattr(spx_config, fname)))
+        data[getattr(spx_config, key)] = _data
 
     return data
 
 
 def write_data(
     data: MutableMapping[str, MutableSequence[float | MutableSequence[float]]],
-    subpex_cm: SubpexContextManager,
+    spx_config: SubpexConfig,
     data_dir: str | None = None,
 ) -> None:
     if data_dir is None:
         data_dir = ""
     for activated, key, fname in zip(
-        sorted(subpex_cm.data_activated),
-        sorted(subpex_cm.data_keys),
-        sorted(subpex_cm.data_file_names),
+        sorted(spx_config.data_activated),
+        sorted(spx_config.data_keys),
+        sorted(spx_config.data_file_names),
     ):
         if not activated:
             continue
         f_path = os.path.join(data_dir, fname)
         f_ext = fname.split(".")[-1]
 
-        _data = data[getattr(subpex_cm, key)]
+        _data = data[getattr(spx_config, key)]
         if f_ext in ("xyz", "pdb"):
             if isinstance(_data[0], float):
                 logger.warning(f"File extension for {key} is {f_ext}")
@@ -80,9 +80,9 @@ def write_data(
                 logger.warning("Not writing this data.")
                 continue
             write_fop(
-                data[getattr(subpex_cm, key)],
+                data[getattr(spx_config, key)],
                 f_path,
-                subpex_cm=subpex_cm,
+                spx_config=spx_config,
                 data_dir=data_dir,
             )
         elif f_ext == "txt":

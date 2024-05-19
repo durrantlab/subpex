@@ -2,13 +2,13 @@ from collections.abc import Sequence
 
 import scipy as sp
 
-from ..contexts.subpex import SubpexContextManager
+from ..configs import SubpexConfig
 
 
 def get_jaccard_distance(
     fop_ref: Sequence[Sequence[float]],
     fop_segment: Sequence[Sequence[float]],
-    subpex_cm: SubpexContextManager,
+    spx_config: SubpexConfig,
 ) -> float:
     """Calculates the Jaccard distance between the points in `fop_ref` and
     the `fop_segment`. Uses the distance between points to calculate the intersection.
@@ -16,7 +16,7 @@ def get_jaccard_distance(
     Args:
         fop_ref: Reference FOP.
         fop_segment: Segment FOP.
-        subpex_cm: The subpex context manager.
+        spx_config: The subpex context manager.
 
     Returns:
         Jaccard distance.
@@ -32,7 +32,7 @@ def get_jaccard_distance(
     # Obtain the points that are at less than resolution/2.5 (aka have the same
     # coordinates)
     clash_indices = tree_ref.query_ball_tree(
-        tree_segment, subpex_cm.pocket_resolution / 2.5, p=2, eps=0
+        tree_segment, spx_config.pocket_resolution / 2.5, p=2, eps=0
     )
 
     # Count the points that intersect and convert to float

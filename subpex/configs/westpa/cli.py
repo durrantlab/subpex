@@ -2,7 +2,7 @@ import argparse
 import os
 from collections.abc import Sequence
 
-from ..utils import update_parameters_from_yaml, write_yaml
+from ..utils import from_yaml, write_yaml
 from .base import WestpaConfig
 
 
@@ -16,7 +16,7 @@ def run_westpa_config(
 
     # Update parameters from YAML files if provided
     if yaml_paths:
-        westpa_config = update_parameters_from_yaml(westpa_config, yaml_paths)
+        westpa_config = from_yaml(westpa_config, yaml_paths)
 
     # Create the output file path
     if save_dir is None:

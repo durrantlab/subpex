@@ -5,7 +5,7 @@ from collections.abc import Sequence
 
 from loguru import logger
 
-from ..contexts.subpex import SubpexContextManager
+from ..configs import SubpexConfig
 from .prop import get_fop_volume
 
 
@@ -142,7 +142,7 @@ def points_to_xyz(
 def write_fop(
     fop: Sequence[Sequence[float]],
     f_path: str,
-    subpex_cm: SubpexContextManager,
+    spx_config: SubpexConfig,
     data_dir: str | None = None,
 ) -> None:
     if data_dir is None:
@@ -154,8 +154,8 @@ def write_fop(
         points_to_xyz(
             f_path,
             fop,
-            subpex_cm.pocket_resolution,
-            subpex_cm.pocket_radius,
+            spx_config.pocket.resolution,
+            spx_config.pocket.radius,
         )
     elif fop_type.lower() == "pdb":
         points_to_pdb(f_path, fop)
