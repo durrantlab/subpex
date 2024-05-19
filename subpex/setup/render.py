@@ -29,14 +29,14 @@ def clean_render(render_string: str) -> str:
 
 
 def slurm(
-    spx_config: SubpexConfig,
+    subpex_config: SubpexConfig,
     file_name: str | None = None,
     save_dir: str | None = None,
 ) -> Sequence[str]:
     """Render slurm sbatch script.
 
     Args:
-        spx_config: SubPEx context manager.
+        subpex_config: SubPEx context manager.
         file_name: Name for the file including the extension.
         save_dir: Directory to save rendered file.
     """
@@ -45,7 +45,7 @@ def slurm(
 
     template = Template(load_template(SLURM_TEMPLATE_PATH))
 
-    rendered_file = template.render(**spx_config.get())
+    rendered_file = template.render(**subpex_config.get())
     rendered_file = clean_render(rendered_file)
 
     if save_dir is not None:

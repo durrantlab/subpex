@@ -142,7 +142,7 @@ def points_to_xyz(
 def write_fop(
     fop: Sequence[Sequence[float]],
     f_path: str,
-    spx_config: SubpexConfig,
+    subpex_config: SubpexConfig,
     data_dir: str | None = None,
 ) -> None:
     if data_dir is None:
@@ -154,8 +154,8 @@ def write_fop(
         points_to_xyz(
             f_path,
             fop,
-            spx_config.pocket.resolution,
-            spx_config.pocket.radius,
+            subpex_config.pocket.resolution,
+            subpex_config.pocket.radius,
         )
     elif fop_type.lower() == "pdb":
         points_to_pdb(f_path, fop)

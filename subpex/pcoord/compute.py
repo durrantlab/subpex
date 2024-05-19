@@ -22,16 +22,16 @@ def compute_frame_data(
     atoms_frame: mda.AtomGroup,
     atoms_ref: mda.AtomGroup,
     atoms_ref_pocket: mda.AtomGroup,
-    spx_config: SubpexConfig,
+    subpex_config: SubpexConfig,
     composite_sigma: float | None = None,
 ) -> MutableMapping[str, float]:
     results_frame: MutableMapping[str, float] = {}
-    data_keys = spx_config.data_keys
+    data_keys = subpex_config.data_keys
 
-    if spx_config.key_pocket_rmsd in data_keys:
-        results_frame[spx_config.key_pocket_rmsd] = get_rmsd(
+    if subpex_config.key_pocket_rmsd in data_keys:
+        results_frame[subpex_config.key_pocket_rmsd] = get_rmsd(
             atoms_ref_pocket.positions,
-            atoms_frame.select_atoms(spx_config.pocket_selection_str).positions,
+            atoms_frame.select_atoms(subpex_config.pocket_selection_str).positions,
         )
 
     # The next lines calculate the Jaccard distance of the pocket comparing
@@ -43,54 +43,54 @@ def compute_frame_data(
         or "p_rog" in data_keys
     ):
         frame_coordinates = atoms_frame.select_atoms("protein").positions
-        if spx_config.pocket_selection_str is None:
+        if subpex_config.pocket_selection_str is None:
             raise ValueError("Pocket selection string cannot be `None`")
         pocket_calpha = atoms_frame.select_atoms(
-            spx_config.pocket_selection_str + " and name CA*"
+            subpex_config.pocket_selection_str + " and name CA*"
         ).positions
-        if spx_config.pocket_center is None:
+        if subpex_config.pocket_center is None:
             raise ValueError("`pocket_center` cannot be None")
         fop_frame = get_fop_pocket(
             frame_coordinates,
             pocket_calpha,
-            spx_config.pocket_center,
-            spx_config.pocket_resolution,
-            spx_config.pocket_radius,
+            subpex_config.pocket_center,
+            subpex_config.pocket_resolution,
+            subpex_config.pocket_radius,
         )
 
-    if spx_config.key_pocket_jd in data_keys:
-        results_frame[spx_config.key_pocket_jd] = get_jaccard_distance(
-            fop_ref, fop_frame, spx_config
+    if subpex_config.key_pocket_jd in data_keys:
+        results_frame[subpex_config.key_pocket_jd] = get_jaccard_distance(
+            fop_ref, fop_frame, subpex_config
         )
 
-    if spx_config.key_pocket_fop in data_keys:
-        results_frame[spx_config.key_pocket_fop] = fop_frame
+    if subpex_config.key_pocket_fop in data_keys:
+        results_frame[subpex_config.key_pocket_fop] = fop_frame
 
-    if spx_config.key_pocket_vol in data_keys:
-        results_frame[spx_config.key_pocket_vol] = get_fop_volume(
-            fop_frame, spx_config.pocket_resolution
+    if subpex_config.key_pocket_vol in data_keys:
+        results_frame[subpex_config.key_pocket_vol] = get_fop_volume(
+            fop_frame, subpex_config.pocket_resolution
         )
 
-    if spx_config.key_pocket_rog in data_keys:
-        results_frame[spx_config.key_pocket_rog] = get_pocket_rog(fop_frame)
+    if subpex_config.key_pocket_rog in data_keys:
+        results_frame[subpex_config.key_pocket_rog] = get_pocket_rog(fop_frame)
 
-    if spx_config.key_bb_rmsd in data_keys:
+    if subpex_config.key_bb_rmsd in data_keys:
         align.alignto(atoms_frame, atoms_ref, select="backbone")
-        results_frame[spx_config.key_bb_rmsd] = get_rmsd(
+        results_frame[subpex_config.key_bb_rmsd] = get_rmsd(
             atoms_ref.select_atoms("backbone").positions,
             atoms_frame.select_atoms("backbone").positions,
         )
 
-    if spx_config.key_composite in data_keys:
-        if spx_config.key_pocket_rmsd not in data_keys:
+    if subpex_config.key_composite in data_keys:
+        if subpex_config.key_pocket_rmsd not in data_keys:
             raise RuntimeError("pocket_rmsd must be active for composite")
-        if spx_config.key_pocket_rmsd not in data_keys:
+        if subpex_config.key_pocket_rmsd not in data_keys:
             raise RuntimeError("backbone_rmsd must be active for composite")
         if composite_sigma is None:
             raise RuntimeError("composite_sigma cannot be None for composite")
-        results_frame[spx_config.key_composite] = results_frame[
-            spx_config.key_pocket_rmsd
-        ] + (composite_sigma * results_frame[spx_config.key_bb_rmsd])
+        results_frame[subpex_config.key_composite] = results_frame[
+            subpex_config.key_pocket_rmsd
+        ] + (composite_sigma * results_frame[subpex_config.key_bb_rmsd])
 
     return results_frame
 
@@ -100,7 +100,7 @@ def run_compute_pcoord(
     traj_path: str,
     ref_path: str,
     fop_ref: Sequence[Sequence[float]],
-    spx_config: SubpexConfig,
+    subpex_config: SubpexConfig,
     selection_align_suffix: str = " and backbone",
     write: bool = True,
     write_dir: str | None = None,
@@ -113,7 +113,7 @@ def run_compute_pcoord(
             coordinates.
         ref_path: Path to reference structure. This will preferably be a PDB file.
         fop_ref: Reference field of points.
-        spx_config: Context manager for computing progress coordinates.
+        subpex_config: Context manager for computing progress coordinates.
         selection_align_suffix: Suffix to append to pocket selection for alignment
             purposes.
         write: Write output files.
@@ -126,32 +126,32 @@ def run_compute_pcoord(
 
     # Using the selection string to select atoms in the pocket
     reference = u_ref.select_atoms("protein")
-    pocket_reference = reference.select_atoms(spx_config.pocket_selection_str)
+    pocket_reference = reference.select_atoms(subpex_config.pocket_selection_str)
 
     # Define the number of times that the progress coordinates and auxiliary
     # info will be calculated.
-    num_points = spx_config.calculated_points
+    num_points = subpex_config.calculated_points
     if num_points == -1:
         num_points = len(u_ensemble.trajectory)
 
     # Create a dictionary with all the elements to calculate
-    results = initialize_data(spx_config, data_dir=write_dir)
+    results = initialize_data(subpex_config, data_dir=write_dir)
 
     # get selection string for alignment
-    if spx_config.pocket_selection_str is None:
+    if subpex_config.pocket_selection_str is None:
         raise ValueError("pocket_selection_str cannot be None")
-    selection_alignment = spx_config.pocket_selection_str + selection_align_suffix
+    selection_alignment = subpex_config.pocket_selection_str + selection_align_suffix
 
     # if we are calculating the composite
     if "composite" in results.keys():
-        if spx_config.composite_sigma is None:
+        if subpex_config.composite_sigma is None:
             composite_sigma = (
                 1
                 - len(reference.select_atoms(selection_alignment))
                 / len(reference.select_atoms("backbone"))
             ) / 2
         else:
-            composite_sigma = spx_config.composite_sigma
+            composite_sigma = subpex_config.composite_sigma
 
     # loop through frames of walker and calculate pcoord and auxdata
     for frame in np.linspace(0, len(u_ensemble.trajectory) - 1, num_points, dtype=int):
@@ -166,13 +166,13 @@ def run_compute_pcoord(
             atoms_frame=protein,
             atoms_ref=reference,
             atoms_ref_pocket=pocket_reference,
-            spx_config=spx_config,
+            subpex_config=subpex_config,
             composite_sigma=composite_sigma,
         )
         for key, value in results_frame.items():
             results[key].append(value)
 
-    write_data(results, spx_config=spx_config, data_dir=write_dir)
+    write_data(results, subpex_config=subpex_config, data_dir=write_dir)
 
     return results
 
@@ -208,11 +208,11 @@ def cli_get_pcoord():
     )
     args = parser.parse_args()
 
-    spx_config = SubpexConfig()
+    subpex_config = SubpexConfig()
     if args.yaml is None:
         args.yaml = []
     for yaml_path in reversed(args.yaml):
-        spx_config.from_yaml(yaml_path)
+        subpex_config.from_yaml(yaml_path)
 
     # Checking the the trajectory doesn't have a rattle error.
     try:
@@ -234,7 +234,7 @@ def cli_get_pcoord():
         traj_path=args.traj_path,
         ref_path=args.ref_path,
         fop_ref=fop_ref,
-        spx_config=spx_config,
+        subpex_config=subpex_config,
         write_dir=args.write_dir,
     )
 
