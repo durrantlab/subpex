@@ -30,61 +30,57 @@
 
 ## What is it?
 
-Subpocket explorer (SubPEx) is a tool that uses weighted ensemble (WE) path
-sampling, as implemented in WESTPA, to maximize pocket conformational search.
-SubPEx's goal is to produce a diverse ensemble of protein conformations for use
-in ensemble docking.
+Subpocket explorer (SubPEx) is a tool that uses weighted ensemble (WE) path sampling, as implemented in [WESTPA](https://github.com/westpa/westpa), to maximize pocket conformational search.
+SubPEx's goal is to produce a diverse ensemble of protein conformations for use in ensemble docking.
 
-As with any WE implementation, SubPEx uses a progress coordinate to focus
-computational power on sampling phase space. The available progress coordinates
-are:
+As with any WE implementation, SubPEx uses a progress coordinate to focus computational power on sampling phase space.
+The available progress coordinates are:
 
 -   composite RMSD (a linear combination of backbone and pocket heavy-atom RMSD)
 -   pocket heavy atoms RMSD
 -   backbone RMSD
 -   Jaccard distance of pocket volumes (jd)
 
-We highly recommend using the composite RMSD progress coordinate. Use of other
-coordinates is not officially supported.
+We highly recommend using the composite RMSD progress coordinate.
+Use of other coordinates may have inadequate performance.
 
-## SubPEx use
-
-### Downloading and installing SubPEx
+## Installation
 
 The first step is to download, clone, or copy the repository.
 
 ```bash
-git clone https://git.durrantlab.pitt.edu/erh91/SubPEx-Erich.git
+git clone git@github.com:durrantlab/subpex.git
 ```
 
-The repository includes a `yaml` file to create a `conda` environment with all
-the necessary dependencies. Simply run this command:
+The repository includes lock files to build the same environment we use for development.
+Simply run this command (after ensuring you have Makefile tools installed):
 
 ```bash
-conda env create -f environment.yaml
+make environment
 ```
 
 To activate the new `conda` environment, run:
 
 ```bash
-conda activate westpa
+conda activate subpex-dev
 ```
 
-Some users may wish to create their own environments or to use an existing
-WESTPA environment. If so, install the following packages so SubPEx can
-calculate the progress coordinate:
+Some users may wish to create their own environments or to use an existing WESTPA environment.
+If so, install the following packages so SubPEx can calculate the progress coordinate:
 
--   Westpa
--   MDAnalysis
--   NumPy
--   SciPy
+-   loguru
+-   mdanalysis
+-   westpa
+-   numpy
+-   scipy
 -   scikit-learn
--   yaml
+-   jinja2
+-   pydantic
+-   pydantic-settings
 
-Note that installing SubPEx into an existing environment is not officially
-supported.
+## Usage
 
-### Configuring a SubPEx run
+TODO: Needs to be updated to new version
 
 Users should take advantage of our autobuilder (`wizard.py`) to setup their
 SubPEx simulations. In some cases, however, users may wish to manually set up
@@ -285,3 +281,24 @@ the output in the `job_logs` directory.
 -   __pcoord_istate.py__ calculates the progress coordinate for the initial
   states.
 -   __pcoord.py__ calculates the progress coordinate for the production run.
+
+## Deploying
+
+We use [bump-my-version](https://github.com/callowayproject/bump-my-version) to release a new version.
+This will create a git tag that is used by [poetry-dynamic-version](https://github.com/mtkennerly/poetry-dynamic-versioning) to generate version strings and update `CHANGELOG.md`.
+
+For example, to bump the `minor` version you would run the following command.
+
+```bash
+poetry run bump-my-version bump minor
+```
+
+After releasing a new version, you need to push and include all tags.
+
+```bash
+git push --follow-tags
+```
+
+## License
+
+This project is released under the MIT License as specified in `LICENSE.md`.
