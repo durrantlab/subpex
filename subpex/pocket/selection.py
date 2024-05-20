@@ -11,14 +11,14 @@ from .detect import get_fop_pocket
 def get_pocket_selection_string(subpex_config: SubpexConfig) -> str:
     pocket_selection_mda = subpex_config.pocket.selection_mda_str
     pocket_selection_resids = subpex_config.pocket.selection_resids
-    pocket_selection_dist = subpex_config.pocket.selection_dist
+    pocket_water_dist = subpex_config.pocket.water_dist
     if pocket_selection_mda is not None:
         pocket_selection_str = pocket_selection_mda
     elif pocket_selection_resids is not None:
         pocket_selection_str = "resid " + " or resid ".join(
             [str(i) for i in pocket_selection_resids]
         )
-    elif pocket_selection_dist:
+    elif pocket_water_dist:
         # Define the pocket atoms as all atoms that are at a radius distance of the center point as defined by the user.
         # TODO: Write selection string for this based on distance.
         raise NotImplementedError("Distance pocket selection is not yet implemented")
