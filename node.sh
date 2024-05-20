@@ -17,4 +17,3 @@ env | sort
 $WEST_ROOT/bin/w_run "$@" &> west-$SLURM_NODENAME-node.log
 
 echo "Shutting down.  Hopefully this was on purpose?"
-

@@ -22,7 +22,7 @@
 source env.sh
 
 SERVER_INFO=$WEST_SIM_ROOT/west_zmq_info-$SLURM_JOBID.json
-echo $WEST_PYTHON 
+echo $WEST_PYTHON
 
 w_run --work-manager=zmq --n-workers=0 --zmq-mode=master --zmq-write-host-info=$SERVER_INFO --zmq-comm-mode=tcp &> ./job_logs/west-$SLURM_JOBID.log &
 

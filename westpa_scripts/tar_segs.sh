@@ -15,4 +15,3 @@ for ITER in ${ITERS[@]}; do
     [ ! -f $ITER.tar ] &&               #ask Jen what the hell does this do
         tar -cvf $ITER.tar $ITER
 done
-
