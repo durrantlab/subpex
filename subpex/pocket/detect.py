@@ -24,7 +24,7 @@ def get_fop_pocket(
     clustering_model: type | None = None,
     clustering_kwargs: MutableMapping[str, Any] | None = None,
 ) -> Sequence[Sequence[float]]:
-    r"""Calculate the field of points (FOP) for a pocket.
+    """Calculate the field of points (FOP) for a pocket.
 
     This function generates a field of points (FOP) representing the shape
     of a pocket using the provided protein and alpha carbon coordinates.
@@ -82,7 +82,7 @@ def get_fop_pocket_convenience(
     *args: Any,
     **kwargs: Any,
 ) -> Sequence[Sequence[float]]:
-    r"""Convenience function for getting the FOP for a pocket.
+    """Convenience function for getting the FOP for a pocket.
 
     This function simplifies the process of calculating the field of points
     (FOP) for a pocket using a simulation frame and the SuPEx configuration.
@@ -114,7 +114,7 @@ def get_fop_pocket_convenience(
 def get_residues_in_pocket(
     u: mda.Universe, center: Sequence[float], radius: float, resnames: Sequence[str]
 ) -> mda.AtomGroup:
-    r"""Get residues within the pocket.
+    """Get residues within the pocket.
 
     Args:
         u: MDAnalysis universe containing the protein.
@@ -137,7 +137,7 @@ def get_pocket_selection(
     water_resnames: Sequence[str] = ["WAT", "HOH", "H2O"],
     selection_append: str = "and (not name H*)",
 ) -> str:
-    r"""Get the initial selection of the pocket based on the specified radius.
+    """Get the initial selection of the pocket based on the specified radius.
 
     This function identifies the initial selection of pocket residues based
     on a user-specified radius, and optionally considers distance from water molecules
