@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Generator
 
 from collections.abc import Callable, MutableSequence
 
@@ -46,7 +46,7 @@ class AuxData(BaseModel):
         `values`.
         """
         if self.compute_function is not None:
-            result = self.compute_function(
+            result = self.compute_function(  # type: ignore
                 atoms_frame, subpex_config, atoms_ref, *args, **kwargs
             )
             self.values.append(result)
@@ -57,19 +57,51 @@ class AuxData(BaseModel):
         return self.label + "." + self.f_ext
 
 
+class ContainerAuxData(BaseModel):
+
+    pocket_volume: AuxData = Field(
+        default_factory=lambda: AuxData(
+            label="pocket_volume", compute_function=get_pocket_volume_convenience  # type: ignore
+        )
+    )
+    pocket_rog: AuxData = Field(
+        default_factory=lambda: AuxData(
+            label="pocket_rog", compute_function=get_pocket_rog_convenience  # type: ignore
+        )
+    )
+    pocket_rmsd: AuxData = Field(
+        default_factory=lambda: AuxData(
+            label="pocket_rmsd", compute_function=get_pocket_rmsd_convenience  # type: ignore
+        )
+    )
+    pocket_jd: AuxData = Field(
+        default_factory=lambda: AuxData(
+            label="pocket_jd", compute_function=get_pocket_jaccard_convenience  # type: ignore
+        )
+    )
+    backbone_rmsd: AuxData = Field(
+        default_factory=lambda: AuxData(
+            label="backbone_rmsd", compute_function=get_backbone_rmsd  # type: ignore
+        )
+    )
+
+    def get_all(self) -> Generator[AuxData, None, None]:
+        """Yields each attribute of type AuxData."""
+        for attribute in self.__annotations__:
+            value = getattr(self, attribute)
+            if isinstance(value, AuxData):
+                yield value
+
+    def get_active(self) -> Generator[AuxData, None, None]:
+        """Yields each attribute of type AuxData."""
+        for value in self.get_all():
+            if value.active:
+                yield value
+
+
 class DataConfig(BaseModel):
 
-    aux: MutableSequence[AuxData] = Field(
-        default_factory=lambda: [
-            AuxData(
-                label="pocket_volume", compute_function=get_pocket_volume_convenience
-            ),
-            AuxData(label="pocket_rog", compute_function=get_pocket_rog_convenience),
-            AuxData(label="pocket_rmsd", compute_function=get_pocket_rmsd_convenience),
-            AuxData(label="pocket_jd", compute_function=get_pocket_jaccard_convenience),
-            AuxData(label="backbone_rmsd", compute_function=get_backbone_rmsd),
-        ]
-    )
+    aux: ContainerAuxData = Field(default_factory=ContainerAuxData)
 
     write_dir: str = Field(default="")
     """Where to write any auxillary data that has `write` as `True`"""

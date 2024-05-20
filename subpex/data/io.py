@@ -36,11 +36,10 @@ def load_data(subpex_config: SubpexConfig, data_dir: str | None = None) -> Subpe
         The last value of data we could find.
     """
     if data_dir is not None:
-        for aux_data in subpex_config.data.aux:
-            if aux_data.active:
-                _data = _load_data(os.path.join(data_dir, aux_data.file_name))
-                if len(_data) > 0:
-                    aux_data.values.append(_data)
+        for aux_data in subpex_config.data.aux.get_active():
+            _data = _load_data(os.path.join(data_dir, aux_data.file_name))
+            if len(_data) > 0:
+                aux_data.values.append(_data)
 
     return subpex_config
 
@@ -51,9 +50,7 @@ def write_data(
 ) -> None:
     if data_dir is None:
         data_dir = ""
-    for aux_data in subpex_config.data.aux:
-        if not aux_data.active:
-            continue
+    for aux_data in subpex_config.data.aux.get_active():
         f_path = os.path.join(data_dir, aux_data.file_name)
         f_ext = f_path.split(".")[-1]
 

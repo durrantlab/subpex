@@ -66,13 +66,12 @@ def run_compute_data(
         atoms_frame = u_traj.select_atoms("protein")
         align.alignto(atoms_frame, atoms_ref, select=selection_alignment)
 
-        for aux_data in subpex_config.data.aux:
-            if aux_data.active:
-                aux_data.compute_frame(
-                    atoms_frame=atoms_frame,
-                    subpex_config=subpex_config,
-                    atoms_ref=atoms_ref,
-                )
+        for aux_data in subpex_config.data.aux.get_active():
+            aux_data.compute_frame(
+                atoms_frame=atoms_frame,
+                subpex_config=subpex_config,
+                atoms_ref=atoms_ref,
+            )
 
     if write:
         write_data(subpex_config=subpex_config, data_dir=write_dir)
