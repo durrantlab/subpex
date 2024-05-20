@@ -45,7 +45,7 @@ def slurm(
 
     template = Template(load_template(SLURM_TEMPLATE_PATH))
 
-    rendered_file = template.render(**subpex_config.get())
+    rendered_file = template.render(**subpex_config.dict())
     rendered_file = clean_render(rendered_file)
 
     if save_dir is not None:
@@ -58,11 +58,11 @@ def slurm(
 
 def west_cfg(
     westpa_cm: WestpaConfig,
-    file_name: str | None = None,
-    save_dir: str | None = None,
+    file_name: str = "west.cfg",
+    save_dir: str = "",
 ) -> None:
     """Writes `west.cfg` file for WESTPA simulations."""
-    westpa_cm.to_yaml(save_dir=save_dir)
+    westpa_cm.to_yaml(file_path=os.path.join(save_dir, file_name))
 
 
 def cli_renderer():
@@ -85,7 +85,7 @@ def cli_renderer():
     args = parser.parse_args()
 
     if args.function_name == "west_cfg":
-        cm = WestpaConfig()
+        cm: WestpaConfig | SubpexConfig = WestpaConfig()
     elif args.function_name in ["slurm"]:
         cm = SubpexConfig()
     else:
