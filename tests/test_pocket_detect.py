@@ -32,7 +32,7 @@ def test_pocket_selection_m7g(
         u,
         center=m7g_config.pocket.center,  # type: ignore
         radius=m7g_config.pocket.radius,
-        distance_constraint=m7g_config.pocket.selection_dist,  # type: ignore
+        water_dist=m7g_config.pocket.water_dist,  # type: ignore
     )
     assert pocket_selection == m7g_config.pocket.selection_str
 

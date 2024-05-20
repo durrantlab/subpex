@@ -9,8 +9,12 @@ class PocketConfig(BaseModel):
     selection_mda_str: str | None = Field(default=None)
     """MDAnalysis atom selection string for pocket.
     """
-    selection_dist: float | None = Field(default=None)
-    """Define the pocket as all atoms within a radius of the center.
+    water_dist: float | None = Field(default=6.7)
+    """If water molecules are captured in the pocket, protein residues are only
+    included if they are within this distance of water molecules.
+
+    This simple algorithm attempts to identify surface residues and filter buried
+    residues from the pocket.
     """
     selection_append: str | None = "and protein and (not name H*)"
     """String to append to pocket selection if desired."""
