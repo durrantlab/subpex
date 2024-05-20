@@ -48,7 +48,7 @@ def get_fop_ref(
         raise RuntimeError("The pocket center must be specified.")
     reference_fop = get_fop_pocket(
         protein=reference_coordinates,
-        alphas=reference_alpha,
+        pocket_c_alphas=reference_alpha,
         center=subpex_config.pocket.center,
         resolution=subpex_config.pocket.resolution,
         radius=subpex_config.pocket.radius,
