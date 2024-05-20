@@ -139,7 +139,7 @@ def points_to_pdb(
     if all(isinstance(i, (float, int)) for i in fop_input[0]):
         fop = [fop_input]
     else:
-        fop = fop_input
+        fop = fop_input  # type: ignore
 
     with open(file_path, "w", encoding="utf-8") as f:
         frame_number = 1
@@ -177,13 +177,13 @@ def points_to_xyz(
 
     # Ensure fop is a 3D list
     if all(isinstance(i, (float, int)) for i in fop_input[0]):
-        fop = [fop_input]  # Wrap in an outer list to make it a 3D list
+        fop = [fop_input]
     else:
-        fop = fop_input
+        fop = fop_input  # type: ignore
 
     with open(file_path, "w", encoding="utf-8") as f:
         for frame in fop:
-            f.write(f"{len(frame)}\n\n")  # Number of atoms and a blank line
+            f.write(f"{len(frame)}\n\n")
             for point in frame:
                 f.write(f"CA    {point[0]:.3f}    {point[1]:.3f}    {point[2]:.3f}\n")
 
