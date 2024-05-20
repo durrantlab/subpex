@@ -72,17 +72,6 @@ class DataConfig(BaseModel):
     write_dir: str = Field(default="")
     """Where to write any auxillary data that has `write` as `True`"""
 
-    @property
-    def progress_coord(self) -> MutableSequence[AuxData]:
-        return [aux for aux in self.aux if aux.progress]
-
-    """Auxillary data used in the progress coordinate"""
-
-    def dict(self, **kwargs):
-        d = super().dict(**kwargs)
-        d["progress_coord"] = [aux.label for aux in self.progress_coord]
-        return d
-
     composite_sigma: float | None = Field(default=None)
     """Sigma to use for composite progress coordinate. If `None`, this defaults
     to

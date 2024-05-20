@@ -6,10 +6,6 @@ class ClusteringConfig(BaseModel):
     clustering_engine: str = Field(default="cpptraj")
     """Clustering engine to use. `cpptraj` is the only option at the moment.
     """
-    calculated_points: int = Field(default=-1)
-    """Number of point to calculate per trajectory segment. If `-1`, it will
-    calculate all.
-    """
     n_clusters: int = Field(default=25)
     """Number of independent clusters to identify."""
     min_n_clusters_gen_bin: int = Field(default=3)
