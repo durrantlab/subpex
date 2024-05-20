@@ -1,13 +1,17 @@
 from typing import Any
 
 import MDAnalysis as mda
-from mda.analysis import align
+from MDAnalysis.analysis import align
 
 from ..utils.spatial import get_rmsd
 
 
 def get_backbone_rmsd(
-    atoms_ref: mda.AtomGroup, atoms_frame: mda.AtomGroup, *args: Any, **kwargs: Any
+    atoms_ref: mda.AtomGroup,
+    subpex_config: "SubpexConfig",  # noqa: F821
+    atoms_frame: mda.AtomGroup,
+    *args: Any,
+    **kwargs: Any
 ) -> float:
     """
     Compute the Root Mean Square Deviation (RMSD) of the backbone atoms between
@@ -33,5 +37,5 @@ def get_backbone_rmsd(
         >>> print(f"Backbone RMSD: {rmsd:.2f}")
     """
     align.alignto(atoms_frame, atoms_ref, select="backbone")
-    rmsd = get_rmsd(atoms_ref, atoms_frame)
+    rmsd = get_rmsd(atoms_ref.positions, atoms_frame.positions)
     return float(rmsd)

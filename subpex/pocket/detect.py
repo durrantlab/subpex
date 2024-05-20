@@ -9,6 +9,7 @@ from loguru import logger
 
 from ..fop.clean import remove_convex_fop, remove_fop_atom_clash
 from ..fop.cluster import cluster_fop
+from ..fop.compute import get_fop_inputs
 from ..fop.gen import gen_fop
 from ..utils.spatial import calculate_distance_two_points
 
@@ -59,6 +60,21 @@ def get_fop_pocket(
     )
 
     return fop_pocket
+
+
+def get_fop_pocket_convenience(
+    atoms_frame: mda.AtomGroup,
+    subpex_config: "SubpexConfig",  # noqa: F821
+    *args: Any,
+    **kwargs: Any,
+) -> Sequence[Sequence[float]]:
+    """Convenience function for getting the FOP for a pocket"""
+    inputs = get_fop_inputs(
+        atoms_frame=atoms_frame,
+        pocket_selection=subpex_config.pocket.selection_str,
+        subpex_config=subpex_config,
+    )
+    return get_fop_pocket(**inputs)
 
 
 def get_pocket_selection(

@@ -1,15 +1,15 @@
 import argparse
 import sys
-from collections.abc import MutableMapping, MutableSequence, Sequence
+from collections.abc import Sequence
 
 import MDAnalysis as mda
 import numpy as np
 import pandas as pd
-from mda.analysis import align
+from MDAnalysis.analysis import align
 
 from ..configs import SubpexConfig
 from ..fop.io import read_fop
-from .io import initialize_data, write_data
+from .io import load_data, write_data
 
 
 def run_compute_data(
@@ -21,7 +21,7 @@ def run_compute_data(
     selection_align_suffix: str = " and backbone",
     write: bool = True,
     write_dir: str | None = None,
-) -> MutableMapping[str, MutableSequence[float | MutableSequence[float]]]:
+) -> SubpexConfig:
     """Computes auxillary data during the course of a a simulation.
 
     Args:
@@ -53,7 +53,7 @@ def run_compute_data(
         num_points = len(u_traj.trajectory)
 
     # Create a dictionary with all the elements to calculate
-    results = initialize_data(subpex_config, data_dir=write_dir)
+    load_data(subpex_config, data_dir=write_dir)
 
     # get selection string for alignment
     selection_alignment = subpex_config.pocket.selection_str + selection_align_suffix
@@ -74,9 +74,10 @@ def run_compute_data(
                     atoms_ref=atoms_ref,
                 )
 
-    write_data(results, subpex_config=subpex_config, data_dir=write_dir)
+    if write:
+        write_data(subpex_config=subpex_config, data_dir=write_dir)
 
-    return results
+    return subpex_config
 
 
 def cli_get_data():

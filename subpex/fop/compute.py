@@ -6,14 +6,11 @@ from collections.abc import MutableMapping, Sequence
 
 import MDAnalysis as mda
 
-from ..configs import SubpexConfig
-from ..pocket.detect import get_fop_pocket
-
 
 def get_fop_inputs(
     atoms_frame: mda.AtomGroup,
     pocket_selection: str | None,
-    subpex_config: SubpexConfig,
+    subpex_config: "SubpexConfig",  # noqa: F821
     *args: Any,
     **kwargs: Any
 ) -> MutableMapping[str, Any]:
@@ -42,23 +39,3 @@ def get_fop_volume(
         resolution: resolution in Angstroms.
     """
     return float(len(fop) * (resolution**3))
-
-
-def get_fop_volume_convenience(
-    atoms_frame: mda.AtomGroup,
-    subpex_config: SubpexConfig,
-    atoms_ref: mda.AtomGroup | None = None,
-    *args: Any,
-    **kwargs: Any
-) -> float:
-    """A convenience wrapper around `get_fop_volume` using a simulation frame.
-
-    Args:
-        atoms_frame: Trajectory frame to analyze.
-        subpex_config: SuPEx configuration.
-    """
-    inputs = get_fop_inputs(
-        atoms_frame, subpex_config.pocket.selection_str, subpex_config, *args, **kwargs
-    )
-    inputs["fop"] = get_fop_pocket(**inputs)
-    return get_fop_volume(**inputs)

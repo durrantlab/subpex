@@ -5,11 +5,11 @@ from collections.abc import Callable, MutableSequence
 import MDAnalysis as mda
 from pydantic import BaseModel, Field, computed_field
 
-from ...fop.compute import get_fop_volume_convenience
 from ...pocket.compute import (
     get_pocket_jaccard_convenience,
     get_pocket_rmsd_convenience,
     get_pocket_rog_convenience,
+    get_pocket_volume_convenience,
 )
 from ...protein.compute import get_backbone_rmsd
 
@@ -61,7 +61,9 @@ class DataConfig(BaseModel):
 
     aux: MutableSequence[AuxData] = Field(
         default_factory=lambda: [
-            AuxData(label="pocket_volume", compute_function=get_fop_volume_convenience),
+            AuxData(
+                label="pocket_volume", compute_function=get_pocket_volume_convenience
+            ),
             AuxData(label="pocket_rog", compute_function=get_pocket_rog_convenience),
             AuxData(label="pocket_rmsd", compute_function=get_pocket_rmsd_convenience),
             AuxData(label="pocket_jd", compute_function=get_pocket_jaccard_convenience),

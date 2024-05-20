@@ -2,17 +2,36 @@
 
 from typing import Any
 
-from collections.abc import Sequence
+from collections.abc import MutableMapping, Sequence
 
 import MDAnalysis as mda
 import numpy as np
 import numpy.typing as npt
 import scipy as sp
 
-from ..configs import SubpexConfig
-from ..fop.compute import get_fop_inputs
-from ..pocket.detect import get_fop_pocket
+from ..fop.compute import get_fop_inputs, get_fop_volume
+from ..pocket.detect import get_fop_pocket, get_fop_pocket_convenience
 from ..utils.spatial import calculate_distance_two_points, get_centroid, get_rmsd
+
+
+def get_pocket_volume_convenience(
+    atoms_frame: mda.AtomGroup,
+    subpex_config: "SubpexConfig",  # noqa: F821
+    atoms_ref: mda.AtomGroup | None = None,
+    *args: Any,
+    **kwargs: Any
+) -> float:
+    """A convenience wrapper around `get_fop_volume` using a simulation frame.
+
+    Args:
+        atoms_frame: Trajectory frame to analyze.
+        subpex_config: SuPEx configuration.
+    """
+    inputs = get_fop_inputs(
+        atoms_frame, subpex_config.pocket.selection_str, subpex_config, *args, **kwargs
+    )
+    inputs["fop"] = get_fop_pocket(**inputs)
+    return get_fop_volume(**inputs)
 
 
 def get_pocket_rmsd(
@@ -34,7 +53,7 @@ def get_pocket_rmsd(
 
 def get_pocket_rmsd_convenience(
     atoms_frame: mda.AtomGroup,
-    subpex_config: SubpexConfig,
+    subpex_config: "SubpexConfig",  # noqa: F821
     atoms_ref: mda.AtomGroup | None = None,
     *args: Any,
     **kwargs: Any
@@ -47,13 +66,11 @@ def get_pocket_rmsd_convenience(
     """
     if atoms_ref is None:
         raise ValueError("atoms_ref cannot be None")
-    rmsd = get_pocket_rmsd(atoms_ref, atoms_frame)
+    rmsd = get_pocket_rmsd(atoms_ref.positions, atoms_frame.positions)
     return rmsd
 
 
-def get_pocket_rog(
-    fop_pocket: Sequence[Sequence[float]], *args: Any, **kwargs: Any
-) -> float:
+def get_pocket_rog(fop: Sequence[Sequence[float]], *args: Any, **kwargs: Any) -> float:
     """Takes the xyz coordinates of a field of points and calculates the radius
     of gyration. It assumes a mass of one for all the points.
 
@@ -63,15 +80,15 @@ def get_pocket_rog(
     Returns:
         radius of gyration of the pocket.
     """
-    mass = len(fop_pocket)
+    mass = len(fop)
 
     if mass == 0:
         # Sometimes there are no points.
         return -9999
 
-    centroid = get_centroid(fop_pocket)
+    centroid = get_centroid(fop)
     gyration_radius = 0.0
-    for i in fop_pocket:
+    for i in fop:
         gyration_radius += (calculate_distance_two_points(i, centroid)) ** 2
 
     return float(np.sqrt(gyration_radius / mass))
@@ -79,7 +96,7 @@ def get_pocket_rog(
 
 def get_pocket_rog_convenience(
     atoms_frame: mda.AtomGroup,
-    subpex_config: SubpexConfig,
+    subpex_config: "SubpexConfig",  # noqa: F821
     atoms_ref: mda.AtomGroup | None = None,
     *args: Any,
     **kwargs: Any
@@ -139,9 +156,8 @@ def get_pocket_jaccard(
 
 def get_pocket_jaccard_convenience(
     atoms_frame: mda.AtomGroup,
-    subpex_config: SubpexConfig,
+    subpex_config: "SubpexConfig",  # noqa: F821
     atoms_ref: mda.AtomGroup | None = None,
-    fop_ref: Sequence[Sequence[float]] | None = None,
     *args: Any,
     **kwargs: Any
 ) -> float:
@@ -151,10 +167,12 @@ def get_pocket_jaccard_convenience(
         atoms_frame: Trajectory frame to analyze.
         subpex_config: SuPEx configuration.
     """
-    if fop_ref is None:
-        raise ValueError("fop_ref cannot be None")
-    inputs = get_fop_inputs(
-        atoms_frame, subpex_config.pocket.selection_str, subpex_config, *args, **kwargs
+    inputs: MutableMapping[str, Sequence[Sequence[float]] | float] = {}
+    inputs["fop_ref"] = get_fop_pocket_convenience(
+        atoms_frame=atoms_ref, subpex_config=subpex_config
     )
-    inputs["fop_frame"] = get_fop_pocket(**inputs)
-    return get_pocket_jaccard(fop_ref=fop_ref, **inputs)
+    inputs["fop_frame"] = get_fop_pocket_convenience(
+        atoms_frame=atoms_frame, subpex_config=subpex_config
+    )
+    inputs["resolution"] = subpex_config.pocket.resolution
+    return get_pocket_jaccard(**inputs)
