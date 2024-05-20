@@ -9,7 +9,3 @@
 *.nc binary
 *.rst binary
 
-*.pdb filter=lfs diff=lfs merge=lfs -text
-*.nc filter=lfs diff=lfs merge=lfs -text
-*.rst filter=lfs diff=lfs merge=lfs -text
-*.prmtop filter=lfs diff=lfs merge=lfs -text
