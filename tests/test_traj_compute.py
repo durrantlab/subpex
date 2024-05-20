@@ -15,8 +15,6 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
     This function tests the framework's ability to compute various descriptors for a binding pocket
     in a molecular dynamics simulation. The test uses a predefined PDB reference structure,
     topology, and trajectory files, and verifies the computed auxiliary data against known values.
-    The reference structure is taken from the last frame of the same simulation, so properties
-    compared to the reference should be close to zero.
 
     Args:
         path_m7g_paths (dict): Dictionary containing paths to the input files required for the test:
@@ -62,8 +60,6 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
         shutil.rmtree(write_dir)
     os.makedirs(write_dir, exist_ok=False)
 
-    m7g_config.calculated_points = 3
-
     run_compute_data(
         topo_path=path_m7g_paths["topo"],
         traj_path=path_m7g_paths["traj"],
@@ -76,22 +72,54 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
     )
 
     assert np.allclose(
-        np.array([1.1303496360778809, 0.9975303411483765, 0.00028853819821961224]),
+        np.array(
+            [
+                1.1303496360778809,
+                1.1373416185379028,
+                1.0807933807373047,
+                0.9600823521614075,
+                0.8374161720275879,
+            ]
+        ),
         np.array(m7g_config.data.aux.backbone_rmsd.values),
     )
     assert np.allclose(
-        np.array([0.16315789473684206, 0.2279226240538268, 0.0]),
+        np.array(
+            [
+                0.16315789473684206,
+                0.28441127694859036,
+                0.2343059239610964,
+                0.22831858407079642,
+                0.24537037037037035,
+            ]
+        ),
         np.array(m7g_config.data.aux.pocket_jd.values),
     )
     assert np.allclose(
-        np.array([1.5243936777114868, 1.6841306686401367, 0.0003748516319319606]),
+        np.array(
+            [
+                1.5243936777114868,
+                1.889655351638794,
+                2.2993032932281494,
+                1.395134687423706,
+                1.8448500633239746,
+            ]
+        ),
         np.array(m7g_config.data.aux.pocket_rmsd.values),
     )
     assert np.allclose(
-        np.array([3.1923352274061543, 3.1671394736443172, 3.2815136334233626]),
+        np.array(
+            [
+                3.1923352274061543,
+                3.1152869440628796,
+                3.1127554945582774,
+                3.10684407247731,
+                3.051189269768271,
+            ]
+        ),
         np.array(m7g_config.data.aux.pocket_rog.values),
     )
     assert np.allclose(
-        np.array([129.625, 131.0, 131.125]),
+        np.array([129.625, 126.25, 117.875, 121.5, 109.125]),
         np.array(m7g_config.data.aux.pocket_volume.values),
     )
