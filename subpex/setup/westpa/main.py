@@ -7,6 +7,18 @@ from loguru import logger
 from ...configs import SubpexConfig, WestpaConfig
 
 
+def link_initial_sims(
+    subpex_config: SubpexConfig,
+    westpa_config: WestpaConfig,
+    write_dir: str = "",
+    overwrite: bool = False,
+) -> None:
+    """WESTPA starts from a relaxed molecular simulation using the same MD engine.
+    Instead of copying the preliminary simulation files, we create a soft link to
+    the relevant files.
+    """
+
+
 def run_westpa_setup(
     subpex_config: SubpexConfig,
     westpa_config: WestpaConfig,
@@ -27,12 +39,16 @@ def run_westpa_setup(
             logger.error("Aborting")
             sys.exit(1)
 
-    logger.info(f"Creating directory at {write_dir}")
-    os.makedirs(write_dir, exist_ok=True)
+    logger.info(f"Creating directory at {write_dir} if absent")
+    os.makedirs(write_dir, exist_ok=overwrite)
 
-    logger.info("Creating all necessary directories")
+    logger.info("Creating all necessary WESTPA directories")
+    logger.debug("   - Creating common_files")
+    os.makedirs(os.path.join(write_dir, "common_files"), exist_ok=overwrite)
+    logger.debug("   - Creating westpa_scripts")
+    os.makedirs(os.path.join(write_dir, "westpa_scripts"), exist_ok=overwrite)
     logger.debug("   - Creating bstates")
-    os.makedirs(os.path.join(write_dir, "bstates"))
+    os.makedirs(os.path.join(write_dir, "bstates"), exist_ok=overwrite)
 
 
 def cli_run_westpa_setup():
@@ -61,7 +77,7 @@ def cli_run_westpa_setup():
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Remove and overwrite directory",
+        help="Overwrite files in write_dir",
     )
     args = parser.parse_args()
 
