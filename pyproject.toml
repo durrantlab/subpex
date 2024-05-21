@@ -38,6 +38,7 @@ mypy-extensions = "^1.0.0"
 bump-my-version = "^0.11.0"
 poetry-dynamic-versioning = "^1.1.0"
 black = "^24.4.2"
+types-pyyaml = "^6.0.12.20240311"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.2"
