@@ -586,9 +586,6 @@ def run_wizard():
         # Exit
         sys.exit(0)
 
-    check_existing_params()
-    confirm_environment()
-    confirm_dependencies()
     engine, get_pcoord, runseg = amber_or_namd(get_pcoord, runseg)
     get_prelim_sim_files(engine)
     get_sim_last_frame()

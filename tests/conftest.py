@@ -35,6 +35,9 @@ def m7g_config():
     subpex_config.pocket.radius = 6.5
     subpex_config.pocket.water_dist = 6.7
     subpex_config.pocket.selection_str = "resid 124 or resid 125 or resid 128 or resid 88 or resid 89 or resid 121 or resid 92 or resid 129 and (not name H*)"
+    subpex_config.sim.path_traj_relax = os.path.join(
+        TEST_DIR, "files/m7g/equil_frames.nc"
+    )
     for aux_data in subpex_config.data.aux.get_all():
         aux_data.active = True
     return subpex_config
