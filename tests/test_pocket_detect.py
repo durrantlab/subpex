@@ -6,8 +6,8 @@ from subpex.configs import SubpexConfig
 from subpex.pocket.detect import get_fop_pocket_convenience, get_pocket_selection
 
 
-def test_pocket_selection_m7g(
-    path_m7g_paths: MutableMapping[str, str], m7g_config: SubpexConfig
+def test_pocket_selection_larp1_dm15(
+    path_larp1_dm15_paths: MutableMapping[str, str], larp1_dm15_config: SubpexConfig
 ) -> None:
     """
     Test the selection of atoms for the binding pocket in a molecular dynamics simulation.
@@ -17,28 +17,28 @@ def test_pocket_selection_m7g(
     is compared against a known selection string from the configuration.
 
     Args:
-        path_m7g_paths (dict): Dictionary containing paths to the input files required for the test:
+        path_larp1_dm15_paths (dict): Dictionary containing paths to the input files required for the test:
             - "ref_pdb": Path to the reference PDB file.
-        m7g_config (object): Configuration object for the simulation which includes the parameters
+        larp1_dm15_config (object): Configuration object for the simulation which includes the parameters
             for defining the pocket (center, radius, and selection distance).
 
     Raises:
         AssertionError: If the computed pocket selection string does not match the expected value.
     """
     # Load structure
-    u = mda.Universe(path_m7g_paths["ref_pdb"])
+    u = mda.Universe(path_larp1_dm15_paths["ref_pdb"])
 
     pocket_selection = get_pocket_selection(
         u,
-        center=m7g_config.pocket.center,  # type: ignore
-        radius=m7g_config.pocket.radius,
-        water_dist=m7g_config.pocket.water_dist,  # type: ignore
+        center=larp1_dm15_config.pocket.center,  # type: ignore
+        radius=larp1_dm15_config.pocket.radius,
+        water_dist=larp1_dm15_config.pocket.water_dist,  # type: ignore
     )
-    assert pocket_selection == m7g_config.pocket.selection_str
+    assert pocket_selection == larp1_dm15_config.pocket.selection_str
 
 
-def test_pocket_fop_gen_m7g(
-    path_m7g_paths: MutableMapping[str, str], m7g_config: SubpexConfig
+def test_pocket_fop_gen_larp1_dm15(
+    path_larp1_dm15_paths: MutableMapping[str, str], larp1_dm15_config: SubpexConfig
 ) -> None:
     """
     Test the generation of the Frame of Pocket (FOP) for the binding pocket in a molecular dynamics simulation.
@@ -48,17 +48,17 @@ def test_pocket_fop_gen_m7g(
     and specific coordinates of a known atom are verified against expected values.
 
     Args:
-        path_m7g_paths (dict): Dictionary containing paths to the input files required for the test:
+        path_larp1_dm15_paths (dict): Dictionary containing paths to the input files required for the test:
             - "ref_pdb": Path to the reference PDB file.
-        m7g_config (object): Configuration object for the simulation which includes settings for
+        larp1_dm15_config (object): Configuration object for the simulation which includes settings for
             detecting the pocket.
 
     Raises:
         AssertionError: If the number of detected pocket atoms or the coordinates of a specific
             atom do not match the expected values.
     """
-    u = mda.Universe(path_m7g_paths["ref_pdb"])
-    fop_frame = get_fop_pocket_convenience(u.atoms, m7g_config)
+    u = mda.Universe(path_larp1_dm15_paths["ref_pdb"])
+    fop_frame = get_fop_pocket_convenience(u.atoms, larp1_dm15_config)
 
     assert len(fop_frame) == 1057
     assert fop_frame[57] == [31.5, 38.5, 31.0]

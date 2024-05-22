@@ -19,27 +19,27 @@ def tmp_dir():
 
 
 @pytest.fixture
-def path_m7g_paths():
+def path_larp1_dm15_paths():
     paths = {
-        "topo": os.path.join(TEST_DIR, "files/m7g/mol.prmtop"),
-        "ref_pdb": os.path.join(TEST_DIR, "files/m7g/mol.pdb"),
-        "traj": os.path.join(TEST_DIR, "files/m7g/mol.nc"),
-        "restart": os.path.join(TEST_DIR, "files/m7g/mol.rst"),
+        "topo": os.path.join(TEST_DIR, "files/larp1_dm15/mol.prmtop"),
+        "ref_pdb": os.path.join(TEST_DIR, "files/larp1_dm15/mol.pdb"),
+        "traj": os.path.join(TEST_DIR, "files/larp1_dm15/mol.nc"),
+        "restart": os.path.join(TEST_DIR, "files/larp1_dm15/mol.rst"),
     }
     return paths
 
 
 @pytest.fixture
-def m7g_config():
+def larp1_dm15_config():
     subpex_config = SubpexConfig()
     subpex_config.pocket.center = [30.037991, 41.463818, 30.3776]
     subpex_config.pocket.radius = 6.5
     subpex_config.pocket.water_dist = 6.7
     subpex_config.pocket.selection_str = "resid 124 or resid 125 or resid 128 or resid 88 or resid 89 or resid 121 or resid 92 or resid 129 and (not name H*)"
     subpex_config.sim.path_traj_relax = os.path.join(
-        TEST_DIR, "files/m7g/equil_frames.nc"
+        TEST_DIR, "files/larp1_dm15/equil_frames.nc"
     )
-    subpex_config.sim.path_topo = os.path.join(TEST_DIR, "files/m7g/mol.prmtop")
+    subpex_config.sim.path_topo = os.path.join(TEST_DIR, "files/larp1_dm15/mol.prmtop")
     for aux_data in subpex_config.data.aux.get_all():
         aux_data.active = True
     return subpex_config

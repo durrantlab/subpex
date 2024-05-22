@@ -8,7 +8,7 @@ from subpex.data.compute import run_compute_data
 from subpex.pocket.detect import get_fop_pocket_convenience
 
 
-def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
+def test_traj_data_larp1_dm15(path_larp1_dm15_paths, larp1_dm15_config, tmp_dir):
     """
     Test the computation of auxiliary data during a simulation for the binding pocket descriptors.
 
@@ -17,11 +17,11 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
     topology, and trajectory files, and verifies the computed auxiliary data against known values.
 
     Args:
-        path_m7g_paths (dict): Dictionary containing paths to the input files required for the test:
+        path_larp1_dm15_paths (dict): Dictionary containing paths to the input files required for the test:
             - "ref_pdb": Path to the reference PDB file.
             - "topo": Path to the topology file.
             - "traj": Path to the trajectory file.
-        m7g_config (object): Configuration object for the simulation which includes settings and
+        larp1_dm15_config (object): Configuration object for the simulation which includes settings and
             parameters for computing the auxiliary data.
         tmp_dir (str): Path to a temporary directory for writing output data during the test.
 
@@ -52,20 +52,20 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
         is the last frame of the same simulation, properties compared to the reference should
         be close to zero.
     """
-    u = mda.Universe(path_m7g_paths["ref_pdb"])
-    fop_ref = get_fop_pocket_convenience(u.atoms, m7g_config)
+    u = mda.Universe(path_larp1_dm15_paths["ref_pdb"])
+    fop_ref = get_fop_pocket_convenience(u.atoms, larp1_dm15_config)
 
-    write_dir = os.path.join(tmp_dir, "m7g/calc-data/")
+    write_dir = os.path.join(tmp_dir, "larp1_dm15/calc-data/")
     if os.path.exists(write_dir):
         shutil.rmtree(write_dir)
     os.makedirs(write_dir, exist_ok=False)
 
     run_compute_data(
-        topo_path=path_m7g_paths["topo"],
-        traj_path=path_m7g_paths["traj"],
-        ref_path=path_m7g_paths["ref_pdb"],
+        topo_path=path_larp1_dm15_paths["topo"],
+        traj_path=path_larp1_dm15_paths["traj"],
+        ref_path=path_larp1_dm15_paths["ref_pdb"],
         fop_ref=fop_ref,
-        subpex_config=m7g_config,
+        subpex_config=larp1_dm15_config,
         selection_align_suffix=" and backbone",
         write=False,
         write_dir=write_dir,
@@ -81,7 +81,7 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
                 0.0002885486464947462,
             ]
         ),
-        np.array(m7g_config.data.aux.backbone_rmsd.values),
+        np.array(larp1_dm15_config.data.aux.backbone_rmsd.values),
     )
     assert np.allclose(
         np.array(
@@ -93,7 +93,7 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
                 0.0,
             ]
         ),
-        np.array(m7g_config.data.aux.pocket_jd.values),
+        np.array(larp1_dm15_config.data.aux.pocket_jd.values),
     )
     assert np.allclose(
         np.array(
@@ -105,7 +105,7 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
                 0.0003747374867089093,
             ]
         ),
-        np.array(m7g_config.data.aux.pocket_rmsd.values),
+        np.array(larp1_dm15_config.data.aux.pocket_rmsd.values),
     )
     assert np.allclose(
         np.array(
@@ -117,9 +117,9 @@ def test_traj_data_m7g(path_m7g_paths, m7g_config, tmp_dir):
                 3.2499845795814117,
             ]
         ),
-        np.array(m7g_config.data.aux.pocket_rog.values),
+        np.array(larp1_dm15_config.data.aux.pocket_rog.values),
     )
     assert np.allclose(
         np.array([129.625, 123.25, 126.25, 124.625, 129.0]),
-        np.array(m7g_config.data.aux.pocket_volume.values),
+        np.array(larp1_dm15_config.data.aux.pocket_volume.values),
     )
