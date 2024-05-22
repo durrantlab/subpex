@@ -22,8 +22,9 @@ def tmp_dir():
 def path_m7g_paths():
     paths = {
         "topo": os.path.join(TEST_DIR, "files/m7g/mol.prmtop"),
-        "ref_pdb": os.path.join(TEST_DIR, "files/m7g/equil_frame_last.pdb"),
-        "traj": os.path.join(TEST_DIR, "files/m7g/equil_frames.nc"),
+        "ref_pdb": os.path.join(TEST_DIR, "files/m7g/mol.pdb"),
+        "traj": os.path.join(TEST_DIR, "files/m7g/mol.nc"),
+        "restart": os.path.join(TEST_DIR, "files/m7g/mol.rst"),
     }
     return paths
 
