@@ -16,7 +16,7 @@ def write_env_script(westpa_config: WestpaConfig, write_dir: str = "") -> None:
         write_dir: The directory where the env.sh file will be written.
     """
     logger.debug("Writing env.sh")
-    lines_env = []
+    lines_env = ["#!/usr/bin/env bash", ""]
 
     for line in westpa_config.env.lines_prepend:
         lines_env.append(line)
