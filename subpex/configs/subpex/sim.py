@@ -9,3 +9,7 @@ class SimulationConfig(BaseModel):
     """Path to the final simulation trajectory file to use. The last frame of this
     trajectory will be used as the starting frame for the enhanced simulations.
     """
+    path_topo: str | None = Field(default=None)
+    """Path to the topology file for the system. This file is used to define the system
+    and parameters for the molecular dynamics simulations.
+    """
