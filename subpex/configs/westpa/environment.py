@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 class EnvVars(BaseModel):
     WEST_SIM_ROOT: str = Field(default="$PWD")
     """path to the base directory containing the WESTPA install"""
+    SIM_NAME: str = Field(default="$(basename $WEST_SIM_ROOT)")
+    """Simulation name"""
     WEST_PYTHON: str = Field(default="$(which python)")
     """path to python executable to run the WESTPA simulation"""
     WEST_PYTHONPATH: str | None = Field(default=None)
