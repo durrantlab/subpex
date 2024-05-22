@@ -118,6 +118,11 @@ def run_westpa_setup(
         write_dir=write_dir,
         **path_dirs_westpa,  # type: ignore
     )
+
+    # Write configuration file
+    westpa_config.to_yaml(os.path.join(write_dir, "west.cfg"))
+
+    # Write all bash scripts
     write_westpa_bash_scripts(
         subpex_config=subpex_config,
         westpa_config=westpa_config,
