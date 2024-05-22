@@ -8,26 +8,30 @@ from .main import WestpaConfig
 
 
 def run_westpa_config(
+    westpa_config: WestpaConfig | None = None,
     file_name: str = "west.cfg",
     save_dir: str | None = None,
     yaml_paths: Sequence[str] | None = None,
 ) -> None:
     """
-    Create, update, and save a WESTPA configuration file.
+    Run the WestpaConfig configuration process.
 
     Args:
-        file_name: The name of the output configuration file.
-        save_dir: The directory where the configuration file will be saved. If `None`,
-            the current directory is used.
-        yaml_paths: A list of paths to YAML files from which to update the
-            configuration. If None, no updates are made.
+        westpa_config (WestpaConfig | None): An instance of WestpaConfig. If `None`,
+            a default instance will be initialized.
+        file_name (str): The name of the output file. Default is 'west.cfg'.
+        save_dir (str | None): The directory where the output file will be saved.
+            If `None`, the current directory will be used.
+        yaml_paths (Sequence[str] | None): A sequence of YAML file paths to update the
+            configuration parameters from.
 
     Returns:
-    --------
-    None
+        None: This function does not return anything.
+
     """
-    logger.debug("Initializing default WestpaConfig instance.")
-    westpa_config = WestpaConfig()
+    if westpa_config is None:
+        logger.debug("Initializing default WestpaConfig instance.")
+        westpa_config = WestpaConfig()
 
     if yaml_paths:
         logger.debug("Updating parameters from YAML files.")
