@@ -10,6 +10,10 @@ def test_westpa_init_m7g(path_m7g_paths, m7g_config, tmp_dir):
     write_dir = os.path.join(tmp_dir, "westpa_init_m7g")
     if os.path.exists(write_dir):
         shutil.rmtree(write_dir)
+
+    # Setup WESTPA
+    westpa_config.env.load_modules = ["gcc/10.2.0", "openmpi/4.1.1", "amber/22"]
+
     run_westpa_setup(
         subpex_config=m7g_config,
         westpa_config=westpa_config,

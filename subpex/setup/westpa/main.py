@@ -76,9 +76,6 @@ def write_westpa_bash_scripts(
         write_dir (str, optional): The directory where the scripts will be written. Defaults to "".
         *args: Additional positional arguments.
         **kwargs: Additional keyword arguments.
-
-    Returns:
-        None
     """
     write_env_script(westpa_config=westpa_config, write_dir=write_dir)
 
