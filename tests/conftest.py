@@ -38,6 +38,7 @@ def m7g_config():
     subpex_config.sim.path_traj_relax = os.path.join(
         TEST_DIR, "files/m7g/equil_frames.nc"
     )
+    subpex_config.sim.path_topo = os.path.join(TEST_DIR, "files/m7g/mol.prmtop")
     for aux_data in subpex_config.data.aux.get_all():
         aux_data.active = True
     return subpex_config
